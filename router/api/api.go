@@ -7,7 +7,7 @@ import (
 
 func RegisterRoutes(m *macaron.Macaron) {
 	m.Group("/auth", func() {
-		m.Post("/", binding.Bind(AuthRequest{}), Auth)
+		m.Post("/", binding.Json(AuthRequest{}), Auth)
 		//m.Post("/", api.AuthCookies)
 	})
 }

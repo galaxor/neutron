@@ -8,14 +8,16 @@ import (
 
 func main() {
 	m := macaron.Classic()
+	m.Use(macaron.Renderer())
 
 	m.Group("/api", func() {
 		api.RegisterRoutes(m)
 	})
 
-	m.Get("/", func() string {
-		return "Hello world!"
-	})
+	m.Use(macaron.Static("public/build", macaron.StaticOptions{
+		IndexFile: "app.html",
+		SkipLogging: true,
+	}))
 
 	m.Run()
 }
