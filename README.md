@@ -4,7 +4,7 @@ Self-hosted server for [Protonmail client](https://github.com/ProtonMail/WebClie
 
 ## Usage
 
-```
+```bash
 # Build client
 make build-client
 
