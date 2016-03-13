@@ -14,6 +14,12 @@ const (
 	ResponseToken ResponseType = "token"
 )
 
+type TokenType string
+
+const (
+	TokenBearer TokenType = "Bearer"
+)
+
 type AuthRequest struct {
 	ClientID string
 	ClientSecret string
@@ -29,7 +35,7 @@ type AuthResponse struct {
 	Code int
 	AccessToken string
 	ExpiresIn int
-	TokenType string
+	TokenType TokenType
 	Scope string
 	Uid string
 	RefreshToken string
