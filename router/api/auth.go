@@ -16,6 +16,7 @@ type GrantType string
 
 const (
 	GrantPassword GrantType = "password"
+	GrantRefreshToken = "refresh_token"
 )
 
 type ResponseType string
@@ -55,6 +56,15 @@ type AuthResponse struct {
 	EventID string
 }
 
+type AuthCookiesRequest struct {
+	ClientID string
+	ResponseType ResponseType
+	GrantType GrantType
+	RefreshToken string
+	RedirectURI string
+	State string
+}
+
 func encrypt(user *backend.User, token string) (encrypted string, err error) {
 	entitiesList, err := openpgp.ReadArmoredKeyRing(strings.NewReader(user.PrivateKey))
 	if err != nil {
@@ -89,6 +99,15 @@ func encrypt(user *backend.User, token string) (encrypted string, err error) {
 }
 
 func Auth(ctx *macaron.Context, req AuthRequest) {
+	if req.GrantType != GrantPassword {
+		ctx.JSON(200, &ErrorResponse{
+			Response: Response{400},
+			Error: "invalid_grant",
+			ErrorDescription: "GrantType must be set to password",
+		})
+		return
+	}
+
 	user, err := backend.Login(req.Username, req.Password)
 	if err != nil {
 		ctx.JSON(200, &ErrorResponse{
@@ -99,7 +118,7 @@ func Auth(ctx *macaron.Context, req AuthRequest) {
 		return
 	}
 
-	encryptedToken, err := encrypt(user, "token")
+	encryptedToken, err := encrypt(user, "access_token")
 	if err != nil {
 		ctx.JSON(200, &ErrorResponse{
 			Response: Response{500},
@@ -116,9 +135,22 @@ func Auth(ctx *macaron.Context, req AuthRequest) {
 		TokenType: TokenBearer,
 		Scope: "full mail payments reset keys",
 		Uid: user.Uid,
-		RefreshToken: "1d73f4c430feaa77079f2e99ceb30b29fdbba213",
+		RefreshToken: "refresh_token",
 		PrivateKey: user.PrivateKey,
 		EncPrivateKey: user.PrivateKey,
 		EventID: "gnFPgsx4P9uXvB7IW8sIAUEcxEGGGH7mmRFiCmWwcn1jY3hxPxnCh39qvQInv5LkQFPn5rYh8qzfP_bJPrvHrg==",
 	})
+}
+
+func AuthCookies(ctx *macaron.Context, req AuthCookiesRequest) {
+	if req.GrantType != GrantRefreshToken {
+		ctx.JSON(200, &ErrorResponse{
+			Response: Response{400},
+			Error: "invalid_grant",
+			ErrorDescription: "GrantType must be set to refresh_token",
+		})
+		return
+	}
+
+	// TODO
 }
