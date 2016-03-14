@@ -172,7 +172,7 @@ func AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 		AccessToken: "access_token",
 		Uid: "uid",
 	})
-	ctx.SetCookie("AUTH-session_token", string(authCookie), 0, "/api/", "", true, true)
+	ctx.SetCookie("AUTH-session_token", string(authCookie), 0, "/api/", "", false, true)
 
 	ctx.JSON(200, &AuthCookiesResp{
 		Resp: Resp{1000},
