@@ -35,5 +35,14 @@ func RegisterRoutes(m *macaron.Macaron) {
 		m.Get("/", GetLabels)
 	})
 
+	m.Group("/messages", func() {
+		m.Get("/count", GetMessagesCount)
+	})
+
+	m.Group("/conversations", func() {
+		m.Get("/", GetConversations)
+		m.Get("/count", GetConversationsCount)
+	})
+
 	m.Post("/bugs/crash", binding.Json(CrashReq{}), Crash)
 }
