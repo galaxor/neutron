@@ -18,3 +18,13 @@ Credentials:
 * Username: `neutron`
 * Password: `neutron`
 * Mailbox password: `neutron` (public/private PGP keys are stored in `data/`)
+
+## Roadmap
+
+- [ ] Implement dummy server ([#1](https://github.com/emersion/neutron/issues/1))
+- [ ] Define backend interface
+- [ ] Implement IMAP + SMTP interface
+
+## License
+
+MIT
