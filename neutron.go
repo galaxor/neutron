@@ -18,6 +18,10 @@ func main() {
 	// API
 	m.Group("/api", func() {
 		api.RegisterRoutes(m)
+
+		m.NotFound(func(ctx *macaron.Context) {
+			ctx.PlainText(404, []byte("endpoint not found"))
+		})
 	})
 
 	// Serve static files

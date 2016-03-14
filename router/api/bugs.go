@@ -6,7 +6,8 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-type CrashRequest struct {
+type CrashReq struct {
+	Req
 	OSVersion string
 	Client string
 	ClientVersion string
@@ -19,7 +20,7 @@ type CrashRequest struct {
 	}
 }
 
-func Crash(ctx *macaron.Context, req CrashRequest) {
+func Crash(ctx *macaron.Context, req CrashReq) {
 	log.Println("Client crashed:")
 	log.Println(req)
 

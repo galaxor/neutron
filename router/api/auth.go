@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"strings"
+	"encoding/json"
 
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
@@ -31,7 +32,8 @@ const (
 	TokenBearer TokenType = "Bearer"
 )
 
-type AuthRequest struct {
+type AuthReq struct {
+	Req
 	ClientID string
 	ClientSecret string
 	GrantType GrantType
@@ -42,8 +44,8 @@ type AuthRequest struct {
 	Username string
 }
 
-type AuthResponse struct {
-	Response
+type AuthResp struct {
+	Resp
 	AccessToken string
 	ExpiresIn int
 	TokenType TokenType
@@ -56,7 +58,8 @@ type AuthResponse struct {
 	EventID string
 }
 
-type AuthCookiesRequest struct {
+type AuthCookiesReq struct {
+	Req
 	ClientID string
 	ResponseType ResponseType
 	GrantType GrantType
@@ -65,8 +68,18 @@ type AuthCookiesRequest struct {
 	State string
 }
 
+type AuthCookiesResp struct {
+	Resp
+	SessionToken string
+}
+
+type AuthCookie struct {
+	AccessToken string
+	Uid string `json:"UID"`
+}
+
 func encrypt(user *backend.User, token string) (encrypted string, err error) {
-	entitiesList, err := openpgp.ReadArmoredKeyRing(strings.NewReader(user.PrivateKey))
+	entitiesList, err := openpgp.ReadArmoredKeyRing(strings.NewReader(user.EncPrivateKey))
 	if err != nil {
 		return
 	}
@@ -83,7 +96,6 @@ func encrypt(user *backend.User, token string) (encrypted string, err error) {
 		return
 	}
 
-	
 	w, err := openpgp.Encrypt(armorWriter, []*openpgp.Entity{entity}, nil, nil, nil)
 	if err != nil {
 		return
@@ -98,59 +110,72 @@ func encrypt(user *backend.User, token string) (encrypted string, err error) {
 	return
 }
 
-func Auth(ctx *macaron.Context, req AuthRequest) {
+var userId string
+
+func Auth(ctx *macaron.Context, req AuthReq) {
 	if req.GrantType != GrantPassword {
-		ctx.JSON(200, &ErrorResponse{
-			Response: Response{400},
+		ctx.JSON(200, &ErrorResp{
+			Resp: Resp{400},
 			Error: "invalid_grant",
 			ErrorDescription: "GrantType must be set to password",
 		})
 		return
 	}
 
-	user, err := backend.Login(req.Username, req.Password)
+	user, err := backend.Auth(req.Username, req.Password)
 	if err != nil {
-		ctx.JSON(200, &ErrorResponse{
-			Response: Response{401},
+		ctx.JSON(200, &ErrorResp{
+			Resp: Resp{401},
 			Error: "invalid_grant",
 			ErrorDescription: err.Error(),
 		})
 		return
 	}
 
+	userId = user.ID
+
 	encryptedToken, err := encrypt(user, "access_token")
 	if err != nil {
-		ctx.JSON(200, &ErrorResponse{
-			Response: Response{500},
+		ctx.JSON(200, &ErrorResp{
+			Resp: Resp{500},
 			Error: "invalid_key",
 			ErrorDescription: err.Error(),
 		})
 		return
 	}
 
-	ctx.JSON(200, &AuthResponse{
-		Response: Response{1000},
+	ctx.JSON(200, &AuthResp{
+		Resp: Resp{1000},
 		AccessToken: encryptedToken,
 		ExpiresIn: 360000,
 		TokenType: TokenBearer,
 		Scope: "full mail payments reset keys",
-		Uid: user.Uid,
+		Uid: "uid",
 		RefreshToken: "refresh_token",
-		PrivateKey: user.PrivateKey,
-		EncPrivateKey: user.PrivateKey,
+		PrivateKey: user.EncPrivateKey,
+		EncPrivateKey: user.EncPrivateKey,
 		EventID: "gnFPgsx4P9uXvB7IW8sIAUEcxEGGGH7mmRFiCmWwcn1jY3hxPxnCh39qvQInv5LkQFPn5rYh8qzfP_bJPrvHrg==",
 	})
 }
 
-func AuthCookies(ctx *macaron.Context, req AuthCookiesRequest) {
+func AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 	if req.GrantType != GrantRefreshToken {
-		ctx.JSON(200, &ErrorResponse{
-			Response: Response{400},
+		ctx.JSON(200, &ErrorResp{
+			Resp: Resp{400},
 			Error: "invalid_grant",
 			ErrorDescription: "GrantType must be set to refresh_token",
 		})
 		return
 	}
 
-	// TODO
+	authCookie, _ := json.Marshal(&AuthCookie{
+		AccessToken: "access_token",
+		Uid: "uid",
+	})
+	ctx.SetCookie("AUTH-session_token", string(authCookie), 0, "/api/", "", true, true)
+
+	ctx.JSON(200, &AuthCookiesResp{
+		Resp: Resp{1000},
+		SessionToken: "session_token",
+	})
 }
