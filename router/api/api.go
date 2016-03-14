@@ -5,9 +5,21 @@ import (
 	"github.com/go-macaron/binding"
 )
 
+type Response struct {
+	Code int
+}
+
+type ErrorResponse struct {
+	Response
+	Error string
+	ErrorDescription string
+}
+
 func RegisterRoutes(m *macaron.Macaron) {
 	m.Group("/auth", func() {
 		m.Post("/", binding.Json(AuthRequest{}), Auth)
-		//m.Post("/", api.AuthCookies)
+		//m.Post("/cookies", api.AuthCookies)
 	})
+
+	m.Post("/bugs/crash", binding.Json(CrashRequest{}), Crash)
 }

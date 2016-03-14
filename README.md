@@ -13,3 +13,8 @@ make build-client
 # Start server
 make start
 ```
+
+Credentials:
+* Username: `neutron`
+* Password: `neutron`
+* Mailbox password: `neutron` (public/private PGP keys are stored in `data/`)
