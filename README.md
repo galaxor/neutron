@@ -6,6 +6,8 @@ Self-hosted server for [Protonmail client](https://github.com/ProtonMail/WebClie
 
 ```bash
 # Build client
+git submodule init
+git submodule update
 make build-client
 
 # Start server
