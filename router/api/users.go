@@ -12,6 +12,8 @@ type UserResp struct {
 }
 
 func (api *Api) GetCurrentUser(ctx *macaron.Context) {
+	userId := api.getUserId(ctx)
+
 	user, err := api.backend.GetUser(userId)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{

@@ -7,10 +7,6 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-type Api struct {
-	backend backend.Backend
-}
-
 type Req struct {}
 
 type Resp struct {
@@ -23,9 +19,38 @@ type ErrorResp struct {
 	ErrorDescription string
 }
 
+type Api struct {
+	backend backend.Backend
+	sessions map[string]string
+}
+
+func (api *Api) getSessionToken(ctx *macaron.Context) string {
+	sessionToken, ok := ctx.Data["sessionToken"].(string)
+	if !ok {
+		return ""
+	}
+
+	return sessionToken
+}
+
+func (api *Api) getUserId(ctx *macaron.Context) string {
+	sessionToken := api.getSessionToken(ctx)
+	if sessionToken == "" {
+		return ""
+	}
+
+	userId, ok := api.sessions[sessionToken]
+	if !ok {
+		return ""
+	}
+
+	return userId
+}
+
 func New(m *macaron.Macaron, backend backend.Backend) {
 	api := &Api{
 		backend: backend,
+		sessions: map[string]string{},
 	}
 
 	m.Use(func (ctx *macaron.Context) {

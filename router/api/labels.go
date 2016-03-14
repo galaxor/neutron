@@ -12,6 +12,8 @@ type LabelsResp struct {
 }
 
 func (api *Api) GetLabels(ctx *macaron.Context) (err error) {
+	userId := api.getUserId(ctx)
+
 	labels, err := api.backend.GetLabels(userId)
 	if err != nil {
 		return

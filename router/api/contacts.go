@@ -12,6 +12,8 @@ type ContactsResp struct {
 }
 
 func (api *Api) GetContacts(ctx *macaron.Context) (err error) {
+	userId := api.getUserId(ctx)
+
 	contacts, err := api.backend.GetContacts(userId)
 	if err != nil {
 		return

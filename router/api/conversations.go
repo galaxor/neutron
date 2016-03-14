@@ -24,6 +24,7 @@ type ConversationsCount struct {
 }
 
 func (api *Api) GetConversations(ctx *macaron.Context) (err error) {
+	userId := api.getUserId(ctx)
 	label := ctx.Params("Label")
 	limit := ctx.ParamsInt("Limit")
 	page := ctx.ParamsInt("Page")
