@@ -28,11 +28,6 @@ func main() {
 
 	// Fallback to index file
 	m.NotFound(func(ctx *macaron.Context) {
-
-		ctx.ServeFileContent(publicDir + "/" + indexFile)
-	})
-
-	m.NotFound(func(ctx *macaron.Context) {
 		data, err := ioutil.ReadFile(publicDir + "/" + indexFile)
 		if err != nil {
 			ctx.PlainText(404, []byte("page not found"))
