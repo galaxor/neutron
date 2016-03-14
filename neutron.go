@@ -5,6 +5,7 @@ import (
 
 	"gopkg.in/macaron.v1"
 
+	"github.com/emersion/neutron/backend/memory"
 	"github.com/emersion/neutron/router/api"
 )
 
@@ -12,12 +13,14 @@ func main() {
 	publicDir := "public/build"
 	indexFile := "app.html"
 
+	backend := memory.New()
+
 	m := macaron.Classic()
 	m.Use(macaron.Renderer())
 
 	// API
 	m.Group("/api", func() {
-		api.RegisterRoutes(m)
+		api.New(m, backend)
 
 		m.NotFound(func(ctx *macaron.Context) {
 			ctx.PlainText(404, []byte("endpoint not found"))

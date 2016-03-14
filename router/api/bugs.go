@@ -20,7 +20,7 @@ type CrashReq struct {
 	}
 }
 
-func Crash(ctx *macaron.Context, req CrashReq) {
+func (api *Api) Crash(ctx *macaron.Context, req CrashReq) {
 	log.Println("Client crashed:")
 	log.Println(req)
 

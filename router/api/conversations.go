@@ -23,12 +23,12 @@ type ConversationsCount struct {
 	Unread int
 }
 
-func GetConversations(ctx *macaron.Context) (err error) {
+func (api *Api) GetConversations(ctx *macaron.Context) (err error) {
 	label := ctx.Params("Label")
 	limit := ctx.ParamsInt("Limit")
 	page := ctx.ParamsInt("Page")
 
-	conversations, total, err := backend.GetConversations(userId, label, limit, page)
+	conversations, total, err := api.backend.GetConversations(userId, label, limit, page)
 	if err != nil {
 		return
 	}
@@ -41,7 +41,7 @@ func GetConversations(ctx *macaron.Context) (err error) {
 	return
 }
 
-func GetConversationsCount(ctx *macaron.Context) (err error) {
+func (api *Api) GetConversationsCount(ctx *macaron.Context) (err error) {
 	// TODO
 	ctx.JSON(200, &ConversationsCountResp{
 		Resp: Resp{1000},

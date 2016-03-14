@@ -25,7 +25,7 @@ type EventResp struct {
 	//Organization
 }
 
-func GetEvent(ctx *macaron.Context) {
+func (api *Api) GetEvent(ctx *macaron.Context) {
 	id := ctx.Params("event")
 
 	ctx.JSON(200, &EventResp{

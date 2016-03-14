@@ -11,8 +11,8 @@ type LabelsResp struct {
 	Labels []*backend.Label
 }
 
-func GetLabels(ctx *macaron.Context) (err error) {
-	labels, err := backend.GetLabels(userId)
+func (api *Api) GetLabels(ctx *macaron.Context) (err error) {
+	labels, err := api.backend.GetLabels(userId)
 	if err != nil {
 		return
 	}

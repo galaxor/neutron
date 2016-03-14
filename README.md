@@ -22,7 +22,7 @@ Credentials:
 ## Roadmap
 
 - [ ] Implement dummy server ([#1](https://github.com/emersion/neutron/issues/1))
-- [ ] Define backend interface
+- [x] Define backend interface
 - [ ] Implement IMAP + SMTP interface
 
 ## License

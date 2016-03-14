@@ -11,8 +11,8 @@ type UserResp struct {
 	User *backend.User
 }
 
-func GetCurrentUser(ctx *macaron.Context) {
-	user, err := backend.Get(userId)
+func (api *Api) GetCurrentUser(ctx *macaron.Context) {
+	user, err := api.backend.GetUser(userId)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{404},

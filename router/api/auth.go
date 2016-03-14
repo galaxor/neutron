@@ -112,7 +112,7 @@ func encrypt(user *backend.User, token string) (encrypted string, err error) {
 
 var userId string
 
-func Auth(ctx *macaron.Context, req AuthReq) {
+func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	if req.GrantType != GrantPassword {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{400},
@@ -122,7 +122,7 @@ func Auth(ctx *macaron.Context, req AuthReq) {
 		return
 	}
 
-	user, err := backend.Auth(req.Username, req.Password)
+	user, err := api.backend.Auth(req.Username, req.Password)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{401},
@@ -158,7 +158,7 @@ func Auth(ctx *macaron.Context, req AuthReq) {
 	})
 }
 
-func AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
+func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 	if req.GrantType != GrantRefreshToken {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{400},

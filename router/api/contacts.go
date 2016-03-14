@@ -11,8 +11,8 @@ type ContactsResp struct {
 	Contacts []*backend.Contact
 }
 
-func GetContacts(ctx *macaron.Context) (err error) {
-	contacts, err := backend.GetContacts(userId)
+func (api *Api) GetContacts(ctx *macaron.Context) (err error) {
+	contacts, err := api.backend.GetContacts(userId)
 	if err != nil {
 		return
 	}

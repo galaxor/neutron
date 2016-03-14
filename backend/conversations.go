@@ -4,8 +4,8 @@ type Conversation struct {
 	ID string
 	Order int
 	Subject string
-	Senders []*ConversationAddress
-	Recipients []*ConversationAddress
+	Senders []*Email
+	Recipients []*Email
 	NumMessages int
 	NumUnread int
 	NumAttachments int
@@ -16,7 +16,7 @@ type Conversation struct {
 	Labels []*ConversationLabel
 }
 
-type ConversationAddress struct {
+type Email struct {
 	Address string
 	Name string
 }
@@ -26,12 +26,4 @@ type ConversationLabel struct {
 	Count int
 	NumMessages int
 	NumUnread int
-}
-
-func GetConversations(user, label string, limit, page int) (conversations []*Conversation, total int, err error) {
-	conversations = []*Conversation{}
-
-	total = len(conversations)
-
-	return
 }
