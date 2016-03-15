@@ -27,3 +27,9 @@ type ConversationLabel struct {
 	NumMessages int
 	NumUnread int
 }
+
+type ConversationsCount struct {
+	LabelID string
+	Total int
+	Unread int
+}

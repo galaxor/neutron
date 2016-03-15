@@ -14,13 +14,7 @@ type ConversationsResp struct {
 
 type ConversationsCountResp struct {
 	Resp
-	Counts []*ConversationsCount
-}
-
-type ConversationsCount struct {
-	LabelID string
-	Total int
-	Unread int
+	Counts []*backend.ConversationsCount
 }
 
 func (api *Api) GetConversations(ctx *macaron.Context) (err error) {
@@ -43,16 +37,16 @@ func (api *Api) GetConversations(ctx *macaron.Context) (err error) {
 }
 
 func (api *Api) GetConversationsCount(ctx *macaron.Context) (err error) {
-	// TODO
+	userId := api.getUserId(ctx)
+
+	counts, err := api.backend.CountConversations(userId)
+	if err != nil {
+		return
+	}
+
 	ctx.JSON(200, &ConversationsCountResp{
 		Resp: Resp{1000},
-		Counts: []*ConversationsCount{
-			&ConversationsCount{
-				LabelID: "0",
-				Total: 0,
-				Unread: 0,
-			},
-		},
+		Counts: counts,
 	})
 	return
 }

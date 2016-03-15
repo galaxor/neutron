@@ -9,4 +9,5 @@ type Backend interface {
 	ListLabels(user string) ([]*Label, error)
 
 	ListConversations(user, label string, limit, page int) ([]*Conversation, int, error)
+	CountConversations(user string) ([]*ConversationsCount, error)
 }

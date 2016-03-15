@@ -13,3 +13,11 @@ func (b *Backend) ListConversations(user, label string, limit, page int) (convs 
 
 	return
 }
+
+func (b *Backend) CountConversations(user string) (counts []*backend.ConversationsCount, err error) {
+	//convs := b.data[user].conversations
+
+	// TODO
+
+	return
+}
