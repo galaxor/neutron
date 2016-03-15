@@ -29,12 +29,13 @@ func (b *Backend) getKeypair(id string) (keypair *backend.Keypair, err error) {
 }
 
 func (b *Backend) GetUser(id string) (user *backend.User, err error) {
-	user = &backend.User{
-		ID: id,
-		Name: "neutron",
-		DisplayName: "Neutron",
-		NotificationEmail: "neutron@example.org",
+	item, ok := b.data[id]
+	if !ok {
+		err = errors.New("No such user")
+		return
 	}
+
+	user = item.user
 
 	keypair, err := b.getKeypair(id)
 	if err != nil {
@@ -60,11 +61,13 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 }
 
 func (b *Backend) Auth(username, password string) (user *backend.User, err error) {
-	if username != "neutron" || password != "neutron" {
-		err = errors.New("Invalid username and password combination")
-		return
+	for id, item := range b.data {
+		if item.user.Name == username && item.password == password {
+			user, err = b.GetUser(id)
+			return
+		}
 	}
 
-	user, err = b.GetUser("user_id")
+	err = errors.New("Invalid username and password combination")
 	return
 }

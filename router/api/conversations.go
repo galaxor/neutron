@@ -29,7 +29,7 @@ func (api *Api) GetConversations(ctx *macaron.Context) (err error) {
 	limit := ctx.ParamsInt("Limit")
 	page := ctx.ParamsInt("Page")
 
-	conversations, total, err := api.backend.GetConversations(userId, label, limit, page)
+	conversations, total, err := api.backend.ListConversations(userId, label, limit, page)
 	if err != nil {
 		return
 	}

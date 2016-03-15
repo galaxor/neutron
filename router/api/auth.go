@@ -150,7 +150,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		ExpiresIn: 360000,
 		TokenType: TokenBearer,
 		Scope: "full mail payments reset keys",
-		Uid: "uid",
+		Uid: user.ID, // TODO: put something else there
 		RefreshToken: "refresh_token",
 		PrivateKey: user.EncPrivateKey,
 		EncPrivateKey: user.EncPrivateKey,
@@ -159,7 +159,26 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 }
 
 func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
-	sessionToken := api.getSessionToken(ctx)
+	uid := api.getUid(ctx)
+	if uid == "" {
+		ctx.JSON(200, &ErrorResp{
+			Resp: Resp{400},
+			Error: "invalid_grant",
+			ErrorDescription: "No uid provided",
+		})
+		return
+	}
+
+	userId := uid // TODO
+
+	sessionToken := ""
+	for t, id := range api.sessions {
+		if id == userId {
+			sessionToken = t
+			break
+		}
+	}
+
 	if sessionToken == "" {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{401},
@@ -180,7 +199,7 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 
 	authCookie, _ := json.Marshal(&AuthCookie{
 		AccessToken: sessionToken,
-		Uid: "uid",
+		Uid: userId,
 	})
 	ctx.SetCookie("AUTH-" + sessionToken, string(authCookie), 0, "/api/", "", false, true)
 
@@ -188,4 +207,15 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 		Resp: Resp{1000},
 		SessionToken: sessionToken,
 	})
+}
+
+func (api *Api) DeleteAuth(ctx *macaron.Context) {
+	sessionToken := api.getSessionToken(ctx)
+	if sessionToken != "" {
+		ctx.SetCookie("AUTH-" + sessionToken, "", 0, "/api/", "", false, true)
+
+		api.sessions[sessionToken] = ""
+	}
+
+	ctx.Resp.WriteHeader(200)
 }
