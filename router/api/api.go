@@ -100,8 +100,9 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 	})
 
 	m.Group("/conversations", func() {
-		m.Get("/", api.GetConversations)
+		m.Get("/", api.ListConversations)
 		m.Get("/count", api.GetConversationsCount)
+		m.Get("/:id", api.GetConversation)
 	})
 
 	m.Group("/events", func() {

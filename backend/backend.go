@@ -10,4 +10,6 @@ type Backend interface {
 
 	ListConversations(user, label string, limit, page int) ([]*Conversation, int, error)
 	CountConversations(user string) ([]*ConversationsCount, error)
+	GetConversation(user, id string) (conv *Conversation, err error)
+	ListConversationMessages(user, id string) (msgs []*Message, err error)
 }

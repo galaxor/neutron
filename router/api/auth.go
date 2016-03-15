@@ -154,7 +154,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		RefreshToken: "refresh_token",
 		PrivateKey: user.EncPrivateKey,
 		EncPrivateKey: user.EncPrivateKey,
-		EventID: "gnFPgsx4P9uXvB7IW8sIAUEcxEGGGH7mmRFiCmWwcn1jY3hxPxnCh39qvQInv5LkQFPn5rYh8qzfP_bJPrvHrg==",
+		EventID: "event_id",
 	})
 }
 
