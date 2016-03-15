@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"gopkg.in/macaron.v1"
 	"github.com/go-macaron/binding"
 
@@ -74,7 +73,6 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 			ctx.Data["sessionToken"] = sessionToken[0]
 		}
 		if uid, ok := ctx.Req.Header["X-Pm-Uid"]; ok {
-			log.Println(uid)
 			ctx.Data["uid"] = uid[0]
 		}
 	})
