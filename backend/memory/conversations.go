@@ -81,14 +81,11 @@ func (b *Backend) GetConversation(user, id string) (conv *backend.Conversation, 
 	for _, c := range b.data[user].conversations {
 		if c.ID == id {
 			conv = c
-			break
+			return
 		}
 	}
 
-	if conv == nil {
-		err = errors.New("No such conversation")
-	}
-
+	err = errors.New("No such conversation")
 	return
 }
 
@@ -99,4 +96,17 @@ func (b *Backend) ListConversationMessages(user, id string) (msgs []*backend.Mes
 		}
 	}
 	return
+}
+
+func (b *Backend) UpdateConversation(user string, update *backend.ConversationUpdate) error {
+	updated := update.Conversation
+
+	_, err := b.GetConversation(user, updated.ID)
+	if err != nil {
+		return err
+	}
+
+	// TODO
+
+	return nil
 }

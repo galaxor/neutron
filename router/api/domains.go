@@ -11,7 +11,7 @@ type AvailableDomainsResp struct {
 
 func (api *Api) GetAvailableDomains(ctx *macaron.Context) {
 	ctx.JSON(200, &AvailableDomainsResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		Domains: []string{"example.org"},
 	})
 	return

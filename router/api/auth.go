@@ -113,7 +113,7 @@ func encrypt(user *backend.User, token string) (encrypted string, err error) {
 func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	if req.GrantType != GrantPassword {
 		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{400},
+			Resp: Resp{BadRequest},
 			Error: "invalid_grant",
 			ErrorDescription: "GrantType must be set to password",
 		})
@@ -123,7 +123,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	user, err := api.backend.Auth(req.Username, req.Password)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{401},
+			Resp: Resp{Unauthorized},
 			Error: "invalid_grant",
 			ErrorDescription: err.Error(),
 		})
@@ -135,7 +135,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	encryptedToken, err := encrypt(user, sessionToken)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{500},
+			Resp: Resp{InternalServerError},
 			Error: "invalid_key",
 			ErrorDescription: err.Error(),
 		})
@@ -145,7 +145,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	api.sessions[sessionToken] = user.ID
 
 	ctx.JSON(200, &AuthResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		AccessToken: encryptedToken,
 		ExpiresIn: 360000,
 		TokenType: TokenBearer,
@@ -162,7 +162,7 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 	uid := api.getUid(ctx)
 	if uid == "" {
 		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{400},
+			Resp: Resp{BadRequest},
 			Error: "invalid_grant",
 			ErrorDescription: "No uid provided",
 		})
@@ -181,7 +181,7 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 
 	if sessionToken == "" {
 		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{401},
+			Resp: Resp{Unauthorized},
 			Error: "invalid_session",
 			ErrorDescription: "Not logged in",
 		})
@@ -190,7 +190,7 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 
 	if req.GrantType != GrantRefreshToken {
 		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{400},
+			Resp: Resp{BadRequest},
 			Error: "invalid_grant",
 			ErrorDescription: "GrantType must be set to refresh_token",
 		})
@@ -204,7 +204,7 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 	ctx.SetCookie("AUTH-" + sessionToken, string(authCookie), 0, "/api/", "", false, true)
 
 	ctx.JSON(200, &AuthCookiesResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		SessionToken: sessionToken,
 	})
 }
@@ -217,5 +217,5 @@ func (api *Api) DeleteAuth(ctx *macaron.Context) {
 		api.sessions[sessionToken] = ""
 	}
 
-	ctx.Resp.WriteHeader(200)
+	ctx.JSON(200, &Resp{Ok})
 }

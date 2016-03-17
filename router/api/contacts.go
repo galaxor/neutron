@@ -20,7 +20,7 @@ func (api *Api) GetContacts(ctx *macaron.Context) (err error) {
 	}
 
 	ctx.JSON(200, &ContactsResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		Contacts: contacts,
 	})
 	return

@@ -43,7 +43,7 @@ func (api *Api) GetCurrentUser(ctx *macaron.Context) {
 	user, err := api.backend.GetUser(userId)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{404},
+			Resp: Resp{NotFound},
 			Error: "invalid_user",
 			ErrorDescription: err.Error(),
 		})
@@ -51,7 +51,7 @@ func (api *Api) GetCurrentUser(ctx *macaron.Context) {
 	}
 
 	ctx.JSON(200, &UserResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		User: user,
 	})
 }
@@ -68,7 +68,7 @@ func (api *Api) CreateUser(ctx *macaron.Context, req CreateUserReq) (err error) 
 	}
 
 	ctx.JSON(200, &UserResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		User: user,
 	})
 	return
@@ -76,7 +76,7 @@ func (api *Api) CreateUser(ctx *macaron.Context, req CreateUserReq) (err error) 
 
 func (api *Api) GetDirectUser(ctx *macaron.Context) {
 	ctx.JSON(200, &DirectUserResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		Direct: 1,
 	})
 }
@@ -95,7 +95,7 @@ func (api *Api) GetUsernameAvailable(ctx *macaron.Context) (err error) {
 	}
 
 	ctx.JSON(200, &UsernameAvailableResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		Available: value,
 	})
 	return
@@ -112,6 +112,6 @@ func (api *Api) UpdateUserDisplayName(ctx *macaron.Context, req UpdateUserDispla
 		return
 	}
 
-	ctx.JSON(200, &Resp{1000})
+	ctx.JSON(200, &Resp{Ok})
 	return
 }

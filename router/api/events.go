@@ -29,7 +29,7 @@ func (api *Api) GetEvent(ctx *macaron.Context) {
 	id := ctx.Params("event")
 
 	ctx.JSON(200, &EventResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		EventID: id,
 	})
 }

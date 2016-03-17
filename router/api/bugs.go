@@ -24,5 +24,5 @@ func (api *Api) Crash(ctx *macaron.Context, req CrashReq) {
 	log.Println("Client crashed:")
 	log.Println(req)
 
-	ctx.Resp.WriteHeader(200)
+	ctx.JSON(200, &Resp{Ok})
 }

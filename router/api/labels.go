@@ -20,7 +20,7 @@ func (api *Api) GetLabels(ctx *macaron.Context) (err error) {
 	}
 
 	ctx.JSON(200, &LabelsResp{
-		Resp: Resp{1000},
+		Resp: Resp{Ok},
 		Labels: labels,
 	})
 	return

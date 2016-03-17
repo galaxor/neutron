@@ -48,3 +48,7 @@ type ConversationsFilter struct {
 	Sort string
 	Desc bool
 }
+
+type ConversationUpdate struct {
+	Conversation *Conversation
+}

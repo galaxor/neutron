@@ -7,16 +7,44 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
+type RespCode int
+
+const (
+	Ok RespCode = 1000
+	Batch = 1001
+
+	BadRequest = 400
+	Unauthorized = 401
+	NotFound = 404
+
+	InternalServerError = 500
+)
+
 type Req struct {}
 
 type Resp struct {
-	Code int
+	Code RespCode
 }
 
 type ErrorResp struct {
 	Resp
 	Error string
 	ErrorDescription string
+}
+
+type BatchReq struct {
+	Req
+	IDs []string
+}
+
+type BatchResp struct {
+	Resp
+	Responses []*BatchRespItem
+}
+
+type BatchRespItem struct {
+	ID string
+	Response interface{}
 }
 
 type Api struct {
@@ -100,13 +128,15 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 
 	m.Group("/messages", func() {
 		m.Get("/count", api.GetMessagesCount)
-		m.Put("/read", binding.Json(SetMessagesReadReq{}), api.SetMessagesRead)
-		m.Put("/unread", binding.Json(SetMessagesReadReq{}), api.SetMessagesUnread)
+		m.Put("/read", binding.Json(BatchReq{}), api.SetMessagesRead)
+		m.Put("/unread", binding.Json(BatchReq{}), api.SetMessagesUnread)
 	})
 
 	m.Group("/conversations", func() {
 		m.Get("/", api.ListConversations)
 		m.Get("/count", api.GetConversationsCount)
+		m.Put("/read", binding.Json(BatchReq{}), api.SetConversationsRead)
+		m.Put("/unread", binding.Json(BatchReq{}), api.SetConversationsUnread)
 		m.Get("/:id", api.GetConversation)
 	})
 
