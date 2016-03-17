@@ -25,7 +25,15 @@ func New() backend.Backend {
 					ID: "user_id",
 					Name: "neutron",
 					DisplayName: "Neutron",
-					NotificationEmail: "neutron@example.org",
+					Addresses: []*backend.Address{
+						&backend.Address{
+							ID: "address_id",
+							DomainID: "domain_id",
+							Email: "neutron@example.org",
+							Send: 1,
+							Receive: 1,
+						},
+					},
 				},
 				password: "neutron",
 				contacts: []*backend.Contact{

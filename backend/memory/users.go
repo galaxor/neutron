@@ -63,16 +63,13 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 		}
 	}
 
-	user.Addresses = []*backend.Address{
-		&backend.Address{
-			ID: "address_id",
-			DomainID: "domain_id",
-			Email: "neutron@example.org",
-			Send: 1,
-			Receive: 1,
-			DisplayName: user.Name,
-			Keys: []*backend.Keypair{keypair},
-		},
+	for _, addr := range user.Addresses {
+		if addr.DisplayName == "" {
+			addr.DisplayName = user.Name
+		}
+		if len(addr.Keys) == 0 {
+			addr.Keys = []*backend.Keypair{keypair}
+		}
 	}
 
 	return
@@ -101,10 +98,38 @@ func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User
 
 	user.ID = "user_id" // TODO
 
+	user.Addresses = []*backend.Address{
+		&backend.Address{
+			ID: "address_id", // TODO
+			DomainID: "domain_id", // TODO
+			Email: user.Name + "@example.org", // TODO
+			Send: 1,
+			Receive: 1,
+		},
+	}
+
+	// Insert new user
 	b.data[user.ID] = &userData{
 		user: user,
 		password: password,
 	}
 
 	return b.GetUser(user.ID)
+}
+
+func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
+	updated := update.User
+
+	item, ok := b.data[updated.ID]
+	if !ok {
+		return errors.New("No such user")
+	}
+
+	user := item.user
+
+	if update.DisplayName {
+		user.DisplayName = updated.DisplayName
+	}
+
+	return nil
 }

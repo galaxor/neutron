@@ -102,13 +102,15 @@ func (api *Api) GetUsernameAvailable(ctx *macaron.Context) (err error) {
 }
 
 func (api *Api) UpdateUserDisplayName(ctx *macaron.Context, req UpdateUserDisplayNameReq) (err error) {
-	// TODO
-	/*err := api.backend.UpdateUser(&backend.User{
-		DisplayName: req.DisplayName,
+	err = api.backend.UpdateUser(&backend.UserUpdate{
+		User: &backend.User{
+			DisplayName: req.DisplayName,
+		},
+		DisplayName: true,
 	})
 	if err != nil {
 		return
-	}*/
+	}
 
 	ctx.JSON(200, &Resp{1000})
 	return
