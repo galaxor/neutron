@@ -105,7 +105,7 @@ func (api *Api) UpdateUserDisplayName(ctx *macaron.Context, req UpdateUserDispla
 	// TODO
 	/*err := api.backend.UpdateUser(&backend.User{
 		DisplayName: req.DisplayName,
-	}, req.Password)
+	})
 	if err != nil {
 		return
 	}*/

@@ -52,3 +52,8 @@ type Keypair struct {
 	PublicKey string
 	PrivateKey string
 }
+
+type UserUpdate struct {
+	User *User
+	DisplayName bool
+}
