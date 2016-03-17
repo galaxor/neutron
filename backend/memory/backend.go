@@ -49,18 +49,7 @@ func New() backend.Backend {
 						Subject: "Hi from Neutron!",
 						Senders: []*backend.Email{ &backend.Email{"neutron@example.org", "Neutron"} },
 						Recipients: []*backend.Email{ &backend.Email{"neutron@example.org", "Neutron"} },
-						NumMessages: 1,
-						NumUnread: 1,
 						Time: 1458073557,
-						LabelIDs: []string{"0"},
-						Labels: []*backend.ConversationLabel{
-							&backend.ConversationLabel{
-								ID: "O",
-								Count: 1,
-								NumMessages: 1,
-								NumUnread: 1,
-							},
-						},
 					},
 				},
 				messages: []*backend.Message{

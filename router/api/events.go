@@ -31,5 +31,6 @@ func (api *Api) GetEvent(ctx *macaron.Context) {
 	ctx.JSON(200, &EventResp{
 		Resp: Resp{Ok},
 		EventID: id,
+		Notices: []string{},
 	})
 }

@@ -6,6 +6,48 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
+func (b *Backend) populateConversation(user string, conv *backend.Conversation) error {
+	msgs, err := b.ListConversationMessages(user, conv.ID)
+	if err != nil {
+		return err
+	}
+
+	conv.NumMessages = 0
+	conv.NumUnread = 0
+	conv.Labels = nil
+	conv.LabelIDs = nil
+
+	for _, msg := range msgs {
+		conv.NumMessages++
+		if msg.IsRead == 0 {
+			conv.NumUnread++
+		}
+
+		for _, labelId := range msg.LabelIDs {
+			var label *backend.ConversationLabel
+			for _, l := range conv.Labels {
+				if l.ID == labelId {
+					label = l
+					break
+				}
+			}
+
+			if label == nil {
+				label = &backend.ConversationLabel{ ID: labelId }
+				conv.Labels = append(conv.Labels, label)
+				conv.LabelIDs = append(conv.LabelIDs, labelId)
+			}
+
+			label.NumMessages++
+			if msg.IsRead == 0 {
+				label.NumUnread++
+			}
+		}
+	}
+
+	return nil
+}
+
 func (b *Backend) ListConversations(user string, filter *backend.ConversationsFilter) (convs []*backend.Conversation, total int, err error) {
 	// TODO: filter according to label
 
@@ -13,6 +55,8 @@ func (b *Backend) ListConversations(user string, filter *backend.ConversationsFi
 	filtered := []*backend.Conversation{}
 
 	for _, c := range all {
+		b.populateConversation(user, c)
+
 		if filter.Label != "" {
 			matches := false
 			for _, lbl := range c.LabelIDs {
@@ -81,6 +125,7 @@ func (b *Backend) GetConversation(user, id string) (conv *backend.Conversation, 
 	for _, c := range b.data[user].conversations {
 		if c.ID == id {
 			conv = c
+			b.populateConversation(user, conv)
 			return
 		}
 	}
