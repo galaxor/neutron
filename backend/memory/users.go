@@ -28,6 +28,16 @@ func (b *Backend) getKeypair(id string) (keypair *backend.Keypair, err error) {
 	return
 }
 
+func (b *Backend) IsUsernameAvailable(username string) (bool, error) {
+	for _, d := range b.data {
+		if d.user.Name == username {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 	item, ok := b.data[id]
 	if !ok {
@@ -37,13 +47,21 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 
 	user = item.user
 
-	keypair, err := b.getKeypair(id)
-	if err != nil {
-		return
-	}
+	var keypair *backend.Keypair
+	if user.EncPrivateKey == "" {
+		keypair, err = b.getKeypair(id)
+		if err != nil {
+			return
+		}
 
-	user.PublicKey = keypair.PublicKey
-	user.EncPrivateKey = keypair.PrivateKey
+		user.PublicKey = keypair.PublicKey
+		user.EncPrivateKey = keypair.PrivateKey
+	} else {
+		keypair = &backend.Keypair{
+			PublicKey: user.PublicKey,
+			PrivateKey: user.EncPrivateKey,
+		}
+	}
 
 	user.Addresses = []*backend.Address{
 		&backend.Address{
@@ -52,7 +70,7 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 			Email: "neutron@example.org",
 			Send: 1,
 			Receive: 1,
-			DisplayName: "Neutron",
+			DisplayName: user.Name,
 			Keys: []*backend.Keypair{keypair},
 		},
 	}
@@ -70,4 +88,23 @@ func (b *Backend) Auth(username, password string) (user *backend.User, err error
 
 	err = errors.New("Invalid username and password combination")
 	return
+}
+
+func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User, error) {
+	available, err := b.IsUsernameAvailable(user.Name)
+	if err != nil {
+		return nil, err
+	}
+	if !available {
+		return nil, errors.New("Username already taken")
+	}
+
+	user.ID = "user_id" // TODO
+
+	b.data[user.ID] = &userData{
+		user: user,
+		password: password,
+	}
+
+	return b.GetUser(user.ID)
 }

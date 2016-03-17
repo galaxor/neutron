@@ -85,6 +85,9 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 
 	m.Group("/users", func() {
 		m.Get("/", api.GetCurrentUser)
+		m.Get("/", binding.Json(CreateUserReq{}), api.CreateUser)
+		m.Get("/direct", api.GetDirectUser)
+		m.Get("/available/:username", api.GetUsernameAvailable)
 	})
 
 	m.Group("/contacts", func() {
@@ -110,6 +113,12 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 	m.Group("/events", func() {
 		m.Get("/:event", api.GetEvent)
 	})
+
+	m.Group("/settings", func() {
+		m.Put("/display", binding.Json(UpdateUserDisplayNameReq{}), api.UpdateUserDisplayName)
+	})
+
+	m.Get("/domains/available", api.GetAvailableDomains)
 
 	m.Post("/bugs/crash", binding.Json(CrashReq{}), api.Crash)
 }

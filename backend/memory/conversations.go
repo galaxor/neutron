@@ -6,22 +6,49 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-func (b *Backend) ListConversations(user, label string, limit, page int) (convs []*backend.Conversation, total int, err error) {
+func (b *Backend) ListConversations(user, filter *backend.ConversationsFilter) (convs []*backend.Conversation, total int, err error) {
 	// TODO: filter according to label
 
-	allConvs := b.data[user].conversations
-	total = len(allConvs)
+	all := b.data[user].conversations
+	filtered := []*backend.Conversation{}
 
-	from := limit * page
-	to := limit * (page + 1)
-	if from < 0 {
-		from = 0
-	}
-	if to > total {
-		to = total
+	for _, c := range all {
+		if filter.Label != "" {
+			matches := false
+			for _, lbl := range c.LabelIDs {
+				if lbl == filter.Label {
+					matches = true
+					break
+				}
+			}
+
+			if !matches {
+				continue
+			}
+		}
+
+		// TODO: other filter fields support
+
+		filtered = append(filtered, c)
 	}
 
-	convs = allConvs[from:to]
+	total = len(filtered)
+
+	if filter.Limit > 0 && filter.Page >= 0 {
+		from := filter.Limit * filter.Page
+		to := filter.Limit * (filter.Page + 1)
+		if from < 0 {
+			from = 0
+		}
+		if to > total {
+			to = total
+		}
+
+		convs = filtered[from:to]
+	} else {
+		convs = filtered
+	}
+
 	return
 }
 
