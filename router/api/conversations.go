@@ -25,21 +25,7 @@ type ConversationResp struct {
 
 func (api *Api) ListConversations(ctx *macaron.Context) (err error) {
 	userId := api.getUserId(ctx)
-
-	filter := &backend.ConversationsFilter{
-		Limit: ctx.QueryInt("Limit"),
-		Page: ctx.QueryInt("Page"),
-		Label: ctx.Query("Label"),
-		Keyword: ctx.Query("Keyword"),
-		Address: ctx.Query("Address"),
-		Attachments: (ctx.Query("Attachments") == "1"),
-		From: ctx.Query("From"),
-		To: ctx.Query("To"),
-		Begin: ctx.QueryInt("Begin"),
-		End: ctx.QueryInt("End"),
-		Sort: ctx.Query("Sort"),
-		Desc: (ctx.Query("Desc") == "1"),
-	}
+	filter := getMessagesFilter(ctx)
 
 	conversations, total, err := api.backend.ListConversations(userId, filter)
 	if err != nil {
@@ -109,16 +95,13 @@ func (api *Api) setConversationsRead(ctx *macaron.Context, req BatchReq, value i
 			for _, msg := range msgs {
 				msg.IsRead = value
 
-				err = api.backend.UpdateMessage(userId, &backend.MessageUpdate{
+				_, err = api.backend.UpdateMessage(userId, &backend.MessageUpdate{
 					Message: msg,
 					IsRead: true,
 				})
 
 				if err != nil {
-					r.Response = &ErrorResp{
-						Resp: Resp{InternalServerError},
-						ErrorDescription: err.Error(),
-					}
+					r.Response = newErrorResp(err)
 					break
 				}
 			}

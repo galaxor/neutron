@@ -32,6 +32,14 @@ type ErrorResp struct {
 	ErrorDescription string
 }
 
+func newErrorResp(err error) *ErrorResp {
+	return &ErrorResp{
+		Resp: Resp{InternalServerError},
+		Error: "unknown_error",
+		ErrorDescription: err.Error(),
+	}
+}
+
 type BatchReq struct {
 	Req
 	IDs []string
@@ -40,6 +48,13 @@ type BatchReq struct {
 type BatchResp struct {
 	Resp
 	Responses []*BatchRespItem
+}
+
+func newBatchResp(items []*BatchRespItem) *BatchResp {
+	return &BatchResp{
+		Resp: Resp{Batch},
+		Responses: items,
+	}
 }
 
 type BatchRespItem struct {
@@ -131,9 +146,13 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 	})
 
 	m.Group("/messages", func() {
+		m.Get("/", api.ListMessages)
 		m.Get("/count", api.GetMessagesCount)
 		m.Put("/read", binding.Json(BatchReq{}), api.SetMessagesRead)
 		m.Put("/unread", binding.Json(BatchReq{}), api.SetMessagesUnread)
+		m.Post("/draft", binding.Json(MessageReq{}), api.CreateDraft)
+		m.Put("/draft/:id", binding.Json(MessageReq{}), api.UpdateDraft)
+		m.Put("/delete", binding.Json(BatchReq{}), api.DeleteMessages)
 	})
 
 	m.Group("/conversations", func() {

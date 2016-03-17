@@ -33,6 +33,8 @@ func New() backend.Backend {
 							Email: "neutron@example.org",
 							Send: 1,
 							Receive: 1,
+							Status: 1,
+							Type: 1,
 						},
 					},
 				},

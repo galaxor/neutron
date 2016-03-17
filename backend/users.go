@@ -43,8 +43,15 @@ type Address struct {
 	Type int
 	DisplayName string
 	Signature string
-	HashKeys int
+	HasKeys int
 	Keys []*Keypair
+}
+
+func (a *Address) GetEmail() *Email {
+	return &Email{
+		Address: a.Email,
+		Name: a.DisplayName,
+	}
 }
 
 type UserUpdate struct {

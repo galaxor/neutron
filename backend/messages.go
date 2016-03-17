@@ -13,7 +13,7 @@ type Message struct {
 	ToList []*Email
 	CCList []*Email
 	BCCList []*Email
-	Time int
+	Time int64
 	Size int
 	NumAttachments int
 	IsEncrypted int
@@ -25,13 +25,37 @@ type Message struct {
 	Body string
 	Header string
 	ReplyTo *Email
-	Attachments []interface{} // TODO
+	Attachments []*Attachment
 	Starred int
 	Location int
 	LabelIDs []string
 }
 
+type Attachment struct {} // TODO
+
+type MessagesFilter struct {
+	Limit int
+	Page int
+	Label string
+	Keyword string
+	Address string // Address ID
+	Attachments bool
+	From string
+	To string
+	Begin int // Timestamp
+	End int // Timestamp
+	Sort string
+	Desc bool
+}
+
 type MessageUpdate struct {
 	Message *Message
+	ToList bool
+	CCList bool
+	BCCList bool
+	Subject bool
 	IsRead bool
+	AddressID bool
+	Body bool
+	Time bool
 }

@@ -79,7 +79,7 @@ func (b *Backend) listConversations(user string) (convs []*backend.Conversation,
 	return
 }
 
-func (b *Backend) ListConversations(user string, filter *backend.ConversationsFilter) (convs []*backend.Conversation, total int, err error) {
+func (b *Backend) ListConversations(user string, filter *backend.MessagesFilter) (convs []*backend.Conversation, total int, err error) {
 	all, err := b.listConversations(user)
 	if err != nil {
 		return

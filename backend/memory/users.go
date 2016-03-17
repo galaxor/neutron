@@ -32,10 +32,11 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 
 	for _, addr := range user.Addresses {
 		if addr.DisplayName == "" {
-			addr.DisplayName = user.Name
+			addr.DisplayName = user.DisplayName
 		}
 		if len(addr.Keys) == 0 {
 			addr.Keys = []*backend.Keypair{keypair}
+			addr.HasKeys = 1
 		}
 	}
 
@@ -72,6 +73,8 @@ func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User
 			Email: user.Name + "@example.org", // TODO
 			Send: 1,
 			Receive: 1,
+			Status: 1,
+			Type: 1,
 		},
 	}
 
