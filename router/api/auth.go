@@ -176,7 +176,7 @@ func (api *Api) DeleteAuth(ctx *macaron.Context) {
 	if sessionToken != "" {
 		ctx.SetCookie("AUTH-" + sessionToken, "", 0, "/api/", "", false, true)
 
-		api.sessions[sessionToken] = ""
+		delete(api.sessions, "sessionToken")
 	}
 
 	ctx.JSON(200, &Resp{Ok})

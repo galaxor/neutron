@@ -63,11 +63,11 @@ func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User
 		return nil, errors.New("Username already taken")
 	}
 
-	user.ID = "user_id" // TODO
+	user.ID = generateId()
 
 	user.Addresses = []*backend.Address{
 		&backend.Address{
-			ID: "address_id", // TODO
+			ID: generateId(),
 			DomainID: "domain_id", // TODO
 			Email: user.Name + "@example.org", // TODO
 			Send: 1,
