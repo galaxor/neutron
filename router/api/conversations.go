@@ -25,11 +25,23 @@ type ConversationResp struct {
 
 func (api *Api) ListConversations(ctx *macaron.Context) (err error) {
 	userId := api.getUserId(ctx)
-	label := ctx.Query("Label")
-	limit := ctx.QueryInt("Limit")
-	page := ctx.QueryInt("Page")
 
-	conversations, total, err := api.backend.ListConversations(userId, label, limit, page)
+	filter := &backend.ConversationsFilter{
+		Limit: ctx.QueryInt("Limit"),
+		Page: ctx.QueryInt("Page"),
+		Label: ctx.Query("Label"),
+		Keyword: ctx.Query("Keyword"),
+		Address: ctx.Query("Address"),
+		Attachments: (ctx.Query("Attachments") == "1"),
+		From: ctx.Query("From"),
+		To: ctx.Query("To"),
+		Begin: ctx.QueryInt("Begin"),
+		End: ctx.QueryInt("End"),
+		Sort: ctx.Query("Sort"),
+		Desc: (ctx.Query("Desc") == "1"),
+	}
+
+	conversations, total, err := api.backend.ListConversations(userId, filter)
 	if err != nil {
 		return
 	}

@@ -30,3 +30,8 @@ type Message struct {
 	Location int
 	LabelIDs []string
 }
+
+type MessageUpdate struct {
+	Message *Message
+	IsRead bool
+}

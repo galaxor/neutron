@@ -6,7 +6,7 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-func (b *Backend) ListConversations(user, filter *backend.ConversationsFilter) (convs []*backend.Conversation, total int, err error) {
+func (b *Backend) ListConversations(user string, filter *backend.ConversationsFilter) (convs []*backend.Conversation, total int, err error) {
 	// TODO: filter according to label
 
 	all := b.data[user].conversations

@@ -26,12 +26,19 @@ func (b *Backend) GetMessage(user, id string) (msg *backend.Message, err error) 
 	return
 }
 
-func (b *Backend) SetMessageRead(user, id string, value int) (err error) {
-	i, err := b.getMessageIndex(user, id)
+func (b *Backend) UpdateMessage(user string, update *backend.MessageUpdate) (err error) {
+	updated := update.Message
+
+	i, err := b.getMessageIndex(user, updated.ID)
 	if err != nil {
 		return
 	}
 
-	b.data[user].messages[i].IsRead = value
+	msg := b.data[user].messages[i]
+
+	if update.IsRead {
+		msg.IsRead = updated.IsRead
+	}
+
 	return
 }
