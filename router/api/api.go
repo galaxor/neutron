@@ -113,13 +113,17 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 
 	m.Group("/users", func() {
 		m.Get("/", api.GetCurrentUser)
-		m.Get("/", binding.Json(CreateUserReq{}), api.CreateUser)
+		m.Post("/", binding.Json(CreateUserReq{}), api.CreateUser)
 		m.Get("/direct", api.GetDirectUser)
 		m.Get("/available/:username", api.GetUsernameAvailable)
 	})
 
 	m.Group("/contacts", func() {
 		m.Get("/", api.GetContacts)
+		m.Post("/", binding.Json(CreateContactsReq{}), api.CreateContacts)
+		m.Delete("/", api.DeleteAllContacts)
+		m.Put("/:id", binding.Json(UpdateContactReq{}), api.UpdateContact)
+		m.Put("/delete", binding.Json(BatchReq{}), api.DeleteContacts)
 	})
 
 	m.Group("/labels", func() {

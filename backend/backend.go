@@ -10,9 +10,10 @@ type Backend interface {
 	//DeleteUser(id string) error
 
 	ListContacts(user string) ([]*Contact, error)
-	//InsertContact(user string, contact *Contact) error
-	//UpdateContact(user string, update *ContactUpdate) error
-	//DeleteContact(user, id string) error
+	InsertContact(user string, contact *Contact) (*Contact, error)
+	UpdateContact(user string, update *ContactUpdate) (*Contact, error)
+	DeleteContact(user, id string) error
+	DeleteAllContacts(user string) error
 
 	ListLabels(user string) ([]*Label, error)
 	//InsertLabel(user string, label *Label) error
