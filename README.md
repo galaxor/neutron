@@ -1,6 +1,9 @@
 # neutron
 
-Self-hosted server for [Protonmail client](https://github.com/ProtonMail/WebClient)
+Self-hosted server for [Protonmail client](https://github.com/ProtonMail/WebClient).
+
+Keep in mind that Neutron is less secure than ProtonMail: most servers doesn't
+use full-disk encryption and aren't under 1,000 meters of granite rock.
 
 ## Usage
 
