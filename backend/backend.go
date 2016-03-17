@@ -8,6 +8,9 @@ type Backend interface {
 
 	ListLabels(user string) ([]*Label, error)
 
+	GetMessage(user, id string) (*Message, error)
+	SetMessageRead(user, id string, value int) error
+
 	ListConversations(user, label string, limit, page int) ([]*Conversation, int, error)
 	CountConversations(user string) ([]*ConversationsCount, error)
 	GetConversation(user, id string) (conv *Conversation, err error)

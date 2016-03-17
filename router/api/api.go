@@ -97,6 +97,8 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 
 	m.Group("/messages", func() {
 		m.Get("/count", api.GetMessagesCount)
+		m.Put("/read", binding.Json(SetMessagesReadReq{}), api.SetMessagesRead)
+		m.Put("/unread", binding.Json(SetMessagesReadReq{}), api.SetMessagesUnread)
 	})
 
 	m.Group("/conversations", func() {
