@@ -25,6 +25,8 @@ func New() backend.Backend {
 					ID: "user_id",
 					Name: "neutron",
 					DisplayName: "Neutron",
+					PublicKey: defaultPublicKey(),
+					EncPrivateKey: defaultPrivateKey(),
 					Addresses: []*backend.Address{
 						&backend.Address{
 							ID: "address_id",

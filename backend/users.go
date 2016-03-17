@@ -47,12 +47,6 @@ type Address struct {
 	Keys []*Keypair
 }
 
-type Keypair struct {
-	ID string
-	PublicKey string
-	PrivateKey string
-}
-
 type UserUpdate struct {
 	User *User
 	DisplayName bool

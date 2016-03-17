@@ -17,7 +17,7 @@ make start
 Default credentials:
 * Username: `neutron`
 * Password: `neutron`
-* Mailbox password: `neutron` (public/private PGP keys are stored in `data/`)
+* Mailbox password: `neutron`
 
 ## Roadmap
 

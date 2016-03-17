@@ -1,16 +1,9 @@
 package api
 
 import (
-	"bytes"
-	"errors"
-	"strings"
 	"encoding/json"
 
-	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
 	"gopkg.in/macaron.v1"
-
-	"github.com/emersion/neutron/backend"
 )
 
 type GrantType string
@@ -78,38 +71,6 @@ type AuthCookie struct {
 	Uid string `json:"UID"`
 }
 
-func encrypt(user *backend.User, token string) (encrypted string, err error) {
-	entitiesList, err := openpgp.ReadArmoredKeyRing(strings.NewReader(user.EncPrivateKey))
-	if err != nil {
-		return
-	}
-	if len(entitiesList) == 0 {
-		err = errors.New("Key ring does not contain any key")
-		return
-	}
-
-	entity := entitiesList[0]
-
-	var tokenBuffer bytes.Buffer
-	armorWriter, err := armor.Encode(&tokenBuffer, "PGP MESSAGE", map[string]string{})
-	if err != nil {
-		return
-	}
-
-	w, err := openpgp.Encrypt(armorWriter, []*openpgp.Entity{entity}, nil, nil, nil)
-	if err != nil {
-		return
-	}
-
-	w.Write([]byte(token))
-	w.Close()
-
-	armorWriter.Close()
-
-	encrypted = tokenBuffer.String()
-	return
-}
-
 func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	if req.GrantType != GrantPassword {
 		ctx.JSON(200, &ErrorResp{
@@ -132,7 +93,8 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 
 	sessionToken := "access_token"
 
-	encryptedToken, err := encrypt(user, sessionToken)
+	keyring := user.Addresses[0].Keys[0] // TODO: find a better way to get the keyring
+	encryptedToken, err := keyring.EncryptToSelf(sessionToken)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{InternalServerError},

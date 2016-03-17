@@ -2,31 +2,9 @@ package memory
 
 import (
 	"errors"
-	"io/ioutil"
 
 	"github.com/emersion/neutron/backend"
 )
-
-func (b *Backend) getKeypair(id string) (keypair *backend.Keypair, err error) {
-	var pub []byte
-	pub, err = ioutil.ReadFile("data/public.key")
-	if err != nil {
-		return
-	}
-
-	var priv []byte
-	priv, err = ioutil.ReadFile("data/private.key")
-	if err != nil {
-		return
-	}
-
-	keypair = &backend.Keypair{
-		ID: "keypair_id",
-		PublicKey: string(pub),
-		PrivateKey: string(priv),
-	}
-	return
-}
 
 func (b *Backend) IsUsernameAvailable(username string) (bool, error) {
 	for _, d := range b.data {
@@ -47,20 +25,9 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 
 	user = item.user
 
-	var keypair *backend.Keypair
-	if user.EncPrivateKey == "" {
-		keypair, err = b.getKeypair(id)
-		if err != nil {
-			return
-		}
-
-		user.PublicKey = keypair.PublicKey
-		user.EncPrivateKey = keypair.PrivateKey
-	} else {
-		keypair = &backend.Keypair{
-			PublicKey: user.PublicKey,
-			PrivateKey: user.EncPrivateKey,
-		}
+	keypair := &backend.Keypair{
+		PublicKey: user.PublicKey,
+		PrivateKey: user.EncPrivateKey,
 	}
 
 	for _, addr := range user.Addresses {
