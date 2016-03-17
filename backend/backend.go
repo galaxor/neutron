@@ -1,8 +1,10 @@
 package backend
 
 type Backend interface {
+	IsUsernameAvailable(username string) (bool, error)
 	GetUser(id string) (*User, error)
 	Auth(username, password string) (*User, error)
+	InsertUser(user *User, password string) (*User, error)
 
 	ListContacts(user string) ([]*Contact, error)
 

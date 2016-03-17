@@ -28,6 +28,16 @@ func (b *Backend) getKeypair(id string) (keypair *backend.Keypair, err error) {
 	return
 }
 
+func (b *Backend) IsUsernameAvailable(username string) (bool, error) {
+	for _, d := range b.data {
+		if d.user.Name == username {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 	item, ok := b.data[id]
 	if !ok {
@@ -70,4 +80,15 @@ func (b *Backend) Auth(username, password string) (user *backend.User, err error
 
 	err = errors.New("Invalid username and password combination")
 	return
+}
+
+func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User, error) {
+	user.ID = "user_id" // TODO
+
+	b.data[user.ID] = &userData{
+		user: user,
+		password: password,
+	}
+
+	return b.GetUser(user.ID)
 }
