@@ -114,6 +114,9 @@ func (b *Backend) UpdateMessage(user string, update *backend.MessageUpdate) (msg
 	if update.IsRead {
 		msg.IsRead = updated.IsRead
 	}
+	if update.Type {
+		msg.Type = updated.Type
+	}
 	if update.AddressID {
 		msg.AddressID = updated.AddressID
 	}
@@ -122,6 +125,41 @@ func (b *Backend) UpdateMessage(user string, update *backend.MessageUpdate) (msg
 	}
 	if update.Time {
 		msg.Time = updated.Time
+	}
+
+	if update.LabelIDs != backend.KeepLabels {
+		switch update.LabelIDs {
+		case backend.ReplaceLabels:
+			msg.LabelIDs = updated.LabelIDs
+		case backend.AddLabels:
+			for _, lblToAdd := range updated.LabelIDs {
+				found := false
+				for _, lbl := range msg.LabelIDs {
+					if lbl == lblToAdd {
+						found = true
+						break
+					}
+				}
+				if !found {
+					msg.LabelIDs = append(msg.LabelIDs, lblToAdd)
+				}
+			}
+		case backend.RemoveLabels:
+			var labels []string
+			for _, lbl := range updated.LabelIDs {
+				found := false
+				for _, lblToRemove := range updated.LabelIDs {
+					if lbl == lblToRemove {
+						found = true
+						break
+					}
+				}
+				if !found {
+					labels = append(labels, lbl)
+				}
+			}
+			msg.LabelIDs = labels
+		}
 	}
 
 	return
@@ -137,4 +175,8 @@ func (b *Backend) DeleteMessage(user, id string) error {
 	b.data[user].messages = append(messages[:i], messages[i+1:]...)
 
 	return nil
+}
+
+func (b *Backend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
+	return nil // Do nothing
 }

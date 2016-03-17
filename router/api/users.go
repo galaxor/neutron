@@ -132,9 +132,7 @@ func (api *Api) GetPublicKey(ctx *macaron.Context) (err error) {
 	}
 
 	resp := map[string]interface{}{ "Code": Ok }
-	if key != "" {
-		resp[email] = key
-	}
+	resp[email] = key
 	ctx.JSON(200, resp)
 	return
 }

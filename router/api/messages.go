@@ -38,6 +38,17 @@ type MessageResp struct {
 	Message *backend.Message
 }
 
+type SendMessageReq struct {
+	Req
+	ID string `json:"id"`
+	Packages []*backend.MessagePackage
+}
+
+type SendMessageResp struct {
+	Resp
+	Sent *backend.Message
+}
+
 func getMessagesFilter(ctx *macaron.Context) *backend.MessagesFilter {
 	return &backend.MessagesFilter{
 		Limit: ctx.QueryInt("Limit"),
@@ -145,8 +156,10 @@ func (api *Api) CreateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 
 func (api *Api) UpdateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 	userId := api.getUserId(ctx)
+	msgId := ctx.Params("id")
 
 	msg := req.getMessage()
+	msg.ID = msgId
 	msg.Time = time.Now().Unix()
 
 	msg, err = api.backend.UpdateMessage(userId, &backend.MessageUpdate{
@@ -167,6 +180,39 @@ func (api *Api) UpdateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 	ctx.JSON(200, &MessageResp{
 		Resp: Resp{Ok},
 		Message: msg,
+	})
+	return
+}
+
+func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error) {
+	userId := api.getUserId(ctx)
+	msgId := ctx.Params("id")
+
+	// Send each package
+	for _, pkg := range req.Packages {
+		err = api.backend.SendMessagePackage(userId, pkg)
+		if err != nil {
+			return
+		}
+	}
+
+	// Move message to Sent folder
+	msg, err := api.backend.UpdateMessage(userId, &backend.MessageUpdate{
+		Message: &backend.Message{
+			ID: msgId,
+			LabelIDs: []string{backend.SentLabel},
+			Type: 2,
+		},
+		Type: true,
+		LabelIDs: backend.ReplaceLabels,
+	})
+	if err != nil {
+		return
+	}
+
+	ctx.JSON(200, &SendMessageResp{
+		Resp: Resp{Ok},
+		Sent: msg,
 	})
 	return
 }

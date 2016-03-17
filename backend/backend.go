@@ -27,6 +27,7 @@ type Backend interface {
 	InsertMessage(user string, msg *Message) (*Message, error)
 	UpdateMessage(user string, update *MessageUpdate) (*Message, error)
 	DeleteMessage(user, id string) error
+	SendMessagePackage(user string, pkg *MessagePackage) error
 
 	GetConversation(user, id string) (conv *Conversation, err error)
 	ListConversations(user string, filter *MessagesFilter) ([]*Conversation, int, error)

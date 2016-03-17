@@ -153,6 +153,7 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 		m.Put("/unread", binding.Json(BatchReq{}), api.SetMessagesUnread)
 		m.Post("/draft", binding.Json(MessageReq{}), api.CreateDraft)
 		m.Put("/draft/:id", binding.Json(MessageReq{}), api.UpdateDraft)
+		m.Post("/send/:id", binding.Json(SendMessageReq{}), api.SendMessage)
 		m.Put("/delete", binding.Json(BatchReq{}), api.DeleteMessages)
 	})
 

@@ -33,6 +33,13 @@ type Message struct {
 
 type Attachment struct {} // TODO
 
+type MessagePackage struct {
+	Address string
+	Type int
+	Body string
+	KeyPackets []interface{} // TODO
+}
+
 type MessagesFilter struct {
 	Limit int
 	Page int
@@ -55,7 +62,18 @@ type MessageUpdate struct {
 	BCCList bool
 	Subject bool
 	IsRead bool
+	Type bool
 	AddressID bool
 	Body bool
 	Time bool
+	LabelIDs LabelsOperation
 }
+
+type LabelsOperation int
+
+const (
+	KeepLabels LabelsOperation = iota
+	ReplaceLabels
+	AddLabels
+	RemoveLabels
+)
