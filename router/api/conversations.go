@@ -105,19 +105,21 @@ func (api *Api) setConversationsRead(ctx *macaron.Context, req BatchReq, value i
 				Resp: Resp{InternalServerError},
 				ErrorDescription: err.Error(),
 			}
-		} else if len(msgs) > 0 {
-			msg := msgs[0]
+		} else {
+			for _, msg := range msgs {
+				msg.IsRead = value
 
-			msg.IsRead = 1
-			err = api.backend.UpdateMessage(userId, &backend.MessageUpdate{
-				Message: msg,
-				IsRead: true,
-			})
+				err = api.backend.UpdateMessage(userId, &backend.MessageUpdate{
+					Message: msg,
+					IsRead: true,
+				})
 
-			if err != nil {
-				r.Response = &ErrorResp{
-					Resp: Resp{InternalServerError},
-					ErrorDescription: err.Error(),
+				if err != nil {
+					r.Response = &ErrorResp{
+						Resp: Resp{InternalServerError},
+						ErrorDescription: err.Error(),
+					}
+					break
 				}
 			}
 		}

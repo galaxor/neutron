@@ -27,5 +27,5 @@ type Backend interface {
 	CountConversations(user string) ([]*ConversationsCount, error)
 	GetConversation(user, id string) (conv *Conversation, err error)
 	ListConversationMessages(user, id string) (msgs []*Message, err error)
-	UpdateConversation(user string, update *ConversationUpdate) error
+	//DeleteConversation(user, id string) error
 }
