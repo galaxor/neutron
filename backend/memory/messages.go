@@ -6,6 +6,12 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
+func populateMessage(msg *backend.Message) {
+	if backend.IsEncrypted(msg.Body) {
+		msg.IsEncrypted = 1
+	}
+}
+
 func (b *Backend) getMessageIndex(user, id string) (int, error) {
 	for i, m := range b.data[user].messages {
 		if m.ID == id {
@@ -23,6 +29,7 @@ func (b *Backend) GetMessage(user, id string) (msg *backend.Message, err error) 
 	}
 
 	msg = b.data[user].messages[i]
+	populateMessage(msg)
 	return
 }
 
@@ -30,10 +37,10 @@ func (b *Backend) ListMessages(user string, filter *backend.MessagesFilter) (msg
 	all := b.data[user].messages
 	filtered := []*backend.Message{}
 
-	for _, c := range all {
+	for _, msg := range all {
 		if filter.Label != "" {
 			matches := false
-			for _, lbl := range c.LabelIDs {
+			for _, lbl := range msg.LabelIDs {
 				if lbl == filter.Label {
 					matches = true
 					break
@@ -47,7 +54,8 @@ func (b *Backend) ListMessages(user string, filter *backend.MessagesFilter) (msg
 
 		// TODO: other filter fields support
 
-		filtered = append(filtered, c)
+		populateMessage(msg)
+		filtered = append(filtered, msg)
 	}
 
 	total = len(filtered)
@@ -73,6 +81,7 @@ func (b *Backend) ListMessages(user string, filter *backend.MessagesFilter) (msg
 func (b *Backend) ListConversationMessages(user, id string) (msgs []*backend.Message, err error) {
 	for _, msg := range b.data[user].messages {
 		if msg.ConversationID == id {
+			populateMessage(msg)
 			msgs = append(msgs, msg)
 		}
 	}
@@ -86,6 +95,7 @@ func (b *Backend) InsertMessage(user string, msg *backend.Message) (*backend.Mes
 	}
 
 	b.data[user].messages = append(b.data[user].messages, msg)
+	populateMessage(msg)
 	return msg, nil
 }
 
@@ -162,6 +172,7 @@ func (b *Backend) UpdateMessage(user string, update *backend.MessageUpdate) (msg
 		}
 	}
 
+	populateMessage(msg)
 	return
 }
 

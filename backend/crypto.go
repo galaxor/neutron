@@ -9,6 +9,8 @@ import (
 	"golang.org/x/crypto/openpgp/armor"
 )
 
+const PgpMessageType = "PGP MESSAGE"
+
 type Keypair struct {
 	ID string
 	PublicKey string
@@ -28,7 +30,7 @@ func (kp *Keypair) EncryptToSelf(data string) (encrypted string, err error) {
 	entity := entitiesList[0]
 
 	var tokenBuffer bytes.Buffer
-	armorWriter, err := armor.Encode(&tokenBuffer, "PGP MESSAGE", map[string]string{})
+	armorWriter, err := armor.Encode(&tokenBuffer, PgpMessageType, map[string]string{})
 	if err != nil {
 		return
 	}
@@ -45,4 +47,8 @@ func (kp *Keypair) EncryptToSelf(data string) (encrypted string, err error) {
 
 	encrypted = tokenBuffer.String()
 	return
+}
+
+func IsEncrypted(data string) bool {
+	return strings.Contains(data, "-----BEGIN " + PgpMessageType + "-----")
 }
