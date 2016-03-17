@@ -6,57 +6,88 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-func (b *Backend) populateConversation(user string, conv *backend.Conversation) error {
-	msgs, err := b.ListConversationMessages(user, conv.ID)
-	if err != nil {
-		return err
+func isEmailInList(needle *backend.Email, haystack []*backend.Email) bool {
+	for _, email := range haystack {
+		if needle.Address == email.Address {
+			return true
+		}
+	}
+	return false
+}
+
+func populateConversation(conv *backend.Conversation, msg *backend.Message) {
+	conv.NumMessages++
+	if msg.IsRead == 0 {
+		conv.NumUnread++
 	}
 
-	conv.NumMessages = 0
-	conv.NumUnread = 0
-	conv.Labels = nil
-	conv.LabelIDs = nil
+	if msg.Time > conv.Time {
+		conv.Time = msg.Time
+		conv.Subject = msg.Subject
+	}
 
-	for _, msg := range msgs {
-		conv.NumMessages++
+	if !isEmailInList(msg.Sender, conv.Senders) {
+		conv.Senders = append(conv.Senders, msg.Sender)
+	}
+
+	for _, email := range msg.ToList {
+		if !isEmailInList(email, conv.Recipients) {
+			conv.Recipients = append(conv.Recipients, email)
+		}
+	}
+
+	for _, labelId := range msg.LabelIDs {
+		var label *backend.ConversationLabel
+		for _, l := range conv.Labels {
+			if l.ID == labelId {
+				label = l
+				break
+			}
+		}
+
+		if label == nil {
+			label = &backend.ConversationLabel{ ID: labelId }
+			conv.Labels = append(conv.Labels, label)
+			conv.LabelIDs = append(conv.LabelIDs, labelId)
+		}
+
+		label.NumMessages++
 		if msg.IsRead == 0 {
-			conv.NumUnread++
-		}
-
-		for _, labelId := range msg.LabelIDs {
-			var label *backend.ConversationLabel
-			for _, l := range conv.Labels {
-				if l.ID == labelId {
-					label = l
-					break
-				}
-			}
-
-			if label == nil {
-				label = &backend.ConversationLabel{ ID: labelId }
-				conv.Labels = append(conv.Labels, label)
-				conv.LabelIDs = append(conv.LabelIDs, labelId)
-			}
-
-			label.NumMessages++
-			if msg.IsRead == 0 {
-				label.NumUnread++
-			}
+			label.NumUnread++
 		}
 	}
+}
 
-	return nil
+func (b *Backend) listConversations(user string) (convs []*backend.Conversation, err error) {
+	for _, msg := range b.data[user].messages {
+		var conv *backend.Conversation
+		for _, c := range convs {
+			if c.ID == msg.ConversationID {
+				conv = c
+				break
+			}
+		}
+
+		if conv == nil {
+			conv = &backend.Conversation{ ID: msg.ConversationID }
+			convs = append(convs, conv)
+		}
+
+		populateConversation(conv, msg)
+	}
+
+	return
 }
 
 func (b *Backend) ListConversations(user string, filter *backend.ConversationsFilter) (convs []*backend.Conversation, total int, err error) {
-	// TODO: filter according to label
+	all, err := b.listConversations(user)
+	if err != nil {
+		return
+	}
 
-	all := b.data[user].conversations
 	filtered := []*backend.Conversation{}
 
 	for _, c := range all {
-		b.populateConversation(user, c)
-
 		if filter.Label != "" {
 			matches := false
 			for _, lbl := range c.LabelIDs {
@@ -97,7 +128,10 @@ func (b *Backend) ListConversations(user string, filter *backend.ConversationsFi
 }
 
 func (b *Backend) CountConversations(user string) (counts []*backend.ConversationsCount, err error) {
-	convs := b.data[user].conversations
+	convs, err := b.listConversations(user)
+	if err != nil {
+		return
+	}
 
 	indexes := map[string]int{}
 
@@ -122,23 +156,18 @@ func (b *Backend) CountConversations(user string) (counts []*backend.Conversatio
 }
 
 func (b *Backend) GetConversation(user, id string) (conv *backend.Conversation, err error) {
-	for _, c := range b.data[user].conversations {
-		if c.ID == id {
-			conv = c
-			b.populateConversation(user, conv)
-			return
+	for _, msg := range b.data[user].messages {
+		if msg.ConversationID == id {
+			if conv == nil {
+				conv = &backend.Conversation{ ID: id }
+			}
+
+			populateConversation(conv, msg)
 		}
 	}
 
-	err = errors.New("No such conversation")
-	return
-}
-
-func (b *Backend) ListConversationMessages(user, id string) (msgs []*backend.Message, err error) {
-	for _, m := range b.data[user].messages {
-		if m.ConversationID == id {
-			msgs = append(msgs, m)
-		}
+	if conv == nil {
+		err = errors.New("No such conversation")
 	}
 	return
 }

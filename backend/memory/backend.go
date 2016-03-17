@@ -12,7 +12,6 @@ type userData struct {
 	user *backend.User
 	password string
 	contacts []*backend.Contact
-	conversations []*backend.Conversation
 	messages []*backend.Message
 	labels []*backend.Label
 }
@@ -45,19 +44,11 @@ func New() backend.Backend {
 						Email: "neutron@example.org",
 					},
 				},
-				conversations: []*backend.Conversation{
-					&backend.Conversation{
-						ID: "conversation_id",
-						Subject: "Hi from Neutron!",
-						Senders: []*backend.Email{ &backend.Email{"neutron@example.org", "Neutron"} },
-						Recipients: []*backend.Email{ &backend.Email{"neutron@example.org", "Neutron"} },
-						Time: 1458073557,
-					},
-				},
 				messages: []*backend.Message{
 					&backend.Message{
 						ID: "message_id",
 						ConversationID: "conversation_id",
+						AddressID: "address_id",
 						Subject: "Hello World",
 						Sender: &backend.Email{"neutron@example.org", "Neutron"},
 						ToList: []*backend.Email{ &backend.Email{"neutron@example.org", "Neutron"} },

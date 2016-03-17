@@ -20,12 +20,12 @@ type Backend interface {
 	//DeleteLabel(user, id string) error
 
 	GetMessage(user, id string) (*Message, error)
+	ListConversationMessages(user, id string) (msgs []*Message, err error)
 	UpdateMessage(user string, update *MessageUpdate) error
 	//DeleteMessage(user, id string) error
 
 	ListConversations(user string, filter *ConversationsFilter) ([]*Conversation, int, error)
 	CountConversations(user string) ([]*ConversationsCount, error)
 	GetConversation(user, id string) (conv *Conversation, err error)
-	ListConversationMessages(user, id string) (msgs []*Message, err error)
 	//DeleteConversation(user, id string) error
 }

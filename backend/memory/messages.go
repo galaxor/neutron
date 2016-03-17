@@ -26,6 +26,15 @@ func (b *Backend) GetMessage(user, id string) (msg *backend.Message, err error) 
 	return
 }
 
+func (b *Backend) ListConversationMessages(user, id string) (msgs []*backend.Message, err error) {
+	for _, msg := range b.data[user].messages {
+		if msg.ConversationID == id {
+			msgs = append(msgs, msg)
+		}
+	}
+	return
+}
+
 func (b *Backend) UpdateMessage(user string, update *backend.MessageUpdate) (err error) {
 	updated := update.Message
 
