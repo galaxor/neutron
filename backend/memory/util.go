@@ -3,7 +3,6 @@ package memory
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"strings"
 )
 
 const idLength = 64
@@ -15,6 +14,5 @@ func generateId() string {
 		panic(err)
 	}
 
-	id := base64.StdEncoding.EncodeToString(b)
-	return strings.Replace(id, "/", "_", -1)
+	return base64.URLEncoding.EncodeToString(b)
 }

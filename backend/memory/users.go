@@ -103,3 +103,14 @@ func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
 
 	return nil
 }
+
+func (b *Backend) GetPublicKey(email string) (string, error) {
+	for _, data := range b.data {
+		for _, address := range data.user.Addresses {
+			if address.Email == email && len(address.Keys) > 0 {
+				return address.Keys[0].PublicKey, nil
+			}
+		}
+	}
+	return "", nil
+}

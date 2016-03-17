@@ -8,6 +8,7 @@ type Backend interface {
 	UpdateUser(update *UserUpdate) error
 	//UpdateUserPassword(id, password string) error
 	//DeleteUser(id string) error
+	GetPublicKey(email string) (string, error)
 
 	ListContacts(user string) ([]*Contact, error)
 	InsertContact(user string, contact *Contact) (*Contact, error)

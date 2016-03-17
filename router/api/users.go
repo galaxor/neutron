@@ -1,6 +1,8 @@
 package api
 
 import (
+	"encoding/base64"
+
 	"gopkg.in/macaron.v1"
 
 	"github.com/emersion/neutron/backend"
@@ -113,5 +115,26 @@ func (api *Api) UpdateUserDisplayName(ctx *macaron.Context, req UpdateUserDispla
 	}
 
 	ctx.JSON(200, &Resp{Ok})
+	return
+}
+
+func (api *Api) GetPublicKey(ctx *macaron.Context) (err error) {
+	b, err := base64.URLEncoding.DecodeString(ctx.Params("email"))
+	if err != nil {
+		return
+	}
+
+	email := string(b)
+
+	key, err := api.backend.GetPublicKey(email)
+	if err != nil {
+		return
+	}
+
+	resp := map[string]interface{}{ "Code": Ok }
+	if key != "" {
+		resp[email] = key
+	}
+	ctx.JSON(200, resp)
 	return
 }
