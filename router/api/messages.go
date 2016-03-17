@@ -42,6 +42,8 @@ type SendMessageReq struct {
 	Req
 	ID string `json:"id"`
 	Packages []*backend.MessagePackage
+	AttachmentKeys []string // TODO
+	ClearBody string
 }
 
 type SendMessageResp struct {
@@ -193,6 +195,38 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 		err = api.backend.SendMessagePackage(userId, pkg)
 		if err != nil {
 			return
+		}
+	}
+
+	// If clear body is available, send it to recipients without package
+	if req.ClearBody != "" {
+		var msg *backend.Message
+		msg, err = api.backend.GetMessage(userId, msgId)
+		if err != nil {
+			return
+		}
+
+		for _, email := range msg.ToList {
+			alreadySent := false
+			for _, pkg := range req.Packages {
+				if pkg.Address == email.Address {
+					alreadySent = true
+					break
+				}
+			}
+			if alreadySent {
+				continue
+			}
+
+			pkg := &backend.MessagePackage{
+				Address: email.Address,
+				Body: req.ClearBody,
+			}
+
+			err = api.backend.SendMessagePackage(userId, pkg)
+			if err != nil {
+				return
+			}
 		}
 	}
 
