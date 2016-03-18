@@ -172,3 +172,20 @@ func (b *Backend) GetConversation(user, id string) (conv *backend.Conversation, 
 	}
 	return
 }
+
+func (b *Backend) DeleteConversation(user, id string) (err error) {
+	// Delete all messages in conversation
+	msgs, err := b.ListConversationMessages(user, id)
+	if err != nil {
+		return
+	}
+
+	for _, msg := range msgs {
+		err = b.DeleteMessage(user, msg.ID)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}

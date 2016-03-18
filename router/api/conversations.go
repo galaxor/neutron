@@ -83,10 +83,7 @@ func (api *Api) batchUpdateConversationMessages(ctx *macaron.Context, req BatchR
 
 		msgs, err := api.backend.ListConversationMessages(userId, id)
 		if err != nil {
-			r.Response = &ErrorResp{
-				Resp: Resp{InternalServerError},
-				ErrorDescription: err.Error(),
-			}
+			r.Response = newErrorResp(err)
 			continue
 		}
 
@@ -98,7 +95,6 @@ func (api *Api) batchUpdateConversationMessages(ctx *macaron.Context, req BatchR
 			updater(update)
 
 			_, err = api.backend.UpdateMessage(userId, update)
-
 			if err != nil {
 				r.Response = newErrorResp(err)
 				break
@@ -126,4 +122,28 @@ func (api *Api) SetConversationsStar(ctx *macaron.Context, req BatchReq) {
 
 func (api *Api) SetConversationsLabel(ctx *macaron.Context, req BatchReq) {
 	api.batchUpdateConversationMessages(ctx, req, batchMessageLabelUpdater(ctx))
+}
+
+func (api *Api) DeleteConversations(ctx *macaron.Context, req BatchReq) {
+	userId := api.getUserId(ctx)
+
+	var respItems []*BatchRespItem
+
+	for _, id := range req.IDs {
+		r := &BatchRespItem{ ID: id }
+		respItems = append(respItems, r)
+
+		err := api.backend.DeleteConversation(userId, id)
+		if err != nil {
+			r.Response = newErrorResp(err)
+			continue
+		} else {
+			r.Response = &Resp{Ok}
+		}
+	}
+
+	ctx.JSON(200, &BatchResp{
+		Resp: Resp{Batch},
+		Responses: respItems,
+	})
 }

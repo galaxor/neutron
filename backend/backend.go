@@ -33,5 +33,5 @@ type Backend interface {
 	GetConversation(user, id string) (conv *Conversation, err error)
 	ListConversations(user string, filter *MessagesFilter) ([]*Conversation, int, error)
 	CountConversations(user string) ([]*MessagesCount, error)
-	//DeleteConversation(user, id string) error
+	DeleteConversation(user, id string) error
 }

@@ -166,6 +166,7 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 		m.Put("/:action(read|unread)", binding.Json(BatchReq{}), api.SetConversationsRead)
 		m.Put("/:action(star|unstar)", binding.Json(BatchReq{}), api.SetConversationsStar)
 		m.Put("/:label(trash|inbox|spam|archive)", binding.Json(BatchReq{}), api.SetConversationsLabel)
+		m.Put("/delete", binding.Json(BatchReq{}), api.DeleteConversations)
 	})
 
 	m.Group("/events", func() {
