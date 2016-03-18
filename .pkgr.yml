@@ -1,7 +1,7 @@
 targets:
   debian-8: &debian
     build_dependencies:
-      - nodejs
+      - nodejs-legacy
       - npm
       - git
   ubuntu-14.04:
