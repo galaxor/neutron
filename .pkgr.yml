@@ -1,0 +1,17 @@
+targets:
+  debian-7: &debian
+    build_dependencies:
+      - nodejs
+      - npm
+      - git
+  debian-8:
+    <<: *debian
+  ubuntu-14.04:
+    <<: *debian
+  ubuntu-12.04:
+    <<: *debian
+before:
+  - git submodule init
+  - git submodule update
+  - make build-client
+  - make build
