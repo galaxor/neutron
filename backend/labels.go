@@ -17,3 +17,11 @@ type Label struct {
 	Display int
 	Order int
 }
+
+type LabelUpdate struct {
+	Label *Label
+	Name bool
+	Color bool
+	Display bool
+	Order bool
+}

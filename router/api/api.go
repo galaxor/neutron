@@ -144,6 +144,10 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 
 	m.Group("/labels", func() {
 		m.Get("/", api.GetLabels)
+		m.Post("/", binding.Json(LabelReq{}), api.CreateLabel)
+		m.Put("/:id", binding.Json(LabelReq{}), api.UpdateLabel)
+		m.Put("/order", binding.Json(LabelsOrderReq{}), api.UpdateLabelsOrder)
+		m.Delete("/:id", api.DeleteLabel)
 	})
 
 	m.Group("/messages", func() {

@@ -17,9 +17,9 @@ type Backend interface {
 	DeleteAllContacts(user string) error
 
 	ListLabels(user string) ([]*Label, error)
-	//InsertLabel(user string, label *Label) error
-	//UpdateLabel(user string, update *LabelUpdate) error
-	//DeleteLabel(user, id string) error
+	InsertLabel(user string, label *Label) (*Label, error)
+	UpdateLabel(user string, update *LabelUpdate) (*Label, error)
+	DeleteLabel(user, id string) error
 
 	GetMessage(user, id string) (*Message, error)
 	ListMessages(user string, filter *MessagesFilter) ([]*Message, int, error)
