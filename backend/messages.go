@@ -37,6 +37,18 @@ const (
 	SentToMyselfType = 3
 )
 
+const (
+	Unencrypted int = 0
+	EndToEndEncryptedInternal = 1
+	EncryptedExternal = 2
+	EndToEndEncryptedExternal = 3
+	StoredEncryptedExternal = 4
+	StoredEncrypted = 5
+	EndToEndEncryptedExternalReply = 6
+	EncryptedPgp = 7
+	EncryptedPgpMime = 8
+)
+
 type Attachment struct {} // TODO
 
 type MessagePackage struct {
