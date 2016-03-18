@@ -59,11 +59,22 @@ func (api *Api) GetCurrentUser(ctx *macaron.Context) {
 }
 
 func (api *Api) CreateUser(ctx *macaron.Context, req CreateUserReq) (err error) {
-	// TODO: support req.Domain, req.Token, req.TokenType
+	// TODO: check req.Token & req.TokenType
 
 	user, err := api.backend.InsertUser(&backend.User{
 		Name: req.Username,
 		EncPrivateKey: req.PrivateKey,
+		Addresses: []*backend.Address{
+			&backend.Address{
+				ID: "address_id", // TODO: insert address
+				DomainID: "domain_id", // TODO: check req.Domain
+				Email: req.Username + "@" + req.Domain,
+				Send: 1,
+				Receive: 1,
+				Status: 1,
+				Type: 1,
+			},
+		},
 	}, req.Password)
 	if err != nil {
 		return
@@ -104,8 +115,11 @@ func (api *Api) GetUsernameAvailable(ctx *macaron.Context) (err error) {
 }
 
 func (api *Api) UpdateUserDisplayName(ctx *macaron.Context, req UpdateUserDisplayNameReq) (err error) {
+	userId := api.getUserId(ctx)
+
 	err = api.backend.UpdateUser(&backend.UserUpdate{
 		User: &backend.User{
+			ID: userId,
 			DisplayName: req.DisplayName,
 		},
 		DisplayName: true,
