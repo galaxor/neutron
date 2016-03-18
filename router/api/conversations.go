@@ -12,17 +12,6 @@ type ConversationsListResp struct {
 	Conversations []*backend.Conversation
 }
 
-type ConversationsCountResp struct {
-	Resp
-	Counts []*backend.ConversationsCount
-}
-
-type ConversationResp struct {
-	Resp
-	Conversation *backend.Conversation
-	Messages []*backend.Message
-}
-
 func (api *Api) ListConversations(ctx *macaron.Context) (err error) {
 	userId := api.getUserId(ctx)
 	filter := getMessagesFilter(ctx)
@@ -48,11 +37,17 @@ func (api *Api) GetConversationsCount(ctx *macaron.Context) (err error) {
 		return
 	}
 
-	ctx.JSON(200, &ConversationsCountResp{
+	ctx.JSON(200, &MessagesCountResp{
 		Resp: Resp{Ok},
 		Counts: counts,
 	})
 	return
+}
+
+type ConversationResp struct {
+	Resp
+	Conversation *backend.Conversation
+	Messages []*backend.Message
 }
 
 func (api *Api) GetConversation(ctx *macaron.Context) (err error) {
@@ -77,13 +72,14 @@ func (api *Api) GetConversation(ctx *macaron.Context) (err error) {
 	return
 }
 
-func (api *Api) setConversationsRead(ctx *macaron.Context, req BatchReq, value int) {
+func (api *Api) batchUpdateConversationMessages(ctx *macaron.Context, req BatchReq, updater batchMessageUpdater) {
 	userId := api.getUserId(ctx)
 
 	var respItems []*BatchRespItem
 
 	for _, id := range req.IDs {
 		r := &BatchRespItem{ ID: id }
+		respItems = append(respItems, r)
 
 		msgs, err := api.backend.ListConversationMessages(userId, id)
 		if err != nil {
@@ -91,27 +87,27 @@ func (api *Api) setConversationsRead(ctx *macaron.Context, req BatchReq, value i
 				Resp: Resp{InternalServerError},
 				ErrorDescription: err.Error(),
 			}
-		} else {
-			for _, msg := range msgs {
-				msg.IsRead = value
+			continue
+		}
 
-				_, err = api.backend.UpdateMessage(userId, &backend.MessageUpdate{
-					Message: msg,
-					IsRead: true,
-				})
+		for _, msg := range msgs {
+			// Create a new Message struct to prevent modifications on msg
+			update := &backend.MessageUpdate{
+				Message: &backend.Message{ ID: msg.ID },
+			}
+			updater(update)
 
-				if err != nil {
-					r.Response = newErrorResp(err)
-					break
-				}
+			_, err = api.backend.UpdateMessage(userId, update)
+
+			if err != nil {
+				r.Response = newErrorResp(err)
+				break
 			}
 		}
 
 		if r.Response == nil {
 			r.Response = &Resp{Ok}
 		}
-
-		respItems = append(respItems, r)
 	}
 
 	ctx.JSON(200, &BatchResp{
@@ -121,9 +117,33 @@ func (api *Api) setConversationsRead(ctx *macaron.Context, req BatchReq, value i
 }
 
 func (api *Api) SetConversationsRead(ctx *macaron.Context, req BatchReq) {
-	api.setConversationsRead(ctx, req, 1)
+	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
+		update.IsRead = true
+		update.Message.IsRead = 1
+	})
 }
 
 func (api *Api) SetConversationsUnread(ctx *macaron.Context, req BatchReq) {
-	api.setConversationsRead(ctx, req, 0)
+	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
+		update.IsRead = true
+		update.Message.IsRead = 0
+	})
+}
+
+func (api *Api) SetConversationsStar(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
+		update.Starred = true
+		update.LabelIDs = backend.AddLabels
+		update.Message.LabelIDs = []string{backend.StarredLabel}
+		update.Message.Starred = 1
+	})
+}
+
+func (api *Api) SetConversationsUnstar(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
+		update.Starred = true
+		update.LabelIDs = backend.RemoveLabels
+		update.Message.LabelIDs = []string{backend.StarredLabel}
+		update.Message.Starred = 0
+	})
 }

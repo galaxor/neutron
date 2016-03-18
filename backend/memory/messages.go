@@ -109,6 +109,30 @@ func (b *Backend) ListConversationMessages(user, id string) (msgs []*backend.Mes
 	return
 }
 
+func (b *Backend) CountMessages(user string) (counts []*backend.MessagesCount, err error) {
+	indexes := map[string]int{}
+
+	for _, msg := range b.data[user].messages {
+		for _, label := range msg.LabelIDs {
+			var count *backend.MessagesCount
+			if i, ok := indexes[label]; ok {
+				count = counts[i]
+			} else {
+				indexes[label] = len(counts)
+				count = &backend.MessagesCount{ LabelID: label }
+				counts = append(counts, count)
+			}
+
+			count.Total++
+			if msg.IsRead == 0 {
+				count.Unread++
+			}
+		}
+	}
+
+	return
+}
+
 func (b *Backend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg.ID = generateId()
 	if msg.ConversationID == "" {

@@ -9,12 +9,6 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-type MessagesListResp struct {
-	Resp
-	Total int
-	Messages []*backend.Message
-}
-
 type MessageReq struct {
 	Req
 	Message *backend.Message
@@ -53,6 +47,11 @@ type SendMessageResp struct {
 	Sent *backend.Message
 }
 
+type MessagesCountResp struct {
+	Resp
+	Counts []*backend.MessagesCount
+}
+
 func getMessagesFilter(ctx *macaron.Context) *backend.MessagesFilter {
 	return &backend.MessagesFilter{
 		Limit: ctx.QueryInt("Limit"),
@@ -68,6 +67,12 @@ func getMessagesFilter(ctx *macaron.Context) *backend.MessagesFilter {
 		Sort: ctx.Query("Sort"),
 		Desc: (ctx.Query("Desc") == "1"),
 	}
+}
+
+type MessagesListResp struct {
+	Resp
+	Total int
+	Messages []*backend.Message
 }
 
 func (api *Api) ListMessages(ctx *macaron.Context) (err error) {
@@ -87,42 +92,74 @@ func (api *Api) ListMessages(ctx *macaron.Context) (err error) {
 	return
 }
 
-func (api *Api) GetMessagesCount(ctx *macaron.Context) {
-	api.GetConversationsCount(ctx) // TODO?
+func (api *Api) GetMessagesCount(ctx *macaron.Context) (err error) {
+	userId := api.getUserId(ctx)
+
+	counts, err := api.backend.CountMessages(userId)
+	if err != nil {
+		return
+	}
+
+	ctx.JSON(200, &MessagesCountResp{
+		Resp: Resp{Ok},
+		Counts: counts,
+	})
+	return
 }
 
-func (api *Api) setMessagesRead(ctx *macaron.Context, req BatchReq, value int) {
+type batchMessageUpdater func(*backend.MessageUpdate)
+
+func (api *Api) batchUpdateMessages(ctx *macaron.Context, req BatchReq, updater batchMessageUpdater) {
 	userId := api.getUserId(ctx)
 
 	var respItems []*BatchRespItem
 
 	for _, id := range req.IDs {
-		_, err := api.backend.UpdateMessage(userId, &backend.MessageUpdate{
-			Message: &backend.Message{
-				ID: id,
-				IsRead: 1,
-			},
-			IsRead: true,
-		})
+		update := &backend.MessageUpdate{
+			Message: &backend.Message{ ID: id },
+		}
+		updater(update)
 
 		r := &BatchRespItem{ ID: id }
+		respItems = append(respItems, r)
+
+		_, err := api.backend.UpdateMessage(userId, update)
 		if err != nil {
 			r.Response = newErrorResp(err)
 		} else {
 			r.Response = &Resp{Ok}
 		}
-		respItems = append(respItems, r)
 	}
 
 	ctx.JSON(200, newBatchResp(respItems))
 }
 
 func (api *Api) SetMessagesRead(ctx *macaron.Context, req BatchReq) {
-	api.setMessagesRead(ctx, req, 1)
+	api.batchUpdateMessages(ctx, req, func(update *backend.MessageUpdate) {
+		update.Message.IsRead = 1
+		update.IsRead = true
+	})
 }
 
 func (api *Api) SetMessagesUnread(ctx *macaron.Context, req BatchReq) {
-	api.setMessagesRead(ctx, req, 0)
+	api.batchUpdateMessages(ctx, req, func(update *backend.MessageUpdate) {
+		update.Message.IsRead = 0
+		update.IsRead = true
+	})
+}
+
+func (api *Api) SetMessagesStar(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateMessages(ctx, req, func(update *backend.MessageUpdate) {
+		update.Message.Starred = 1
+		update.Starred = true
+	})
+}
+
+func (api *Api) SetMessagesUnstar(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateMessages(ctx, req, func(update *backend.MessageUpdate) {
+		update.Message.Starred = 0
+		update.Starred = true
+	})
 }
 
 func (api *Api) CreateDraft(ctx *macaron.Context, req MessageReq) (err error) {

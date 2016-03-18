@@ -58,6 +58,12 @@ type MessagePackage struct {
 	KeyPackets []interface{} // TODO
 }
 
+type MessagesCount struct {
+	LabelID string
+	Total int
+	Unread int
+}
+
 type MessagesFilter struct {
 	Limit int
 	Page int
@@ -84,6 +90,7 @@ type MessageUpdate struct {
 	AddressID bool
 	Body bool
 	Time bool
+	Starred bool
 	LabelIDs LabelsOperation
 }
 

@@ -24,6 +24,7 @@ type Backend interface {
 	GetMessage(user, id string) (*Message, error)
 	ListMessages(user string, filter *MessagesFilter) ([]*Message, int, error)
 	ListConversationMessages(user, id string) (msgs []*Message, err error)
+	CountMessages(user string) ([]*MessagesCount, error)
 	InsertMessage(user string, msg *Message) (*Message, error)
 	UpdateMessage(user string, update *MessageUpdate) (*Message, error)
 	DeleteMessage(user, id string) error
@@ -31,6 +32,6 @@ type Backend interface {
 
 	GetConversation(user, id string) (conv *Conversation, err error)
 	ListConversations(user string, filter *MessagesFilter) ([]*Conversation, int, error)
-	CountConversations(user string) ([]*ConversationsCount, error)
+	CountConversations(user string) ([]*MessagesCount, error)
 	//DeleteConversation(user, id string) error
 }

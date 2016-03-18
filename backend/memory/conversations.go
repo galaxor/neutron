@@ -127,7 +127,7 @@ func (b *Backend) ListConversations(user string, filter *backend.MessagesFilter)
 	return
 }
 
-func (b *Backend) CountConversations(user string) (counts []*backend.ConversationsCount, err error) {
+func (b *Backend) CountConversations(user string) (counts []*backend.MessagesCount, err error) {
 	convs, err := b.listConversations(user)
 	if err != nil {
 		return
@@ -137,12 +137,13 @@ func (b *Backend) CountConversations(user string) (counts []*backend.Conversatio
 
 	for _, c := range convs {
 		for _, label := range c.LabelIDs {
-			var count *backend.ConversationsCount
+			var count *backend.MessagesCount
 			if i, ok := indexes[label]; ok {
 				count = counts[i]
 			} else {
 				indexes[label] = len(counts)
-				count = &backend.ConversationsCount{ LabelID: label }
+				count = &backend.MessagesCount{ LabelID: label }
+				counts = append(counts, count)
 			}
 
 			count.Total++

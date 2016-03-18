@@ -151,6 +151,8 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 		m.Get("/count", api.GetMessagesCount)
 		m.Put("/read", binding.Json(BatchReq{}), api.SetMessagesRead)
 		m.Put("/unread", binding.Json(BatchReq{}), api.SetMessagesUnread)
+		m.Put("/star", binding.Json(BatchReq{}), api.SetMessagesStar)
+		m.Put("/unstar", binding.Json(BatchReq{}), api.SetMessagesUnstar)
 		m.Post("/draft", binding.Json(MessageReq{}), api.CreateDraft)
 		m.Put("/draft/:id", binding.Json(MessageReq{}), api.UpdateDraft)
 		m.Post("/send/:id", binding.Json(SendMessageReq{}), api.SendMessage)
@@ -162,6 +164,8 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 		m.Get("/count", api.GetConversationsCount)
 		m.Put("/read", binding.Json(BatchReq{}), api.SetConversationsRead)
 		m.Put("/unread", binding.Json(BatchReq{}), api.SetConversationsUnread)
+		m.Put("/star", binding.Json(BatchReq{}), api.SetConversationsStar)
+		m.Put("/unstar", binding.Json(BatchReq{}), api.SetConversationsUnstar)
 		m.Get("/:id", api.GetConversation)
 	})
 
