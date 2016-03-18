@@ -11,12 +11,14 @@ import (
 
 const PgpMessageType = "PGP MESSAGE"
 
+// A keypair contains a private and a public key.
 type Keypair struct {
 	ID string
 	PublicKey string
 	PrivateKey string
 }
 
+// Encrypt a message to the keypair's owner.
 func (kp *Keypair) EncryptToSelf(data string) (encrypted string, err error) {
 	entitiesList, err := openpgp.ReadArmoredKeyRing(strings.NewReader(kp.PrivateKey))
 	if err != nil {
@@ -49,6 +51,7 @@ func (kp *Keypair) EncryptToSelf(data string) (encrypted string, err error) {
 	return
 }
 
+// Check if a string contains an encrypted message.
 func IsEncrypted(data string) bool {
 	return strings.Contains(data, "-----BEGIN " + PgpMessageType + "-----")
 }

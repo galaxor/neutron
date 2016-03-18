@@ -1,5 +1,6 @@
 package backend
 
+// System labels
 const (
 	InboxLabel string = "0"
 	DraftsLabel = "1"
@@ -10,6 +11,7 @@ const (
 	StarredLabel = "10"
 )
 
+// A message label.
 type Label struct {
 	ID string
 	Name string
@@ -18,6 +20,8 @@ type Label struct {
 	Order int
 }
 
+// A request to update a label.
+// Fields set to true will be updated with values in Label.
 type LabelUpdate struct {
 	Label *Label
 	Name bool

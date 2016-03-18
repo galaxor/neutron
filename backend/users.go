@@ -1,5 +1,6 @@
 package backend
 
+// A user.
 type User struct {
 	ID string
 	Name string
@@ -33,6 +34,7 @@ type User struct {
 	EncPrivateKey string
 }
 
+// A user's address.
 type Address struct {
 	ID string
 	DomainID string
@@ -47,6 +49,7 @@ type Address struct {
 	Keys []*Keypair
 }
 
+// Get this address' email.
 func (a *Address) GetEmail() *Email {
 	return &Email{
 		Address: a.Email,
@@ -54,6 +57,8 @@ func (a *Address) GetEmail() *Email {
 	}
 }
 
+// A request to update a user.
+// Fields set to true will be updated with values in User.
 type UserUpdate struct {
 	User *User
 	DisplayName bool

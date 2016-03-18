@@ -1,5 +1,6 @@
 package backend
 
+// A conversation is a sequence of messages.
 type Conversation struct {
 	ID string
 	Order int
@@ -16,11 +17,13 @@ type Conversation struct {
 	Labels []*ConversationLabel
 }
 
+// An email contains an address and a name.
 type Email struct {
 	Address string
 	Name string
 }
 
+// Contains messages counts by labels.
 type ConversationLabel struct {
 	ID string
 	Count int

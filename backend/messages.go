@@ -1,5 +1,6 @@
 package backend
 
+// A message.
 type Message struct {
 	ID string
 	Order int
@@ -31,12 +32,14 @@ type Message struct {
 	LabelIDs []string
 }
 
+// Message types.
 const (
 	DraftType int = 1
 	SentType = 2
 	SentToMyselfType = 3
 )
 
+// Message encryption types.
 const (
 	Unencrypted int = 0
 	EndToEndEncryptedInternal = 1
@@ -58,12 +61,14 @@ type MessagePackage struct {
 	KeyPackets []interface{} // TODO
 }
 
+// Contains message counts for one label.
 type MessagesCount struct {
 	LabelID string
 	Total int
 	Unread int
 }
 
+// Contains fields to filter messages.
 type MessagesFilter struct {
 	Limit int
 	Page int
@@ -79,6 +84,8 @@ type MessagesFilter struct {
 	Desc bool
 }
 
+// A request to update a message.
+// Fields set to true will be updated with values in Message.
 type MessageUpdate struct {
 	Message *Message
 	ToList bool
@@ -94,11 +101,12 @@ type MessageUpdate struct {
 	LabelIDs LabelsOperation
 }
 
+// The operation to apply to labels.
 type LabelsOperation int
 
 const (
-	KeepLabels LabelsOperation = iota
-	ReplaceLabels
-	AddLabels
-	RemoveLabels
+	KeepLabels LabelsOperation = iota // Do nothing
+	ReplaceLabels // Replace current labels with new ones
+	AddLabels // Add new labels to current ones
+	RemoveLabels // Remove specified labels from current ones
 )
