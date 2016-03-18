@@ -117,33 +117,34 @@ func (api *Api) batchUpdateConversationMessages(ctx *macaron.Context, req BatchR
 }
 
 func (api *Api) SetConversationsRead(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
-		update.IsRead = true
-		update.Message.IsRead = 1
-	})
-}
+	action := ctx.Params("action")
+	
+	value := 0
+	if action == "read" {
+		value = 1
+	}
 
-func (api *Api) SetConversationsUnread(ctx *macaron.Context, req BatchReq) {
 	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
 		update.IsRead = true
-		update.Message.IsRead = 0
+		update.Message.IsRead = value
 	})
 }
 
 func (api *Api) SetConversationsStar(ctx *macaron.Context, req BatchReq) {
+	action := ctx.Params("action")
+	
+	value := 0
+	labelsAction := backend.AddLabels
+	if action == "star" {
+		value = 1
+		labelsAction = backend.RemoveLabels
+	}
+
 	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
 		update.Starred = true
-		update.LabelIDs = backend.AddLabels
+		update.LabelIDs = labelsAction
 		update.Message.LabelIDs = []string{backend.StarredLabel}
-		update.Message.Starred = 1
+		update.Message.Starred = value
 	})
 }
 
-func (api *Api) SetConversationsUnstar(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
-		update.Starred = true
-		update.LabelIDs = backend.RemoveLabels
-		update.Message.LabelIDs = []string{backend.StarredLabel}
-		update.Message.Starred = 0
-	})
-}

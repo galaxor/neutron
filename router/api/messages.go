@@ -135,30 +135,34 @@ func (api *Api) batchUpdateMessages(ctx *macaron.Context, req BatchReq, updater 
 }
 
 func (api *Api) SetMessagesRead(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateMessages(ctx, req, func(update *backend.MessageUpdate) {
-		update.Message.IsRead = 1
-		update.IsRead = true
-	})
-}
+	action := ctx.Params("action")
+	
+	value := 0
+	if action == "read" {
+		value = 1
+	}
 
-func (api *Api) SetMessagesUnread(ctx *macaron.Context, req BatchReq) {
 	api.batchUpdateMessages(ctx, req, func(update *backend.MessageUpdate) {
-		update.Message.IsRead = 0
 		update.IsRead = true
+		update.Message.IsRead = value
 	})
 }
 
 func (api *Api) SetMessagesStar(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateMessages(ctx, req, func(update *backend.MessageUpdate) {
-		update.Message.Starred = 1
-		update.Starred = true
-	})
-}
+	action := ctx.Params("action")
+	
+	value := 0
+	labelsAction := backend.AddLabels
+	if action == "star" {
+		value = 1
+		labelsAction = backend.RemoveLabels
+	}
 
-func (api *Api) SetMessagesUnstar(ctx *macaron.Context, req BatchReq) {
 	api.batchUpdateMessages(ctx, req, func(update *backend.MessageUpdate) {
-		update.Message.Starred = 0
 		update.Starred = true
+		update.LabelIDs = labelsAction
+		update.Message.LabelIDs = []string{backend.StarredLabel}
+		update.Message.Starred = value
 	})
 }
 
