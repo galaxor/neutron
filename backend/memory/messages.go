@@ -7,6 +7,27 @@ import (
 )
 
 func populateMessage(msg *backend.Message) {
+	if msg.ToList == nil {
+		msg.ToList = []*backend.Email{}
+	}
+	if msg.CCList == nil {
+		msg.CCList = []*backend.Email{}
+	}
+	if msg.BCCList == nil {
+		msg.BCCList = []*backend.Email{}
+	}
+	if msg.Attachments == nil {
+		msg.Attachments = []*backend.Attachment{}
+	}
+	if msg.LabelIDs == nil {
+		msg.LabelIDs = []string{}
+	}
+
+	if msg.Sender != nil {
+		msg.SenderAddress = msg.Sender.Address
+		msg.SenderName = msg.Sender.Name
+	}
+
 	if backend.IsEncrypted(msg.Body) {
 		msg.IsEncrypted = 1
 	}

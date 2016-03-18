@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"time"
 
 	"gopkg.in/macaron.v1"
@@ -18,6 +19,7 @@ type MessageReq struct {
 	Req
 	Message *backend.Message
 	ID string `json:"id"`
+	ParentID string
 }
 
 func (req MessageReq) getMessage() *backend.Message {
@@ -137,11 +139,25 @@ func (api *Api) CreateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 	msg.Time = time.Now().Unix()
 	msg.Type = backend.DraftType
 
+	if req.ParentID != "" {
+		var parent *backend.Message
+		parent, err = api.backend.GetMessage(userId, req.ParentID)
+		if err != nil {
+			return
+		}
+
+		msg.ConversationID = parent.ConversationID
+	}
+
 	for _, address := range user.Addresses {
 		if address.ID == msg.AddressID {
 			msg.Sender = address.GetEmail()
 			break
 		}
+	}
+	if msg.Sender == nil {
+		err = errors.New("Invalid sender address")
+		return
 	}
 
 	msg, err = api.backend.InsertMessage(userId, msg)
