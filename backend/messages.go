@@ -31,6 +31,12 @@ type Message struct {
 	LabelIDs []string
 }
 
+const (
+	DraftType int = 1
+	SentType = 2
+	SentToMyselfType = 3
+)
+
 type Attachment struct {} // TODO
 
 type MessagePackage struct {

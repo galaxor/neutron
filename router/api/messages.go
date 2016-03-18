@@ -135,7 +135,7 @@ func (api *Api) CreateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 	msg.Attachments = []*backend.Attachment{}
 	msg.LabelIDs = []string{backend.DraftsLabel}
 	msg.Time = time.Now().Unix()
-	msg.Type = 1
+	msg.Type = backend.DraftType
 
 	for _, address := range user.Addresses {
 		if address.ID == msg.AddressID {
@@ -235,7 +235,7 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 		Message: &backend.Message{
 			ID: msgId,
 			LabelIDs: []string{backend.SentLabel},
-			Type: 2,
+			Type: backend.SentType,
 		},
 		Type: true,
 		LabelIDs: backend.ReplaceLabels,
