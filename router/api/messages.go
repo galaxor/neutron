@@ -125,12 +125,12 @@ func (api *Api) GetMessagesCount(ctx *macaron.Context) (err error) {
 
 type batchMessageUpdater func(*backend.MessageUpdate)
 
-func (api *Api) batchUpdateMessages(ctx *macaron.Context, req BatchReq, updater batchMessageUpdater) {
+func (api *Api) batchUpdateMessages(ctx *macaron.Context, ids []string, updater batchMessageUpdater) {
 	userId := api.getUserId(ctx)
 
 	var respItems []*BatchRespItem
 
-	for _, id := range req.IDs {
+	for _, id := range ids {
 		update := &backend.MessageUpdate{
 			Message: &backend.Message{ ID: id },
 		}
@@ -152,7 +152,7 @@ func (api *Api) batchUpdateMessages(ctx *macaron.Context, req BatchReq, updater 
 
 func batchMessageReadUpdater(ctx *macaron.Context) batchMessageUpdater {
 	action := ctx.Params("action")
-	
+
 	value := 0
 	if action == "read" {
 		value = 1
@@ -164,13 +164,13 @@ func batchMessageReadUpdater(ctx *macaron.Context) batchMessageUpdater {
 	}
 }
 
-func (api *Api) SetMessagesRead(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateMessages(ctx, req, batchMessageReadUpdater(ctx))
+func (api *Api) UpdateMessagesRead(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateMessages(ctx, req.IDs, batchMessageReadUpdater(ctx))
 }
 
 func batchMessageStarUpdater(ctx *macaron.Context) batchMessageUpdater {
 	action := ctx.Params("action")
-	
+
 	value := 0
 	labelsAction := backend.AddLabels
 	if action == "star" {
@@ -186,11 +186,11 @@ func batchMessageStarUpdater(ctx *macaron.Context) batchMessageUpdater {
 	}
 }
 
-func (api *Api) SetMessagesStar(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateMessages(ctx, req, batchMessageStarUpdater(ctx))
+func (api *Api) UpdateMessagesStar(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateMessages(ctx, req.IDs, batchMessageStarUpdater(ctx))
 }
 
-func batchMessageLabelUpdater(ctx *macaron.Context) batchMessageUpdater {
+func batchMessageSystemLabelUpdater(ctx *macaron.Context) batchMessageUpdater {
 	var label string
 	switch ctx.Params("label") {
 	case "trash":
@@ -209,8 +209,40 @@ func batchMessageLabelUpdater(ctx *macaron.Context) batchMessageUpdater {
 	}
 }
 
-func (api *Api) SetMessagesLabel(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateMessages(ctx, req, batchMessageLabelUpdater(ctx))
+func (api *Api) UpdateMessagesSystemLabel(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateMessages(ctx, req.IDs, batchMessageSystemLabelUpdater(ctx))
+}
+
+type UpdateLabelReq struct {
+	Req
+	Action int
+	LabelID string
+}
+
+type UpdateMessagesLabelReq struct {
+	UpdateLabelReq
+	MessageIDs []string
+}
+
+func batchMessageLabelUpdater(ctx *macaron.Context, req UpdateLabelReq) batchMessageUpdater {
+	label := req.LabelID
+
+	var action backend.LabelsOperation
+	switch req.Action {
+	case 0:
+		action = backend.RemoveLabels
+	case 1:
+		action = backend.AddLabels
+	}
+
+	return func(update *backend.MessageUpdate) {
+		update.LabelIDs = action
+		update.Message.LabelIDs = []string{label}
+	}
+}
+
+func (api *Api) UpdateMessagesLabel(ctx *macaron.Context, req UpdateMessagesLabelReq) {
+	api.batchUpdateMessages(ctx, req.MessageIDs, batchMessageLabelUpdater(ctx, req.UpdateLabelReq))
 }
 
 func (api *Api) CreateDraft(ctx *macaron.Context, req MessageReq) (err error) {

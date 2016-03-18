@@ -72,12 +72,12 @@ func (api *Api) GetConversation(ctx *macaron.Context) (err error) {
 	return
 }
 
-func (api *Api) batchUpdateConversationMessages(ctx *macaron.Context, req BatchReq, updater batchMessageUpdater) {
+func (api *Api) batchUpdateConversationsMessages(ctx *macaron.Context, ids []string, updater batchMessageUpdater) {
 	userId := api.getUserId(ctx)
 
 	var respItems []*BatchRespItem
 
-	for _, id := range req.IDs {
+	for _, id := range ids {
 		r := &BatchRespItem{ ID: id }
 		respItems = append(respItems, r)
 
@@ -112,16 +112,25 @@ func (api *Api) batchUpdateConversationMessages(ctx *macaron.Context, req BatchR
 	})
 }
 
-func (api *Api) SetConversationsRead(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateConversationMessages(ctx, req, batchMessageReadUpdater(ctx))
+func (api *Api) UpdateConversationsRead(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateConversationsMessages(ctx, req.IDs, batchMessageReadUpdater(ctx))
 }
 
-func (api *Api) SetConversationsStar(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateConversationMessages(ctx, req, batchMessageStarUpdater(ctx))
+func (api *Api) UpdateConversationsStar(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateConversationsMessages(ctx, req.IDs, batchMessageStarUpdater(ctx))
 }
 
-func (api *Api) SetConversationsLabel(ctx *macaron.Context, req BatchReq) {
-	api.batchUpdateConversationMessages(ctx, req, batchMessageLabelUpdater(ctx))
+func (api *Api) UpdateConversationsSystemLabel(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateConversationsMessages(ctx, req.IDs, batchMessageSystemLabelUpdater(ctx))
+}
+
+type UpdateConversationsLabelReq struct {
+	UpdateLabelReq
+	ConversationIDs []string
+}
+
+func (api *Api) UpdateConversationsLabel(ctx *macaron.Context, req UpdateConversationsLabelReq) {
+	api.batchUpdateConversationsMessages(ctx, req.ConversationIDs, batchMessageLabelUpdater(ctx, req.UpdateLabelReq))
 }
 
 func (api *Api) DeleteConversations(ctx *macaron.Context, req BatchReq) {

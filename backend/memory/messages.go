@@ -200,8 +200,8 @@ func (b *Backend) UpdateMessage(user string, update *backend.MessageUpdate) (msg
 				}
 			}
 		case backend.RemoveLabels:
-			var labels []string
-			for _, lbl := range updated.LabelIDs {
+			labels := []string{}
+			for _, lbl := range msg.LabelIDs {
 				found := false
 				for _, lblToRemove := range updated.LabelIDs {
 					if lbl == lblToRemove {
