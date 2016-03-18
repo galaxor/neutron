@@ -148,9 +148,11 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 
 	m.Group("/messages", func() {
 		m.Get("/", api.ListMessages)
+		m.Get("/:id", api.GetMessage)
 		m.Get("/count", api.GetMessagesCount)
 		m.Put("/:action(read|unread)", binding.Json(BatchReq{}), api.SetMessagesRead)
 		m.Put("/:action(star|unstar)", binding.Json(BatchReq{}), api.SetMessagesStar)
+		m.Put("/:label(trash|inbox|spam|archive)", binding.Json(BatchReq{}), api.SetMessagesLabel)
 		m.Post("/draft", binding.Json(MessageReq{}), api.CreateDraft)
 		m.Put("/draft/:id", binding.Json(MessageReq{}), api.UpdateDraft)
 		m.Post("/send/:id", binding.Json(SendMessageReq{}), api.SendMessage)
@@ -159,10 +161,11 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 
 	m.Group("/conversations", func() {
 		m.Get("/", api.ListConversations)
+		m.Get("/:id", api.GetConversation)
 		m.Get("/count", api.GetConversationsCount)
 		m.Put("/:action(read|unread)", binding.Json(BatchReq{}), api.SetConversationsRead)
 		m.Put("/:action(star|unstar)", binding.Json(BatchReq{}), api.SetConversationsStar)
-		m.Get("/:id", api.GetConversation)
+		m.Put("/:label(trash|inbox|spam|archive)", binding.Json(BatchReq{}), api.SetConversationsLabel)
 	})
 
 	m.Group("/events", func() {

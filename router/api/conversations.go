@@ -117,34 +117,13 @@ func (api *Api) batchUpdateConversationMessages(ctx *macaron.Context, req BatchR
 }
 
 func (api *Api) SetConversationsRead(ctx *macaron.Context, req BatchReq) {
-	action := ctx.Params("action")
-	
-	value := 0
-	if action == "read" {
-		value = 1
-	}
-
-	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
-		update.IsRead = true
-		update.Message.IsRead = value
-	})
+	api.batchUpdateConversationMessages(ctx, req, batchMessageReadUpdater(ctx))
 }
 
 func (api *Api) SetConversationsStar(ctx *macaron.Context, req BatchReq) {
-	action := ctx.Params("action")
-	
-	value := 0
-	labelsAction := backend.AddLabels
-	if action == "star" {
-		value = 1
-		labelsAction = backend.RemoveLabels
-	}
-
-	api.batchUpdateConversationMessages(ctx, req, func(update *backend.MessageUpdate) {
-		update.Starred = true
-		update.LabelIDs = labelsAction
-		update.Message.LabelIDs = []string{backend.StarredLabel}
-		update.Message.Starred = value
-	})
+	api.batchUpdateConversationMessages(ctx, req, batchMessageStarUpdater(ctx))
 }
 
+func (api *Api) SetConversationsLabel(ctx *macaron.Context, req BatchReq) {
+	api.batchUpdateConversationMessages(ctx, req, batchMessageLabelUpdater(ctx))
+}
