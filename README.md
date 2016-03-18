@@ -2,10 +2,13 @@
 
 Self-hosted server for [Protonmail client](https://github.com/ProtonMail/WebClient).
 
-Keep in mind that Neutron is less secure than ProtonMail: most servers doesn't
-use full-disk encryption and aren't under 1,000 meters of granite rock.
+Demo: http://beta.webmail.emersion.fr (username: `neutron`, passwords: `neutron`)
 
-## Usage
+Keep in mind that Neutron is less secure than ProtonMail: most servers don't
+use full-disk encryption and aren't under 1,000 meters of granite rock.
+If you use Neutron, make sure to [donate to ProtonMail](https://protonmail.com/donate)!
+
+## Installation
 
 Requirements:
 * Go (to build the server)
