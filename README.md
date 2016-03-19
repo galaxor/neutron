@@ -45,7 +45,7 @@ All backends must implement the [backend interface](https://github.com/emersion/
 
 Currently, only a simple memory backend is available. Nothing is saved on disk, everything is destroyed when the server is shut down.
 
-Writing a backend is just a matter of implementing the necessary functions. You can read the [`memory` backend](https://github.com/emersion/neutron/tree/master/backend/memory) to understand how to do that.
+Writing a backend is just a matter of implementing the necessary functions. You can read the [`memory` backend](https://github.com/emersion/neutron/tree/master/backend/memory) to understand how to do that. Docs for the backend are available here: https://godoc.org/github.com/emersion/neutron/backend#Backend
 
 ## License
 
