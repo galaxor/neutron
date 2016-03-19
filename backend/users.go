@@ -74,4 +74,8 @@ type UserUpdate struct {
 	Signature bool
 	AutoSaveContacts bool
 	ShowImages bool
+	ComposerMode bool
+	ViewLayout bool
+	MessageButtons bool
+	Theme bool
 }

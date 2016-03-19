@@ -61,3 +61,19 @@ func (api *Api) UpdateUserAutoSaveContacts(ctx *macaron.Context, req UpdateUserS
 func (api *Api) UpdateUserShowImages(ctx *macaron.Context, req UpdateUserSettingsReq) {
 	api.updateUserSettings(ctx, &backend.UserUpdate{ShowImages: true}, req.User)
 }
+
+func (api *Api) UpdateUserComposerMode(ctx *macaron.Context, req UpdateUserSettingsReq) {
+	api.updateUserSettings(ctx, &backend.UserUpdate{ComposerMode: true}, req.User)
+}
+
+func (api *Api) UpdateUserViewLayout(ctx *macaron.Context, req UpdateUserSettingsReq) {
+	api.updateUserSettings(ctx, &backend.UserUpdate{ViewLayout: true}, req.User)
+}
+
+func (api *Api) UpdateUserMessageButtons(ctx *macaron.Context, req UpdateUserSettingsReq) {
+	api.updateUserSettings(ctx, &backend.UserUpdate{MessageButtons: true}, req.User)
+}
+
+func (api *Api) UpdateUserTheme(ctx *macaron.Context, req UpdateUserSettingsReq) {
+	api.updateUserSettings(ctx, &backend.UserUpdate{Theme: true}, req.User)
+}

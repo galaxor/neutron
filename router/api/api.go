@@ -187,6 +187,11 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 		m.Put("/signature", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserSignature)
 		m.Put("/autosave", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserAutoSaveContacts)
 		m.Put("/showimages", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserShowImages)
+
+		m.Put("/composermode", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserComposerMode)
+		m.Put("/viewlayout", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserViewLayout)
+		m.Put("/messagebuttons", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserMessageButtons)
+		m.Put("/theme", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserTheme)
 	})
 
 	m.Group("/keys", func() {

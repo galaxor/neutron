@@ -108,6 +108,18 @@ func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
 	if update.ShowImages {
 		user.ShowImages = updated.ShowImages
 	}
+	if update.ComposerMode {
+		user.ComposerMode = updated.ComposerMode
+	}
+	if update.ViewLayout {
+		user.ViewLayout = updated.ViewLayout
+	}
+	if update.MessageButtons {
+		user.MessageButtons = updated.MessageButtons
+	}
+	if update.Theme {
+		user.Theme = updated.Theme
+	}
 
 	return nil
 }
