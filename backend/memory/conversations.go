@@ -187,6 +187,14 @@ func (b *ConversationsBackend) GetConversation(user, id string) (conv *backend.C
 	return
 }
 
+func (b *ConversationsBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
+	if msg.ConversationID == "" {
+		msg.ConversationID = generateId()
+	}
+
+	return b.MessagesBackend.InsertMessage(user, msg)
+}
+
 func (b *ConversationsBackend) DeleteConversation(user, id string) (err error) {
 	// Delete all messages in conversation
 	msgs, err := b.ListConversationMessages(user, id)

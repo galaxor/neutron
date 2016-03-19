@@ -8,6 +8,7 @@ type Backend interface {
 	ConversationsBackend
 	SendBackend
 	DomainsBackend
+	EventsBackend
 
 	// Check if a username is available.
 	IsUsernameAvailable(username string) (bool, error)
@@ -101,4 +102,14 @@ type DomainsBackend interface {
 	ListDomains() ([]*Domain, error)
 	// Get the domain which has the specified name.
 	GetDomainByName(name string) (*Domain, error)
+}
+
+// Stores events data.
+type EventsBackend interface {
+	// Insert a new event.
+	InsertEvent(user string, event *Event) error
+	// Get the last event.
+	GetLastEvent(user string) (*Event, error)
+	// Get the sum of all events after a specific one.
+	GetEventsAfter(user, id string) (*Event, error)
 }

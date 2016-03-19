@@ -2,6 +2,7 @@ package memory
 
 import (
 	"errors"
+	"time"
 
 	"github.com/emersion/neutron/backend"
 )
@@ -129,10 +130,6 @@ func (b *MessagesBackend) CountMessages(user string) (counts []*backend.Messages
 
 func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg.ID = generateId()
-	if msg.ConversationID == "" {
-		msg.ConversationID = generateId()
-	}
-
 	b.messages[user] = append(b.messages[user], msg)
 	populateMessage(msg)
 	return msg, nil
@@ -233,12 +230,39 @@ func NewMessagesBackend() backend.MessagesBackend {
 	}
 }
 
-type SendBackend struct {}
 
-func (b *SendBackend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
+// A SendBackend that does nothing.
+type NoopSendBackend struct {}
+
+func (b *NoopSendBackend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
 	return nil // Do nothing
 }
 
-func NewSendBackend() backend.SendBackend {
-	return &SendBackend{}
+func NewNoopSendBackend() backend.SendBackend {
+	return &NoopSendBackend{}
+}
+
+
+// A SendBackend that forwards all sent messages to a MessagesBackend.
+type EchoSendBackend struct {
+	target backend.MessagesBackend
+}
+
+func (b *EchoSendBackend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
+	// TODO: parse package headers
+	_, err := b.target.InsertMessage(user, &backend.Message{
+		Subject: "EchoSendBackend forwarded message",
+		Sender: &backend.Email{Address: pkg.Address},
+		ToList: []*backend.Email{ &backend.Email{Address: pkg.Address} },
+		Body: pkg.Body,
+		Time: time.Now().Unix(),
+		LabelIDs: []string{backend.InboxLabel},
+	})
+	return err
+}
+
+func NewEchoSendBackend(target backend.MessagesBackend) backend.SendBackend {
+	return &EchoSendBackend{
+		target: target,
+	}
 }

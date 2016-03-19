@@ -106,6 +106,12 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 
 	api.sessions[sessionToken] = user.ID
 
+	lastEvent, err := api.backend.GetLastEvent(user.ID)
+	if err != nil {
+		ctx.JSON(500, newErrorResp(err))
+		return
+	}
+
 	ctx.JSON(200, &AuthResp{
 		Resp: Resp{Ok},
 		AccessToken: encryptedToken,
@@ -116,7 +122,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		RefreshToken: "refresh_token",
 		PrivateKey: user.EncPrivateKey,
 		EncPrivateKey: user.EncPrivateKey,
-		EventID: "event_id",
+		EventID: lastEvent.ID,
 	})
 }
 

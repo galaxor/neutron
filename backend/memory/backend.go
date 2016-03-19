@@ -10,6 +10,7 @@ type Backend struct {
 	backend.LabelsBackend
 	backend.ConversationsBackend
 	backend.SendBackend
+	backend.EventsBackend
 
 	users map[string]*user
 }
@@ -20,12 +21,16 @@ type user struct {
 }
 
 func New() backend.Backend {
-	return &Backend{
-		DomainsBackend: NewDomainsBackend(),
-		ContactsBackend: NewContactsBackend(),
-		LabelsBackend: NewLabelsBackend(),
-		ConversationsBackend: NewConversationsBackend(),
-		SendBackend: NewSendBackend(),
+	bkd := &Backend{
 		users: map[string]*user{},
 	}
+
+	bkd.DomainsBackend = NewDomainsBackend()
+	bkd.ContactsBackend = NewContactsBackend()
+	bkd.LabelsBackend = NewLabelsBackend()
+	bkd.ConversationsBackend = NewConversationsBackend()
+	bkd.SendBackend = NewEchoSendBackend(bkd.ConversationsBackend)
+	bkd.EventsBackend = NewEventsBackend()
+
+	return bkd
 }
