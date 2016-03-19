@@ -150,20 +150,18 @@ func (b *Backend) Populate() {
 					LabelIDs: []string{"0"},
 				},
 			},
-			labels: []*backend.Label{
-				&backend.Label{
-					ID: "label_id",
-					Name: "Hey!",
-					Color: "#7272a7",
-					Display: 1,
-					Order: 1,
-				},
-			},
 		},
 	}
 
 	b.InsertContact("user_id", &backend.Contact{
 		Name: "Myself :)",
 		Email: "neutron@example.org",
+	})
+
+	b.InsertLabel("user_id", &backend.Label{
+		Name: "Hey!",
+		Color: "#7272a7",
+		Display: 1,
+		Order: 1,
 	})
 }

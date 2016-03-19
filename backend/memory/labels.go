@@ -6,8 +6,12 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-func (b *Backend) getLabelIndex(user, id string) (int, error) {
-	for i, lbl := range b.data[user].labels {
+type LabelsBackend struct {
+	labels map[string][]*backend.Label
+}
+
+func (b *LabelsBackend) getLabelIndex(user, id string) (int, error) {
+	for i, lbl := range b.labels[user] {
 		if lbl.ID == id {
 			return i, nil
 		}
@@ -15,19 +19,19 @@ func (b *Backend) getLabelIndex(user, id string) (int, error) {
 	return -1, errors.New("No such label")
 }
 
-func (b *Backend) ListLabels(user string) (labels []*backend.Label, err error) {
-	labels = b.data[user].labels
+func (b *LabelsBackend) ListLabels(user string) (labels []*backend.Label, err error) {
+	labels = b.labels[user]
 	return
 }
 
-func (b *Backend) InsertLabel(user string, label *backend.Label) (*backend.Label, error) {
+func (b *LabelsBackend) InsertLabel(user string, label *backend.Label) (*backend.Label, error) {
 	label.ID = generateId()
-	label.Order = len(b.data[user].labels)
-	b.data[user].labels = append(b.data[user].labels, label)
+	label.Order = len(b.labels[user])
+	b.labels[user] = append(b.labels[user], label)
 	return label, nil
 }
 
-func (b *Backend) UpdateLabel(user string, update *backend.LabelUpdate) (*backend.Label, error) {
+func (b *LabelsBackend) UpdateLabel(user string, update *backend.LabelUpdate) (*backend.Label, error) {
 	updated := update.Label
 
 	i, err := b.getLabelIndex(user, updated.ID)
@@ -35,7 +39,7 @@ func (b *Backend) UpdateLabel(user string, update *backend.LabelUpdate) (*backen
 		return nil, err
 	}
 
-	label := b.data[user].labels[i]
+	label := b.labels[user][i]
 
 	if update.Name {
 		label.Name = updated.Name
@@ -53,14 +57,20 @@ func (b *Backend) UpdateLabel(user string, update *backend.LabelUpdate) (*backen
 	return label, nil
 }
 
-func (b *Backend) DeleteLabel(user, id string) error {
+func (b *LabelsBackend) DeleteLabel(user, id string) error {
 	i, err := b.getLabelIndex(user, id)
 	if err != nil {
 		return err
 	}
 
-	labels := b.data[user].labels
-	b.data[user].labels = append(labels[:i], labels[i+1:]...)
+	labels := b.labels[user]
+	b.labels[user] = append(labels[:i], labels[i+1:]...)
 
 	return nil
+}
+
+func NewLabelsBackend() backend.LabelsBackend {
+	return &LabelsBackend{
+		labels: map[string][]*backend.Label{},
+	}
 }

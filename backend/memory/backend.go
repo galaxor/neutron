@@ -9,6 +9,7 @@ import (
 type Backend struct {
 	backend.DomainsBackend
 	backend.ContactsBackend
+	backend.LabelsBackend
 
 	data map[string]*userData
 }
@@ -32,5 +33,6 @@ func New() backend.Backend {
 	return &Backend{
 		DomainsBackend: NewDomainsBackend(),
 		ContactsBackend: NewContactsBackend(),
+		LabelsBackend: NewLabelsBackend(),
 	}
 }

@@ -10,13 +10,8 @@ type ContactsBackend struct {
 	contacts map[string][]*backend.Contact
 }
 
-func (b *ContactsBackend) listContacts(user string) (contacts []*backend.Contact) {
-	contacts, _ = b.contacts[user]
-	return
-}
-
 func (b *ContactsBackend) ListContacts(user string) (contacts []*backend.Contact, err error) {
-	contacts = b.listContacts(user)
+	contacts = b.contacts[user]
 	return
 }
 
