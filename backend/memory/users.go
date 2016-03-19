@@ -103,6 +103,12 @@ func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
 	if update.Signature {
 		user.Signature = updated.Signature
 	}
+	if update.AutoSaveContacts {
+		user.AutoSaveContacts = updated.AutoSaveContacts
+	}
+	if update.ShowImages {
+		user.ShowImages = updated.ShowImages
+	}
 
 	return nil
 }

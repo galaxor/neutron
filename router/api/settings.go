@@ -53,3 +53,11 @@ func (api *Api) UpdateUserDisplayName(ctx *macaron.Context, req UpdateUserSettin
 func (api *Api) UpdateUserSignature(ctx *macaron.Context, req UpdateUserSettingsReq) {
 	api.updateUserSettings(ctx, &backend.UserUpdate{Signature: true}, req.User)
 }
+
+func (api *Api) UpdateUserAutoSaveContacts(ctx *macaron.Context, req UpdateUserSettingsReq) {
+	api.updateUserSettings(ctx, &backend.UserUpdate{AutoSaveContacts: true}, req.User)
+}
+
+func (api *Api) UpdateUserShowImages(ctx *macaron.Context, req UpdateUserSettingsReq) {
+	api.updateUserSettings(ctx, &backend.UserUpdate{ShowImages: true}, req.User)
+}

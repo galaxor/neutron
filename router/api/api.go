@@ -185,6 +185,8 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 		m.Put("/password", binding.Json(UpdateUserPasswordReq{}), api.UpdateUserPassword)
 		m.Put("/display", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserDisplayName)
 		m.Put("/signature", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserSignature)
+		m.Put("/autosave", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserAutoSaveContacts)
+		m.Put("/showimages", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserShowImages)
 	})
 
 	m.Get("/domains/available", api.GetAvailableDomains)

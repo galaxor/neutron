@@ -63,4 +63,6 @@ type UserUpdate struct {
 	User *User
 	DisplayName bool
 	Signature bool
+	AutoSaveContacts bool
+	ShowImages bool
 }
