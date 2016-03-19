@@ -93,7 +93,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 
 	sessionToken := "access_token"
 
-	keyring := user.Addresses[0].Keys[0] // TODO: find a better way to get the keyring
+	keyring := user.GetMainAddress().Keys[0] // TODO: find a better way to get the keyring
 	encryptedToken, err := keyring.EncryptToSelf(sessionToken)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{

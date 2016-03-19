@@ -4,7 +4,7 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-func defaultPrivateKey() string {
+func DefaultPrivateKey() string {
 	return `-----BEGIN PGP PRIVATE KEY BLOCK-----
 Version: GnuPG v1
 
@@ -66,7 +66,7 @@ tPcWTgAvgRnzzzpGfqip2Q4BmhEQ7fyjQR4=
 -----END PGP PRIVATE KEY BLOCK-----`
 }
 
-func defaultPublicKey() string {
+func DefaultPublicKey() string {
 	return `-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1
 
@@ -128,8 +128,8 @@ func (b *Backend) Populate() {
 					Keys: []*backend.Keypair{
 						&backend.Keypair{
 							ID: "keypair_id",
-							PublicKey: defaultPublicKey(),
-							PrivateKey: defaultPrivateKey(),
+							PublicKey: DefaultPublicKey(),
+							PrivateKey: DefaultPrivateKey(),
 						},
 					},
 				},
