@@ -14,6 +14,7 @@ func main() {
 	indexFile := "app.html"
 
 	backend := memory.New()
+	backend.(*memory.Backend).Populate()
 
 	m := macaron.Classic()
 	m.Use(macaron.Renderer())

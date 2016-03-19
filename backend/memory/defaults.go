@@ -1,5 +1,9 @@
 package memory
 
+import (
+	"github.com/emersion/neutron/backend"
+)
+
 func defaultPrivateKey() string {
 	return `-----BEGIN PGP PRIVATE KEY BLOCK-----
 Version: GnuPG v1
@@ -93,4 +97,71 @@ OPkgBoHpKBZMlgSatPbhF5VkkF3PKYXinPSXQraD/TXOHr38nwNJ8Dln4tQ4+iLJ
 kKPymjeuNF5GKhfkP1C09xZOAC+BGfPPOkZ+qKnZDgGaERDt/KNBHg==
 =1lqJ
 -----END PGP PUBLIC KEY BLOCK-----`
+}
+
+func (b *Backend) Populate() {
+	b.DomainsBackend.(*DomainsBackend).domains = []*backend.Domain{
+		&backend.Domain{
+			ID: "domain_id",
+			Name: "example.org",
+		},
+	}
+
+	b.data = map[string]*userData{
+		"user_id": &userData{
+			user: &backend.User{
+				ID: "user_id",
+				Name: "neutron",
+				DisplayName: "Neutron",
+				Addresses: []*backend.Address{
+					&backend.Address{
+						ID: "address_id",
+						DomainID: "domain_id",
+						Email: "neutron@example.org",
+						Send: 1,
+						Receive: 1,
+						Status: 1,
+						Type: 1,
+						Keys: []*backend.Keypair{
+							&backend.Keypair{
+								ID: "keypair_id",
+								PublicKey: defaultPublicKey(),
+								PrivateKey: defaultPrivateKey(),
+							},
+						},
+					},
+				},
+			},
+			password: "neutron",
+			contacts: []*backend.Contact{
+				&backend.Contact{
+					ID: "contact_id",
+					Name: "Myself :)",
+					Email: "neutron@example.org",
+				},
+			},
+			messages: []*backend.Message{
+				&backend.Message{
+					ID: "message_id",
+					ConversationID: "conversation_id",
+					AddressID: "address_id",
+					Subject: "Hello World",
+					Sender: &backend.Email{"neutron@example.org", "Neutron"},
+					ToList: []*backend.Email{ &backend.Email{"neutron@example.org", "Neutron"} },
+					Time: 1458073557,
+					Body: "Hey! How are you today?",
+					LabelIDs: []string{"0"},
+				},
+			},
+			labels: []*backend.Label{
+				&backend.Label{
+					ID: "label_id",
+					Name: "Hey!",
+					Color: "#7272a7",
+					Display: 1,
+					Order: 1,
+				},
+			},
+		},
+	}
 }
