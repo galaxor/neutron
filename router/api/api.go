@@ -200,6 +200,8 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 
 	m.Get("/domains/available", api.GetAvailableDomains)
 
+	m.Get("/organizations", api.GetUserOrganization)
+
 	m.Post("/bugs/crash", binding.Json(CrashReq{}), api.Crash)
 
 	// Not found
