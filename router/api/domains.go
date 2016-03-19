@@ -9,10 +9,20 @@ type AvailableDomainsResp struct {
 	Domains []string
 }
 
-func (api *Api) GetAvailableDomains(ctx *macaron.Context) {
+func (api *Api) GetAvailableDomains(ctx *macaron.Context) (err error) {
+	domains, err := api.backend.ListDomains()
+	if err != nil {
+		return
+	}
+
+	domainNames := make([]string, len(domains))
+	for i, d := range domains {
+		domainNames[i] = d.Name
+	}
+
 	ctx.JSON(200, &AvailableDomainsResp{
 		Resp: Resp{Ok},
-		Domains: []string{"example.org"},
+		Domains: domainNames,
 	})
 	return
 }

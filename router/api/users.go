@@ -18,6 +18,7 @@ type CreateUserReq struct {
 	Username string
 	Password string
 	Domain string
+	Email string
 	News bool
 	PrivateKey string
 	Token string
@@ -56,12 +57,18 @@ func (api *Api) GetCurrentUser(ctx *macaron.Context) {
 func (api *Api) CreateUser(ctx *macaron.Context, req CreateUserReq) (err error) {
 	// TODO: check req.Token & req.TokenType
 
+	domain, err := api.backend.GetDomainByName(req.Domain)
+	if err != nil {
+		return
+	}
+
 	user, err := api.backend.InsertUser(&backend.User{
 		Name: req.Username,
+		NotificationEmail: req.Email,
 		Addresses: []*backend.Address{
 			&backend.Address{
-				DomainID: "domain_id", // TODO: check req.Domain
-				Email: req.Username + "@" + req.Domain,
+				DomainID: domain.ID,
+				Email: req.Username + "@" + domain.Name,
 				Send: 1,
 				Receive: 1,
 				Status: 1,

@@ -7,6 +7,7 @@ import (
 )
 
 type Backend struct {
+	domains []*backend.Domain
 	data map[string]*userData
 }
 
@@ -28,6 +29,12 @@ func (b *Backend) getUserData(id string) (*userData, error) {
 
 func New() backend.Backend {
 	return &Backend{
+		domains: []*backend.Domain{
+			&backend.Domain{
+				ID: "domain_id",
+				Name: "example.org",
+			},
+		},
 		data: map[string]*userData{
 			"user_id": &userData{
 				user: &backend.User{

@@ -23,6 +23,11 @@ type Backend interface {
 	// Get a public key for a user.
 	GetPublicKey(email string) (string, error)
 
+	// List all domains.
+	ListDomains() ([]*Domain, error)
+	// Get the domain which has the specified name.
+	GetDomainByName(name string) (*Domain, error)
+
 	// List all user's contacts.
 	ListContacts(user string) ([]*Contact, error)
 	// Insert a new contact.
