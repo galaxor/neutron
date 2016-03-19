@@ -41,7 +41,7 @@ Default credentials:
 
 ## Backends
 
-All backends must implement the [backend interface](https://github.com/emersion/neutron/blob/master/backend/backend.go).
+All backends must implement the [backend interface](https://github.com/emersion/neutron/blob/master/backend/backend.go). The main backend interface is split into multiple other backend interfaces for different roles: `ContactsBackend`, `LabelsBackend` and so on. This allows to build modular backends, e.g. a `MessagesBackend` which stores messages on an IMAP server with a `ContactsBackend` which stores contacts on a LDAP server and a `SendBackend` which sends outgoing messages to a SMTP server.
 
 Currently, only a simple memory backend is available. Nothing is saved on disk, everything is destroyed when the server is shut down.
 
