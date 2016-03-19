@@ -186,4 +186,13 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 	m.Get("/domains/available", api.GetAvailableDomains)
 
 	m.Post("/bugs/crash", binding.Json(CrashReq{}), api.Crash)
+
+	// Not found
+	m.Any("/*", func (ctx *macaron.Context) {
+		ctx.JSON(404, &ErrorResp{
+			Resp: Resp{404},
+			Error: "invalid_endpoint",
+			ErrorDescription: "Endpoint not found",
+		})
+	})
 }

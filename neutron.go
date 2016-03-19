@@ -2,7 +2,6 @@ package main
 
 import (
 	"io/ioutil"
-	"strings"
 
 	"gopkg.in/macaron.v1"
 
@@ -30,15 +29,8 @@ func main() {
 		SkipLogging: true,
 	}))
 
+	// Fallback to index file
 	m.NotFound(func(ctx *macaron.Context) {
-		// API endpoint, send error
-		if strings.HasPrefix(ctx.Req.URL.Path, "/api/") {
-			ctx.PlainText(404, []byte("endpoint not found"))
-			return
-		}
-
-		// Fallback to index file
-
 		data, err := ioutil.ReadFile(publicDir + "/" + indexFile)
 		if err != nil {
 			ctx.PlainText(404, []byte("page not found"))
