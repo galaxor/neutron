@@ -17,25 +17,27 @@ func (b *Backend) IsUsernameAvailable(username string) (bool, error) {
 }
 
 func (b *Backend) GetUser(id string) (user *backend.User, err error) {
-	item, ok := b.data[id]
-	if !ok {
-		err = errors.New("No such user")
+	item, err := b.getUserData(id)
+	if err != nil {
 		return
 	}
 
 	user = item.user
 
-	keypair := &backend.Keypair{
-		PublicKey: user.PublicKey,
-		PrivateKey: user.EncPrivateKey,
+	if user.EncPrivateKey == "" {
+		addr := user.GetMainAddress()
+		if addr != nil && len(addr.Keys) > 0 {
+			keypair := addr.Keys[0]
+			user.PublicKey = keypair.PublicKey
+			user.EncPrivateKey = keypair.PrivateKey
+		}
 	}
 
 	for _, addr := range user.Addresses {
 		if addr.DisplayName == "" {
 			addr.DisplayName = user.DisplayName
 		}
-		if len(addr.Keys) == 0 {
-			addr.Keys = []*backend.Keypair{keypair}
+		if len(addr.Keys) > 0 {
 			addr.HasKeys = 1
 		}
 	}
@@ -64,18 +66,15 @@ func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User
 		return nil, errors.New("Username already taken")
 	}
 
+	// Generate new IDs
 	user.ID = generateId()
 
-	user.Addresses = []*backend.Address{
-		&backend.Address{
-			ID: generateId(),
-			DomainID: "domain_id", // TODO
-			Email: user.Name + "@example.org", // TODO
-			Send: 1,
-			Receive: 1,
-			Status: 1,
-			Type: 1,
-		},
+	for _, addr := range user.Addresses {
+		addr.ID = generateId()
+
+		for _, kp := range addr.Keys {
+			kp.ID = generateId()
+		}
 	}
 
 	// Insert new user
@@ -90,9 +89,9 @@ func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User
 func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
 	updated := update.User
 
-	item, ok := b.data[updated.ID]
-	if !ok {
-		return errors.New("No such user")
+	item, err := b.getUserData(updated.ID)
+	if err != nil {
+		return err
 	}
 
 	user := item.user
@@ -113,18 +112,50 @@ func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
 	return nil
 }
 
+func checkUserPassword(item *userData, password string) error {
+	if item.password != password {
+		return errors.New("Invalid password")
+	}
+	return nil
+}
+
 func (b *Backend) UpdateUserPassword(id, current, new string) error {
-	item, ok := b.data[id]
-	if !ok {
-		return errors.New("No such user")
+	item, err := b.getUserData(id)
+	if err != nil {
+		return err
 	}
 
-	if item.password != current {
-		return errors.New("Invalid password")
+	err = checkUserPassword(item, current)
+	if err != nil {
+		return err
 	}
 
 	item.password = new
 	return nil
+}
+
+func (b *Backend) UpdateKeypair(id, password string, keypair *backend.Keypair) error {
+	item, err := b.getUserData(id)
+	if err != nil {
+		return err
+	}
+
+	err = checkUserPassword(item, password)
+	if err != nil {
+		return err
+	}
+
+	for _, addr := range item.user.Addresses {
+		for _, kp := range addr.Keys {
+			if kp.ID == keypair.ID {
+				kp.PrivateKey = keypair.PrivateKey
+				kp.PublicKey = "" // Public key is now outdated
+				return nil
+			}
+		}
+	}
+
+	return errors.New("Key not found")
 }
 
 func (b *Backend) GetPublicKey(email string) (string, error) {

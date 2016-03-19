@@ -34,6 +34,15 @@ type User struct {
 	EncPrivateKey string
 }
 
+func (u *User) GetMainAddress() *Address {
+	for _, addr := range u.Addresses {
+		if addr.Send == 1 { // 1 is main address, 2 is secondary address
+			return addr
+		}
+	}
+	return nil
+}
+
 // A user's address.
 type Address struct {
 	ID string

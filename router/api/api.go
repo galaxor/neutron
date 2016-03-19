@@ -189,6 +189,10 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 		m.Put("/showimages", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserShowImages)
 	})
 
+	m.Group("/keys", func() {
+		m.Put("/private", binding.Json(UpdateUserPrivateKeyReq{}), api.UpdateUserPrivateKey)
+	})
+
 	m.Get("/domains/available", api.GetAvailableDomains)
 
 	m.Post("/bugs/crash", binding.Json(CrashReq{}), api.Crash)

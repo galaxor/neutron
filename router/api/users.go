@@ -58,16 +58,19 @@ func (api *Api) CreateUser(ctx *macaron.Context, req CreateUserReq) (err error) 
 
 	user, err := api.backend.InsertUser(&backend.User{
 		Name: req.Username,
-		EncPrivateKey: req.PrivateKey,
 		Addresses: []*backend.Address{
 			&backend.Address{
-				ID: "address_id", // TODO: insert address
 				DomainID: "domain_id", // TODO: check req.Domain
 				Email: req.Username + "@" + req.Domain,
 				Send: 1,
 				Receive: 1,
 				Status: 1,
 				Type: 1,
+				Keys: []*backend.Keypair{
+					&backend.Keypair{
+						PrivateKey: req.PrivateKey,
+					},
+				},
 			},
 		},
 	}, req.Password)

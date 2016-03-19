@@ -1,6 +1,8 @@
 package memory
 
 import (
+	"errors"
+
 	"github.com/emersion/neutron/backend"
 )
 
@@ -16,6 +18,14 @@ type userData struct {
 	labels []*backend.Label
 }
 
+func (b *Backend) getUserData(id string) (*userData, error) {
+	item, ok := b.data[id]
+	if !ok {
+		return nil, errors.New("No such user")
+	}
+	return item, nil
+}
+
 func New() backend.Backend {
 	return &Backend{
 		data: map[string]*userData{
@@ -24,8 +34,6 @@ func New() backend.Backend {
 					ID: "user_id",
 					Name: "neutron",
 					DisplayName: "Neutron",
-					PublicKey: defaultPublicKey(),
-					EncPrivateKey: defaultPrivateKey(),
 					Addresses: []*backend.Address{
 						&backend.Address{
 							ID: "address_id",
@@ -35,6 +43,13 @@ func New() backend.Backend {
 							Receive: 1,
 							Status: 1,
 							Type: 1,
+							Keys: []*backend.Keypair{
+								&backend.Keypair{
+									ID: "keypair_id",
+									PublicKey: defaultPublicKey(),
+									PrivateKey: defaultPrivateKey(),
+								},
+							},
 						},
 					},
 				},

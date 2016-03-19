@@ -15,6 +15,9 @@ type Backend interface {
 	UpdateUser(update *UserUpdate) error
 	// Update a user's password.
 	UpdateUserPassword(id, current, new string) error
+	// Update a user's private key.
+	UpdateKeypair(id, password string, keypair *Keypair) error
+	// Delete a user.
 	//DeleteUser(id string) error
 
 	// Get a public key for a user.
