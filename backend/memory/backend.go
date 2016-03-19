@@ -8,6 +8,7 @@ import (
 
 type Backend struct {
 	backend.DomainsBackend
+	backend.ContactsBackend
 
 	data map[string]*userData
 }
@@ -15,7 +16,6 @@ type Backend struct {
 type userData struct {
 	user *backend.User
 	password string
-	contacts []*backend.Contact
 	messages []*backend.Message
 	labels []*backend.Label
 }
@@ -31,5 +31,6 @@ func (b *Backend) getUserData(id string) (*userData, error) {
 func New() backend.Backend {
 	return &Backend{
 		DomainsBackend: NewDomainsBackend(),
+		ContactsBackend: NewContactsBackend(),
 	}
 }

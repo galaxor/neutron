@@ -6,19 +6,28 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-func (b *Backend) ListContacts(user string) (contacts []*backend.Contact, err error) {
-	contacts = b.data[user].contacts
+type ContactsBackend struct {
+	contacts map[string][]*backend.Contact
+}
+
+func (b *ContactsBackend) listContacts(user string) (contacts []*backend.Contact) {
+	contacts, _ = b.contacts[user]
 	return
 }
 
-func (b *Backend) InsertContact(user string, contact *backend.Contact) (*backend.Contact, error) {
+func (b *ContactsBackend) ListContacts(user string) (contacts []*backend.Contact, err error) {
+	contacts = b.listContacts(user)
+	return
+}
+
+func (b *ContactsBackend) InsertContact(user string, contact *backend.Contact) (*backend.Contact, error) {
 	contact.ID = generateId()
-	b.data[user].contacts = append(b.data[user].contacts, contact)
+	b.contacts[user] = append(b.contacts[user], contact)
 	return contact, nil
 }
 
-func (b *Backend) getContactIndex(user, id string) (int, error) {
-	for i, contact := range b.data[user].contacts {
+func (b *ContactsBackend) getContactIndex(user, id string) (int, error) {
+	for i, contact := range b.contacts[user] {
 		if contact.ID == id {
 			return i, nil
 		}
@@ -27,7 +36,7 @@ func (b *Backend) getContactIndex(user, id string) (int, error) {
 	return -1, errors.New("No such contact")
 }
 
-func (b *Backend) UpdateContact(user string, update *backend.ContactUpdate) (*backend.Contact, error) {
+func (b *ContactsBackend) UpdateContact(user string, update *backend.ContactUpdate) (*backend.Contact, error) {
 	updated := update.Contact
 
 	i, err := b.getContactIndex(user, updated.ID)
@@ -35,7 +44,7 @@ func (b *Backend) UpdateContact(user string, update *backend.ContactUpdate) (*ba
 		return nil, err
 	}
 
-	contact := b.data[user].contacts[i]
+	contact := b.contacts[user][i]
 
 	if update.Name {
 		contact.Name = updated.Name
@@ -47,19 +56,25 @@ func (b *Backend) UpdateContact(user string, update *backend.ContactUpdate) (*ba
 	return contact, nil
 }
 
-func (b *Backend) DeleteContact(user, id string) error {
+func (b *ContactsBackend) DeleteContact(user, id string) error {
 	i, err := b.getContactIndex(user, id)
 	if err != nil {
 		return err
 	}
 
-	contacts := b.data[user].contacts
-	b.data[user].contacts = append(contacts[:i], contacts[i+1:]...)
+	contacts := b.contacts[user]
+	b.contacts[user] = append(contacts[:i], contacts[i+1:]...)
 
 	return nil
 }
 
-func (b *Backend) DeleteAllContacts(user string) error {
-	b.data[user].contacts = nil
+func (b *ContactsBackend) DeleteAllContacts(user string) error {
+	b.contacts[user] = nil
 	return nil
+}
+
+func NewContactsBackend() backend.ContactsBackend {
+	return &ContactsBackend{
+		contacts: map[string][]*backend.Contact{},
+	}
 }

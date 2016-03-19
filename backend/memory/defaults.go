@@ -99,13 +99,17 @@ kKPymjeuNF5GKhfkP1C09xZOAC+BGfPPOkZ+qKnZDgGaERDt/KNBHg==
 -----END PGP PUBLIC KEY BLOCK-----`
 }
 
-func (b *Backend) Populate() {
-	b.DomainsBackend.(*DomainsBackend).domains = []*backend.Domain{
+func (b *DomainsBackend) Populate() {
+	b.domains = []*backend.Domain{
 		&backend.Domain{
 			ID: "domain_id",
 			Name: "example.org",
 		},
 	}
+}
+
+func (b *Backend) Populate() {
+	b.DomainsBackend.(*DomainsBackend).Populate()
 
 	b.data = map[string]*userData{
 		"user_id": &userData{
@@ -133,13 +137,6 @@ func (b *Backend) Populate() {
 				},
 			},
 			password: "neutron",
-			contacts: []*backend.Contact{
-				&backend.Contact{
-					ID: "contact_id",
-					Name: "Myself :)",
-					Email: "neutron@example.org",
-				},
-			},
 			messages: []*backend.Message{
 				&backend.Message{
 					ID: "message_id",
@@ -164,4 +161,9 @@ func (b *Backend) Populate() {
 			},
 		},
 	}
+
+	b.InsertContact("user_id", &backend.Contact{
+		Name: "Myself :)",
+		Email: "neutron@example.org",
+	})
 }
