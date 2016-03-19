@@ -6,6 +6,10 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
+type ConversationsBackend struct {
+	*MessagesBackend
+}
+
 func isEmailInList(needle *backend.Email, haystack []*backend.Email) bool {
 	for _, email := range haystack {
 		if needle.Address == email.Address {
@@ -58,8 +62,18 @@ func populateConversation(conv *backend.Conversation, msg *backend.Message) {
 	}
 }
 
-func (b *Backend) listConversations(user string) (convs []*backend.Conversation, err error) {
-	for _, msg := range b.data[user].messages {
+func (b *ConversationsBackend) ListConversationMessages(user, id string) (msgs []*backend.Message, err error) {
+	for _, msg := range b.messages[user] {
+		if msg.ConversationID == id {
+			populateMessage(msg)
+			msgs = append(msgs, msg)
+		}
+	}
+	return
+}
+
+func (b *ConversationsBackend) listConversations(user string) (convs []*backend.Conversation, err error) {
+	for _, msg := range b.messages[user] {
 		var conv *backend.Conversation
 		for _, c := range convs {
 			if c.ID == msg.ConversationID {
@@ -69,7 +83,7 @@ func (b *Backend) listConversations(user string) (convs []*backend.Conversation,
 		}
 
 		if conv == nil {
-			conv = &backend.Conversation{ ID: msg.ConversationID }
+			conv = &backend.Conversation{ID: msg.ConversationID}
 			convs = append(convs, conv)
 		}
 
@@ -79,7 +93,7 @@ func (b *Backend) listConversations(user string) (convs []*backend.Conversation,
 	return
 }
 
-func (b *Backend) ListConversations(user string, filter *backend.MessagesFilter) (convs []*backend.Conversation, total int, err error) {
+func (b *ConversationsBackend) ListConversations(user string, filter *backend.MessagesFilter) (convs []*backend.Conversation, total int, err error) {
 	all, err := b.listConversations(user)
 	if err != nil {
 		return
@@ -127,7 +141,7 @@ func (b *Backend) ListConversations(user string, filter *backend.MessagesFilter)
 	return
 }
 
-func (b *Backend) CountConversations(user string) (counts []*backend.MessagesCount, err error) {
+func (b *ConversationsBackend) CountConversations(user string) (counts []*backend.MessagesCount, err error) {
 	convs, err := b.listConversations(user)
 	if err != nil {
 		return
@@ -142,7 +156,7 @@ func (b *Backend) CountConversations(user string) (counts []*backend.MessagesCou
 				count = counts[i]
 			} else {
 				indexes[label] = len(counts)
-				count = &backend.MessagesCount{ LabelID: label }
+				count = &backend.MessagesCount{LabelID: label}
 				counts = append(counts, count)
 			}
 
@@ -156,11 +170,11 @@ func (b *Backend) CountConversations(user string) (counts []*backend.MessagesCou
 	return
 }
 
-func (b *Backend) GetConversation(user, id string) (conv *backend.Conversation, err error) {
-	for _, msg := range b.data[user].messages {
+func (b *ConversationsBackend) GetConversation(user, id string) (conv *backend.Conversation, err error) {
+	for _, msg := range b.messages[user] {
 		if msg.ConversationID == id {
 			if conv == nil {
-				conv = &backend.Conversation{ ID: id }
+				conv = &backend.Conversation{ID: id}
 			}
 
 			populateConversation(conv, msg)
@@ -173,7 +187,7 @@ func (b *Backend) GetConversation(user, id string) (conv *backend.Conversation, 
 	return
 }
 
-func (b *Backend) DeleteConversation(user, id string) (err error) {
+func (b *ConversationsBackend) DeleteConversation(user, id string) (err error) {
 	// Delete all messages in conversation
 	msgs, err := b.ListConversationMessages(user, id)
 	if err != nil {
@@ -188,4 +202,10 @@ func (b *Backend) DeleteConversation(user, id string) (err error) {
 	}
 
 	return
+}
+
+func NewConversationsBackend() backend.ConversationsBackend {
+	return &ConversationsBackend{
+		MessagesBackend: NewMessagesBackend().(*MessagesBackend),
+	}
 }

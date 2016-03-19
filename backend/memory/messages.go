@@ -6,6 +6,10 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
+type MessagesBackend struct {
+	messages map[string][]*backend.Message
+}
+
 func populateMessage(msg *backend.Message) {
 	if msg.ToList == nil {
 		msg.ToList = []*backend.Email{}
@@ -33,8 +37,8 @@ func populateMessage(msg *backend.Message) {
 	}
 }
 
-func (b *Backend) getMessageIndex(user, id string) (int, error) {
-	for i, m := range b.data[user].messages {
+func (b *MessagesBackend) getMessageIndex(user, id string) (int, error) {
+	for i, m := range b.messages[user] {
 		if m.ID == id {
 			return i, nil
 		}
@@ -43,19 +47,19 @@ func (b *Backend) getMessageIndex(user, id string) (int, error) {
 	return -1, errors.New("No such message")
 }
 
-func (b *Backend) GetMessage(user, id string) (msg *backend.Message, err error) {
+func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err error) {
 	i, err := b.getMessageIndex(user, id)
 	if err != nil {
 		return
 	}
 
-	msg = b.data[user].messages[i]
+	msg = b.messages[user][i]
 	populateMessage(msg)
 	return
 }
 
-func (b *Backend) ListMessages(user string, filter *backend.MessagesFilter) (msgs []*backend.Message, total int, err error) {
-	all := b.data[user].messages
+func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilter) (msgs []*backend.Message, total int, err error) {
+	all := b.messages[user]
 	filtered := []*backend.Message{}
 
 	for _, msg := range all {
@@ -99,20 +103,10 @@ func (b *Backend) ListMessages(user string, filter *backend.MessagesFilter) (msg
 	return
 }
 
-func (b *Backend) ListConversationMessages(user, id string) (msgs []*backend.Message, err error) {
-	for _, msg := range b.data[user].messages {
-		if msg.ConversationID == id {
-			populateMessage(msg)
-			msgs = append(msgs, msg)
-		}
-	}
-	return
-}
-
-func (b *Backend) CountMessages(user string) (counts []*backend.MessagesCount, err error) {
+func (b *MessagesBackend) CountMessages(user string) (counts []*backend.MessagesCount, err error) {
 	indexes := map[string]int{}
 
-	for _, msg := range b.data[user].messages {
+	for _, msg := range b.messages[user] {
 		for _, label := range msg.LabelIDs {
 			var count *backend.MessagesCount
 			if i, ok := indexes[label]; ok {
@@ -133,18 +127,18 @@ func (b *Backend) CountMessages(user string) (counts []*backend.MessagesCount, e
 	return
 }
 
-func (b *Backend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
+func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg.ID = generateId()
 	if msg.ConversationID == "" {
 		msg.ConversationID = generateId()
 	}
 
-	b.data[user].messages = append(b.data[user].messages, msg)
+	b.messages[user] = append(b.messages[user], msg)
 	populateMessage(msg)
 	return msg, nil
 }
 
-func (b *Backend) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
+func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
 	updated := update.Message
 
 	i, err := b.getMessageIndex(user, updated.ID)
@@ -152,7 +146,7 @@ func (b *Backend) UpdateMessage(user string, update *backend.MessageUpdate) (msg
 		return
 	}
 
-	msg = b.data[user].messages[i]
+	msg = b.messages[user][i]
 
 	if update.ToList {
 		msg.ToList = updated.ToList
@@ -221,18 +215,30 @@ func (b *Backend) UpdateMessage(user string, update *backend.MessageUpdate) (msg
 	return
 }
 
-func (b *Backend) DeleteMessage(user, id string) error {
+func (b *MessagesBackend) DeleteMessage(user, id string) error {
 	i, err := b.getMessageIndex(user, id)
 	if err != nil {
 		return err
 	}
 
-	messages := b.data[user].messages
-	b.data[user].messages = append(messages[:i], messages[i+1:]...)
+	messages := b.messages[user]
+	b.messages[user] = append(messages[:i], messages[i+1:]...)
 
 	return nil
 }
 
-func (b *Backend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
+func NewMessagesBackend() backend.MessagesBackend {
+	return &MessagesBackend{
+		messages: map[string][]*backend.Message{},
+	}
+}
+
+type SendBackend struct {}
+
+func (b *SendBackend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
 	return nil // Do nothing
+}
+
+func NewSendBackend() backend.SendBackend {
+	return &SendBackend{}
 }

@@ -1,8 +1,6 @@
 package memory
 
 import (
-	"errors"
-
 	"github.com/emersion/neutron/backend"
 )
 
@@ -10,23 +8,15 @@ type Backend struct {
 	backend.DomainsBackend
 	backend.ContactsBackend
 	backend.LabelsBackend
+	backend.ConversationsBackend
+	backend.SendBackend
 
-	data map[string]*userData
+	users map[string]*user
 }
 
-type userData struct {
-	user *backend.User
+type user struct {
+	*backend.User
 	password string
-	messages []*backend.Message
-	labels []*backend.Label
-}
-
-func (b *Backend) getUserData(id string) (*userData, error) {
-	item, ok := b.data[id]
-	if !ok {
-		return nil, errors.New("No such user")
-	}
-	return item, nil
 }
 
 func New() backend.Backend {
@@ -34,5 +24,8 @@ func New() backend.Backend {
 		DomainsBackend: NewDomainsBackend(),
 		ContactsBackend: NewContactsBackend(),
 		LabelsBackend: NewLabelsBackend(),
+		ConversationsBackend: NewConversationsBackend(),
+		SendBackend: NewSendBackend(),
+		users: map[string]*user{},
 	}
 }

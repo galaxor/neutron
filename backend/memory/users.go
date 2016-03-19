@@ -7,8 +7,8 @@ import (
 )
 
 func (b *Backend) IsUsernameAvailable(username string) (bool, error) {
-	for _, d := range b.data {
-		if d.user.Name == username {
+	for _, d := range b.users {
+		if d.Name == username {
 			return false, nil
 		}
 	}
@@ -16,13 +16,21 @@ func (b *Backend) IsUsernameAvailable(username string) (bool, error) {
 	return true, nil
 }
 
+func (b *Backend) getUser(id string) (*user, error) {
+	user, ok := b.users[id]
+	if !ok {
+		return nil, errors.New("No such user")
+	}
+	return user, nil
+}
+
 func (b *Backend) GetUser(id string) (user *backend.User, err error) {
-	item, err := b.getUserData(id)
+	item, err := b.getUser(id)
 	if err != nil {
 		return
 	}
 
-	user = item.user
+	user = item.User
 
 	if user.EncPrivateKey == "" {
 		addr := user.GetMainAddress()
@@ -45,20 +53,17 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 	return
 }
 
-func (b *Backend) Auth(username, password string) (user *backend.User, err error) {
-	for id, item := range b.data {
-		if item.user.Name == username && item.password == password {
-			user, err = b.GetUser(id)
-			return
+func (b *Backend) Auth(username, password string) (*backend.User, error) {
+	for id, item := range b.users {
+		if item.Name == username && item.password == password {
+			return b.GetUser(id)
 		}
 	}
-
-	err = errors.New("Invalid username and password combination")
-	return
+	return nil, errors.New("Invalid username and password combination")
 }
 
-func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User, error) {
-	available, err := b.IsUsernameAvailable(user.Name)
+func (b *Backend) InsertUser(u *backend.User, password string) (*backend.User, error) {
+	available, err := b.IsUsernameAvailable(u.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +72,9 @@ func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User
 	}
 
 	// Generate new IDs
-	user.ID = generateId()
+	u.ID = generateId()
 
-	for _, addr := range user.Addresses {
+	for _, addr := range u.Addresses {
 		addr.ID = generateId()
 
 		for _, kp := range addr.Keys {
@@ -78,23 +83,23 @@ func (b *Backend) InsertUser(user *backend.User, password string) (*backend.User
 	}
 
 	// Insert new user
-	b.data[user.ID] = &userData{
-		user: user,
+	b.users[u.ID] = &user{
+		User: u,
 		password: password,
 	}
 
-	return b.GetUser(user.ID)
+	return b.GetUser(u.ID)
 }
 
 func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
 	updated := update.User
 
-	item, err := b.getUserData(updated.ID)
+	item, err := b.getUser(updated.ID)
 	if err != nil {
 		return err
 	}
 
-	user := item.user
+	user := item.User
 
 	if update.DisplayName {
 		user.DisplayName = updated.DisplayName
@@ -124,7 +129,7 @@ func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
 	return nil
 }
 
-func checkUserPassword(item *userData, password string) error {
+func checkUserPassword(item *user, password string) error {
 	if item.password != password {
 		return errors.New("Invalid password")
 	}
@@ -132,7 +137,7 @@ func checkUserPassword(item *userData, password string) error {
 }
 
 func (b *Backend) UpdateUserPassword(id, current, new string) error {
-	item, err := b.getUserData(id)
+	item, err := b.getUser(id)
 	if err != nil {
 		return err
 	}
@@ -147,7 +152,7 @@ func (b *Backend) UpdateUserPassword(id, current, new string) error {
 }
 
 func (b *Backend) UpdateKeypair(id, password string, keypair *backend.Keypair) error {
-	item, err := b.getUserData(id)
+	item, err := b.getUser(id)
 	if err != nil {
 		return err
 	}
@@ -157,7 +162,7 @@ func (b *Backend) UpdateKeypair(id, password string, keypair *backend.Keypair) e
 		return err
 	}
 
-	for _, addr := range item.user.Addresses {
+	for _, addr := range item.User.Addresses {
 		for _, kp := range addr.Keys {
 			if kp.ID == keypair.ID {
 				kp.PrivateKey = keypair.PrivateKey
@@ -171,8 +176,8 @@ func (b *Backend) UpdateKeypair(id, password string, keypair *backend.Keypair) e
 }
 
 func (b *Backend) GetPublicKey(email string) (string, error) {
-	for _, data := range b.data {
-		for _, address := range data.user.Addresses {
+	for _, item := range b.users {
+		for _, address := range item.User.Addresses {
 			if address.Email == email && len(address.Keys) > 0 {
 				return address.Keys[0].PublicKey, nil
 			}

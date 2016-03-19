@@ -111,46 +111,31 @@ func (b *DomainsBackend) Populate() {
 func (b *Backend) Populate() {
 	b.DomainsBackend.(*DomainsBackend).Populate()
 
-	b.data = map[string]*userData{
-		"user_id": &userData{
-			user: &backend.User{
-				ID: "user_id",
-				Name: "neutron",
-				DisplayName: "Neutron",
-				Addresses: []*backend.Address{
-					&backend.Address{
-						ID: "address_id",
-						DomainID: "domain_id",
-						Email: "neutron@example.org",
-						Send: 1,
-						Receive: 1,
-						Status: 1,
-						Type: 1,
-						Keys: []*backend.Keypair{
-							&backend.Keypair{
-								ID: "keypair_id",
-								PublicKey: defaultPublicKey(),
-								PrivateKey: defaultPrivateKey(),
-							},
+	b.users["user_id"] = &user{
+		User: &backend.User{
+			ID: "user_id",
+			Name: "neutron",
+			DisplayName: "Neutron",
+			Addresses: []*backend.Address{
+				&backend.Address{
+					ID: "address_id",
+					DomainID: "domain_id",
+					Email: "neutron@example.org",
+					Send: 1,
+					Receive: 1,
+					Status: 1,
+					Type: 1,
+					Keys: []*backend.Keypair{
+						&backend.Keypair{
+							ID: "keypair_id",
+							PublicKey: defaultPublicKey(),
+							PrivateKey: defaultPrivateKey(),
 						},
 					},
 				},
 			},
-			password: "neutron",
-			messages: []*backend.Message{
-				&backend.Message{
-					ID: "message_id",
-					ConversationID: "conversation_id",
-					AddressID: "address_id",
-					Subject: "Hello World",
-					Sender: &backend.Email{"neutron@example.org", "Neutron"},
-					ToList: []*backend.Email{ &backend.Email{"neutron@example.org", "Neutron"} },
-					Time: 1458073557,
-					Body: "Hey! How are you today?",
-					LabelIDs: []string{"0"},
-				},
-			},
 		},
+		password: "neutron",
 	}
 
 	b.InsertContact("user_id", &backend.Contact{
@@ -163,5 +148,17 @@ func (b *Backend) Populate() {
 		Color: "#7272a7",
 		Display: 1,
 		Order: 1,
+	})
+
+	b.InsertMessage("user_id", &backend.Message{
+		ID: "message_id",
+		ConversationID: "conversation_id",
+		AddressID: "address_id",
+		Subject: "Hello World",
+		Sender: &backend.Email{"neutron@example.org", "Neutron"},
+		ToList: []*backend.Email{ &backend.Email{"neutron@example.org", "Neutron"} },
+		Time: 1458073557,
+		Body: "Hey! How are you today?",
+		LabelIDs: []string{"0"},
 	})
 }
