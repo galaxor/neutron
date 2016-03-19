@@ -2,7 +2,6 @@ package memory
 
 import (
 	"errors"
-	"time"
 
 	"github.com/emersion/neutron/backend"
 )
@@ -227,42 +226,5 @@ func (b *MessagesBackend) DeleteMessage(user, id string) error {
 func NewMessagesBackend() backend.MessagesBackend {
 	return &MessagesBackend{
 		messages: map[string][]*backend.Message{},
-	}
-}
-
-
-// A SendBackend that does nothing.
-type NoopSendBackend struct {}
-
-func (b *NoopSendBackend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
-	return nil // Do nothing
-}
-
-func NewNoopSendBackend() backend.SendBackend {
-	return &NoopSendBackend{}
-}
-
-
-// A SendBackend that forwards all sent messages to a MessagesBackend.
-type EchoSendBackend struct {
-	target backend.MessagesBackend
-}
-
-func (b *EchoSendBackend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
-	// TODO: parse package headers
-	_, err := b.target.InsertMessage(user, &backend.Message{
-		Subject: "EchoSendBackend forwarded message",
-		Sender: &backend.Email{Address: pkg.Address},
-		ToList: []*backend.Email{ &backend.Email{Address: pkg.Address} },
-		Body: pkg.Body,
-		Time: time.Now().Unix(),
-		LabelIDs: []string{backend.InboxLabel},
-	})
-	return err
-}
-
-func NewEchoSendBackend(target backend.MessagesBackend) backend.SendBackend {
-	return &EchoSendBackend{
-		target: target,
 	}
 }

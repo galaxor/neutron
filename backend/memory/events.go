@@ -38,10 +38,21 @@ func mergeEvents(dst, src *backend.Event) *backend.Event {
 
 	dst.Notices = append(dst.Notices, src.Notices...)
 
+	dst.Messages = append(dst.Messages, src.Messages...)
+	dst.Conversations = append(dst.Conversations, src.Conversations...)
+
+	if src.MessageCounts != nil {
+		dst.MessageCounts = src.MessageCounts
+	}
+	if src.ConversationCounts != nil {
+		dst.ConversationCounts = src.ConversationCounts
+	}
+
 	return dst
 }
 
 func (b *EventsBackend) InsertEvent(user string, e *backend.Event) error {
+	log.Println("insert_event", e)
 	e.ID = generateId()
 	b.events[user] = append(b.events[user], &event{Event: e})
 	return nil
@@ -95,7 +106,10 @@ func (b *EventsBackend) GetLastEvent(user string) (*backend.Event, error) {
 }
 
 func (b *EventsBackend) GetEventsAfter(user, id string) (*backend.Event, error) {
-	log.Println("events:", b.events[user])
+	log.Println("events:")
+	for i, e := range b.events[user] {
+		log.Println(i, e)
+	}
 
 	var merged *backend.Event
 	var listener chan *event
@@ -125,7 +139,9 @@ func (b *EventsBackend) GetEventsAfter(user, id string) (*backend.Event, error) 
 
 		// If there are no listeners on this event anymore, there's no need to keep
 		// it in memory, we can destroy it
-		if cleanupUntil == i-1 && len(e.listeners) == 0 {
+		// Make sure this isn't the last event, because we're going to add a listener
+		// on it
+		if cleanupUntil == i-1 && i < last && len(e.listeners) == 0 {
 			cleanupUntil = i
 		}
 

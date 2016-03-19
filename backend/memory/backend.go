@@ -2,6 +2,7 @@ package memory
 
 import (
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util"
 )
 
 type Backend struct {
@@ -25,12 +26,12 @@ func New() backend.Backend {
 		users: map[string]*user{},
 	}
 
+	bkd.EventsBackend = NewEventsBackend()
 	bkd.DomainsBackend = NewDomainsBackend()
 	bkd.ContactsBackend = NewContactsBackend()
 	bkd.LabelsBackend = NewLabelsBackend()
-	bkd.ConversationsBackend = NewConversationsBackend()
-	bkd.SendBackend = NewEchoSendBackend(bkd.ConversationsBackend)
-	bkd.EventsBackend = NewEventsBackend()
+	bkd.ConversationsBackend = util.NewEventedConversationsBackend(NewConversationsBackend(), bkd.EventsBackend)
+	bkd.SendBackend = util.NewEchoSendBackend(bkd.ConversationsBackend)
 
 	return bkd
 }
