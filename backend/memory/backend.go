@@ -28,8 +28,8 @@ func New() backend.Backend {
 
 	bkd.EventsBackend = NewEventsBackend()
 	bkd.DomainsBackend = NewDomainsBackend()
-	bkd.ContactsBackend = NewContactsBackend()
-	bkd.LabelsBackend = NewLabelsBackend()
+	bkd.ContactsBackend = util.NewEventedContactsBackend(NewContactsBackend(), bkd.EventsBackend)
+	bkd.LabelsBackend = util.NewEventedLabelsBackend(NewLabelsBackend(), bkd.EventsBackend)
 	bkd.ConversationsBackend = util.NewEventedConversationsBackend(NewConversationsBackend(), bkd.EventsBackend)
 	bkd.SendBackend = util.NewEchoSendBackend(bkd.ConversationsBackend)
 

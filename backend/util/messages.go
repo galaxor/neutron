@@ -17,6 +17,8 @@ func (b *EventedMessagesBackend) InsertMessage(user string, msg *backend.Message
 	if err == nil {
 		event := backend.NewMessageDeltaEvent(msg.ID, backend.EventCreate, msg)
 		b.events.InsertEvent(user, event)
+
+		// TODO: add MessageCounts to event
 	}
 
 	return msg, err
@@ -39,6 +41,8 @@ func (b *EventedMessagesBackend) DeleteMessage(user, id string) error {
 	if err == nil {
 		event := backend.NewMessageDeltaEvent(id, backend.EventUpdate, nil)
 		b.events.InsertEvent(user, event)
+
+		// TODO: add MessageCounts to event
 	}
 
 	return err

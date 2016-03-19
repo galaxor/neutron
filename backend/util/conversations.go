@@ -26,6 +26,8 @@ func (b *EventedConversationsBackend) InsertMessage(user string, msg *backend.Me
 			event := backend.NewConversationDeltaEvent(msg.ConversationID, action, conv)
 			b.events.InsertEvent(user, event)
 		}
+
+		// TODO: add ConversationCounts to event
 	}
 
 	return msg, err
@@ -60,6 +62,8 @@ func (b *EventedConversationsBackend) DeleteMessage(user, id string) error {
 
 		event := backend.NewConversationDeltaEvent(msg.ConversationID, action, conv)
 		b.events.InsertEvent(user, event)
+
+		// TODO: add ConversationCounts to event
 	}
 
 	return err

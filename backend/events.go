@@ -72,7 +72,29 @@ type EventLabelDelta struct {
 	Label *Label
 }
 
+func NewLabelDeltaEvent(id string, action EventAction, label *Label) *Event {
+	return &Event{
+		Labels: []*EventLabelDelta{
+			&EventLabelDelta{
+				EventDelta: EventDelta{ID: id, Action: action},
+				Label: label,
+			},
+		},
+	}
+}
+
 type EventContactDelta struct {
 	EventDelta
 	Contact *Contact
+}
+
+func NewContactDeltaEvent(id string, action EventAction, contact *Contact) *Event {
+	return &Event{
+		Contacts: []*EventContactDelta{
+			&EventContactDelta{
+				EventDelta: EventDelta{ID: id, Action: action},
+				Contact: contact,
+			},
+		},
+	}
 }

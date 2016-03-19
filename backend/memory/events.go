@@ -40,6 +40,8 @@ func mergeEvents(dst, src *backend.Event) *backend.Event {
 
 	dst.Messages = append(dst.Messages, src.Messages...)
 	dst.Conversations = append(dst.Conversations, src.Conversations...)
+	dst.Labels = append(dst.Labels, src.Labels...)
+	dst.Contacts = append(dst.Contacts, src.Contacts...)
 
 	if src.MessageCounts != nil {
 		dst.MessageCounts = src.MessageCounts
@@ -51,10 +53,28 @@ func mergeEvents(dst, src *backend.Event) *backend.Event {
 	return dst
 }
 
-func (b *EventsBackend) InsertEvent(user string, e *backend.Event) error {
-	log.Println("insert_event", e)
+func (b *EventsBackend) insertEvent(user string, e *backend.Event) error {
 	e.ID = generateId()
 	b.events[user] = append(b.events[user], &event{Event: e})
+	return nil
+}
+
+func (b *EventsBackend) InsertEvent(user string, e *backend.Event) error {
+	// If there is no listener, do not insert the event
+	insert := false
+	for _, e := range b.events[user] {
+		if len(e.listeners) > 0 {
+			insert = true
+			break
+		}
+	}
+
+	log.Println("insert_event", e, insert)
+
+	if insert {
+		b.insertEvent(user, e)
+	}
+
 	return nil
 }
 
@@ -67,7 +87,6 @@ func (b *EventsBackend) listen(user string, e *event) {
 	next := e
 	for {
 		// Insert new listener to the list
-		i := len(next.listeners)
 		next.listeners = append(next.listeners, c)
 
 		// Wait for a new event to listen to
@@ -81,8 +100,21 @@ func (b *EventsBackend) listen(user string, e *event) {
 
 		// Is next event is null, stop listening
 		if next == nil {
-			e.listeners = append(e.listeners[:i], e.listeners[i+1:]...)
+			// Find the listener index to remove it
+			index := -1
+			for i, l := range e.listeners {
+				if l == c {
+					index = i
+					break
+				}
+			}
+			if index >= 0 {
+				e.listeners = append(e.listeners[:index], e.listeners[index+1:]...)
+			}
+
+			// Close channel
 			close(c)
+			// Terminate goroutine
 			return
 		}
 	}
@@ -91,7 +123,7 @@ func (b *EventsBackend) listen(user string, e *event) {
 func (b *EventsBackend) GetLastEvent(user string) (*backend.Event, error) {
 	// No events for this user, create an empty one
 	if len(b.events[user]) == 0 {
-		err := b.InsertEvent(user, &backend.Event{})
+		err := b.insertEvent(user, &backend.Event{})
 		if err != nil {
 			return nil, err
 		}
