@@ -62,4 +62,5 @@ func (a *Address) GetEmail() *Email {
 type UserUpdate struct {
 	User *User
 	DisplayName bool
+	Signature bool
 }

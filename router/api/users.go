@@ -34,11 +34,6 @@ type UsernameAvailableResp struct {
 	Available int
 }
 
-type UpdateUserDisplayNameReq struct {
-	Req
-	DisplayName string
-}
-
 func (api *Api) GetCurrentUser(ctx *macaron.Context) {
 	userId := api.getUserId(ctx)
 
@@ -111,24 +106,6 @@ func (api *Api) GetUsernameAvailable(ctx *macaron.Context) (err error) {
 		Resp: Resp{Ok},
 		Available: value,
 	})
-	return
-}
-
-func (api *Api) UpdateUserDisplayName(ctx *macaron.Context, req UpdateUserDisplayNameReq) (err error) {
-	userId := api.getUserId(ctx)
-
-	err = api.backend.UpdateUser(&backend.UserUpdate{
-		User: &backend.User{
-			ID: userId,
-			DisplayName: req.DisplayName,
-		},
-		DisplayName: true,
-	})
-	if err != nil {
-		return
-	}
-
-	ctx.JSON(200, &Resp{Ok})
 	return
 }
 

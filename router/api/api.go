@@ -182,7 +182,8 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 	})
 
 	m.Group("/settings", func() {
-		m.Put("/display", binding.Json(UpdateUserDisplayNameReq{}), api.UpdateUserDisplayName)
+		m.Put("/display", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserDisplayName)
+		m.Put("/signature", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserSignature)
 	})
 
 	m.Get("/domains/available", api.GetAvailableDomains)

@@ -100,6 +100,9 @@ func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
 	if update.DisplayName {
 		user.DisplayName = updated.DisplayName
 	}
+	if update.Signature {
+		user.Signature = updated.Signature
+	}
 
 	return nil
 }
