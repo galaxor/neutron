@@ -6,10 +6,29 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
+type UpdateUserPasswordReq struct {
+	Req
+	Password string
+	NewPassword string
+}
+
 type UpdateUserSettingsReq struct {
 	Req
 	*backend.User
 	Password string
+}
+
+func (api *Api) UpdateUserPassword(ctx *macaron.Context, req UpdateUserPasswordReq) {
+	userId := api.getUserId(ctx)
+
+	err := api.backend.UpdateUserPassword(userId, req.Password, req.NewPassword)
+	if err != nil {
+		ctx.JSON(500, newErrorResp(err))
+		return
+	}
+
+	ctx.JSON(200, &Resp{Ok})
+	return
 }
 
 func (api *Api) updateUserSettings(ctx *macaron.Context, update *backend.UserUpdate, updated *backend.User) {

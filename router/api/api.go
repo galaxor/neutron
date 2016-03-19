@@ -182,6 +182,7 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 	})
 
 	m.Group("/settings", func() {
+		m.Put("/password", binding.Json(UpdateUserPasswordReq{}), api.UpdateUserPassword)
 		m.Put("/display", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserDisplayName)
 		m.Put("/signature", binding.Json(UpdateUserSettingsReq{}), api.UpdateUserSignature)
 	})

@@ -13,7 +13,8 @@ type Backend interface {
 	InsertUser(user *User, password string) (*User, error)
 	// Update an existing user.
 	UpdateUser(update *UserUpdate) error
-	//UpdateUserPassword(id, password string) error
+	// Update a user's password.
+	UpdateUserPassword(id, current, new string) error
 	//DeleteUser(id string) error
 
 	// Get a public key for a user.

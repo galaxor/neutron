@@ -107,6 +107,20 @@ func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
 	return nil
 }
 
+func (b *Backend) UpdateUserPassword(id, current, new string) error {
+	item, ok := b.data[id]
+	if !ok {
+		return errors.New("No such user")
+	}
+
+	if item.password != current {
+		return errors.New("Invalid password")
+	}
+
+	item.password = new
+	return nil
+}
+
 func (b *Backend) GetPublicKey(email string) (string, error) {
 	for _, data := range b.data {
 		for _, address := range data.user.Addresses {
