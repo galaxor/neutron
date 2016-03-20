@@ -3,6 +3,7 @@ package imap
 import (
 	"sync"
 	"errors"
+	"log"
 
 	"github.com/mxk/go-imap/imap"
 )
@@ -29,14 +30,21 @@ func (b *connBackend) getConn(user string) (*imap.Client, func(), error) {
 		return nil, nil, errors.New("No such user")
 	}
 
+	log.Println("LOCK")
 	lock.Lock()
+	log.Println("LOCKED")
 
 	conn, ok := b.conns[user]
 	if !ok {
+		lock.Unlock()
 		return nil, nil, errors.New("No such user")
 	}
 
-	return conn, lock.Unlock, nil
+	return conn, func () {
+		log.Println("UNLOCK")
+		lock.Unlock()
+		log.Println("UNLOCKED")
+	}, nil
 }
 
 func newConnBackend() *connBackend {

@@ -245,6 +245,7 @@ func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err
 }
 
 func (b *MessagesBackend) getMailboxes(user string) ([]*imap.MailboxInfo, error) {
+	// Mailboxes list already retrieved
 	if len(b.mailboxes[user]) > 0 {
 		return b.mailboxes[user], nil
 	}
@@ -255,14 +256,27 @@ func (b *MessagesBackend) getMailboxes(user string) ([]*imap.MailboxInfo, error)
 	}
 	defer unlock()
 
+	// Since the connection was locked, the mailboxes list could new have been
+	// retrieved
+	if len(b.mailboxes[user]) > 0 {
+		return b.mailboxes[user], nil
+	}
+
 	cmd, _, err := wait(c.List("", "%"))
 	if err != nil {
 		return nil, err
 	}
 
+	// Retrieve mailboxes info and subscribe to them
 	b.mailboxes[user] = make([]*imap.MailboxInfo, len(cmd.Data))
 	for i, rsp := range cmd.Data {
-		b.mailboxes[user][i] = rsp.MailboxInfo()
+		mailboxInfo := rsp.MailboxInfo()
+		b.mailboxes[user][i] = mailboxInfo
+
+		_, _, err := wait(c.Subscribe(mailboxInfo.Name))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return b.mailboxes[user], nil
@@ -293,12 +307,6 @@ func reverseMessagesList(msgs []*backend.Message) {
 }
 
 func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilter) (msgs []*backend.Message, total int, err error) {
-	c, unlock, err := b.getConn(user)
-	if err != nil {
-		return
-	}
-	defer unlock()
-
 	if filter.Label == "" {
 		err = errors.New("Cannot list messages without specifying a label")
 		return
@@ -308,6 +316,12 @@ func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilt
 	if err != nil {
 		return
 	}
+
+	c, unlock, err := b.getConn(user)
+	if err != nil {
+		return
+	}
+	defer unlock()
 
 	if c.Mailbox == nil || c.Mailbox.Name != mailbox {
 		_, err = c.Select(mailbox, false)
