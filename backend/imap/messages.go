@@ -24,13 +24,6 @@ type MessagesBackend struct {
 	mailboxes map[string][]string
 }
 
-func getEmail(addr *mail.Address) *backend.Email {
-	return &backend.Email{
-		Name: addr.Name,
-		Address: addr.Address,
-	}
-}
-
 func parseMessageInfo(msg *backend.Message, msgInfo *imap.MessageInfo) {
 	msg.ID = strconv.Itoa(int(msgInfo.UID))
 	msg.Order = int(msgInfo.Seq)
@@ -109,6 +102,13 @@ func parseEnvelope(msg *backend.Message, envelope []imap.Field) {
 
 	// envelope[7] is In-Reply-To
 	// envelope[8] is Message-Id
+}
+
+func getEmail(addr *mail.Address) *backend.Email {
+	return &backend.Email{
+		Name: addr.Name,
+		Address: addr.Address,
+	}
 }
 
 func parseMessageHeader(msg *backend.Message, header *mail.Header) {
@@ -246,7 +246,12 @@ func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilt
 		}
 	}
 
-	c.Select(mailbox, true)
+	if c.Mailbox == nil || c.Mailbox.Name != mailbox {
+		_, err = c.Select(mailbox, true)
+		if err != nil {
+			return
+		}
+	}
 
 	total = int(c.Mailbox.Messages) // TODO: not filtered
 
