@@ -32,22 +32,13 @@ func (b *ContactsBackend) getContactIndex(user, id string) (int, error) {
 }
 
 func (b *ContactsBackend) UpdateContact(user string, update *backend.ContactUpdate) (*backend.Contact, error) {
-	updated := update.Contact
-
-	i, err := b.getContactIndex(user, updated.ID)
+	i, err := b.getContactIndex(user, update.Contact.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	contact := b.contacts[user][i]
-
-	if update.Name {
-		contact.Name = updated.Name
-	}
-	if update.Email {
-		contact.Email = updated.Email
-	}
-
+	update.Apply(contact)
 	return contact, nil
 }
 

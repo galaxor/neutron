@@ -111,7 +111,7 @@ const (
 	RemoveLabels // Remove specified labels from current ones
 )
 
-// Apply update on a message.
+// Apply this update on a message.
 func (update *MessageUpdate) Apply(msg *Message) {
 	updated := update.Message
 

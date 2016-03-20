@@ -92,40 +92,13 @@ func (b *Backend) InsertUser(u *backend.User, password string) (*backend.User, e
 }
 
 func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
-	updated := update.User
-
-	item, err := b.getUser(updated.ID)
+	item, err := b.getUser(update.User.ID)
 	if err != nil {
 		return err
 	}
 
 	user := item.User
-
-	if update.DisplayName {
-		user.DisplayName = updated.DisplayName
-	}
-	if update.Signature {
-		user.Signature = updated.Signature
-	}
-	if update.AutoSaveContacts {
-		user.AutoSaveContacts = updated.AutoSaveContacts
-	}
-	if update.ShowImages {
-		user.ShowImages = updated.ShowImages
-	}
-	if update.ComposerMode {
-		user.ComposerMode = updated.ComposerMode
-	}
-	if update.ViewLayout {
-		user.ViewLayout = updated.ViewLayout
-	}
-	if update.MessageButtons {
-		user.MessageButtons = updated.MessageButtons
-	}
-	if update.Theme {
-		user.Theme = updated.Theme
-	}
-
+	update.Apply(user)
 	return nil
 }
 

@@ -79,3 +79,33 @@ type UserUpdate struct {
 	MessageButtons bool
 	Theme bool
 }
+
+// Apply this update on a user.
+func (update *UserUpdate) Apply(user *User) {
+	updated := update.User
+
+	if update.DisplayName {
+		user.DisplayName = updated.DisplayName
+	}
+	if update.Signature {
+		user.Signature = updated.Signature
+	}
+	if update.AutoSaveContacts {
+		user.AutoSaveContacts = updated.AutoSaveContacts
+	}
+	if update.ShowImages {
+		user.ShowImages = updated.ShowImages
+	}
+	if update.ComposerMode {
+		user.ComposerMode = updated.ComposerMode
+	}
+	if update.ViewLayout {
+		user.ViewLayout = updated.ViewLayout
+	}
+	if update.MessageButtons {
+		user.MessageButtons = updated.MessageButtons
+	}
+	if update.Theme {
+		user.Theme = updated.Theme
+	}
+}

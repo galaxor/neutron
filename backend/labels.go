@@ -29,3 +29,25 @@ type LabelUpdate struct {
 	Display bool
 	Order bool
 }
+
+// Apply this update on a label.
+func (update *LabelUpdate) Apply(label *Label) {
+	updated := update.Label
+
+	if updated.ID != label.ID {
+		panic("Cannot apply update on a label with a different ID")
+	}
+
+	if update.Name {
+		label.Name = updated.Name
+	}
+	if update.Color {
+		label.Color = updated.Color
+	}
+	if update.Display {
+		label.Display = updated.Display
+	}
+	if update.Order {
+		label.Order = updated.Order
+	}
+}

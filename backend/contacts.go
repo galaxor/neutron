@@ -14,3 +14,19 @@ type ContactUpdate struct {
 	Name bool
 	Email bool
 }
+
+// Apply this update on a contact.
+func (update *ContactUpdate) Apply(contact *Contact) {
+	updated := update.Contact
+
+	if updated.ID != contact.ID {
+		panic("Cannot apply update on a contact with a different ID")
+	}
+
+	if update.Name {
+		contact.Name = updated.Name
+	}
+	if update.Email {
+		contact.Email = updated.Email
+	}
+}

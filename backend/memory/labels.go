@@ -32,28 +32,13 @@ func (b *LabelsBackend) InsertLabel(user string, label *backend.Label) (*backend
 }
 
 func (b *LabelsBackend) UpdateLabel(user string, update *backend.LabelUpdate) (*backend.Label, error) {
-	updated := update.Label
-
-	i, err := b.getLabelIndex(user, updated.ID)
+	i, err := b.getLabelIndex(user, update.Label.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	label := b.labels[user][i]
-
-	if update.Name {
-		label.Name = updated.Name
-	}
-	if update.Color {
-		label.Color = updated.Color
-	}
-	if update.Display {
-		label.Display = updated.Display
-	}
-	if update.Order {
-		label.Order = updated.Order
-	}
-
+	update.Apply(label)
 	return label, nil
 }
 

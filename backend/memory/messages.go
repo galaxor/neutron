@@ -105,9 +105,7 @@ func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (*bac
 }
 
 func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
-	updated := update.Message
-
-	i, err := b.getMessageIndex(user, updated.ID)
+	i, err := b.getMessageIndex(user, update.Message.ID)
 	if err != nil {
 		return
 	}
