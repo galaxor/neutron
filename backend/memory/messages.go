@@ -113,70 +113,7 @@ func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpda
 	}
 
 	msg = b.messages[user][i]
-
-	if update.ToList {
-		msg.ToList = updated.ToList
-	}
-	if update.CCList {
-		msg.CCList = updated.CCList
-	}
-	if update.BCCList {
-		msg.BCCList = updated.BCCList
-	}
-	if update.Subject {
-		msg.Subject = updated.Subject
-	}
-	if update.IsRead {
-		msg.IsRead = updated.IsRead
-	}
-	if update.Type {
-		msg.Type = updated.Type
-	}
-	if update.AddressID {
-		msg.AddressID = updated.AddressID
-	}
-	if update.Body {
-		msg.Body = updated.Body
-	}
-	if update.Time {
-		msg.Time = updated.Time
-	}
-
-	if update.LabelIDs != backend.KeepLabels {
-		switch update.LabelIDs {
-		case backend.ReplaceLabels:
-			msg.LabelIDs = updated.LabelIDs
-		case backend.AddLabels:
-			for _, lblToAdd := range updated.LabelIDs {
-				found := false
-				for _, lbl := range msg.LabelIDs {
-					if lbl == lblToAdd {
-						found = true
-						break
-					}
-				}
-				if !found {
-					msg.LabelIDs = append(msg.LabelIDs, lblToAdd)
-				}
-			}
-		case backend.RemoveLabels:
-			labels := []string{}
-			for _, lbl := range msg.LabelIDs {
-				found := false
-				for _, lblToRemove := range updated.LabelIDs {
-					if lbl == lblToRemove {
-						found = true
-						break
-					}
-				}
-				if !found {
-					labels = append(labels, lbl)
-				}
-			}
-			msg.LabelIDs = labels
-		}
-	}
-
+	update.Apply(msg)
 	return
 }
 
