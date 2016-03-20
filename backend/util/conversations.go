@@ -95,12 +95,14 @@ func (b *DummyConversationsBackend) ListConversationMessages(user, id string) ([
 func (b *DummyConversationsBackend) buildConversation(msg *backend.Message) *backend.Conversation {
 	conv := &backend.Conversation{
 		ID: msg.ID,
+		Order: msg.Order,
 		NumMessages: 1,
 		NumUnread: 1 - msg.IsRead,
 		Time: msg.Time,
 		Subject: msg.Subject,
 		Senders: []*backend.Email{msg.Sender},
 		Recipients: msg.ToList,
+		TotalSize: msg.Size,
 		LabelIDs: msg.LabelIDs,
 	}
 

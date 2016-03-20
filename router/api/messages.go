@@ -52,6 +52,33 @@ type MessagesCountResp struct {
 	Counts []*backend.MessagesCount
 }
 
+func populateMessage(msg *backend.Message) {
+	if msg.ToList == nil {
+		msg.ToList = []*backend.Email{}
+	}
+	if msg.CCList == nil {
+		msg.CCList = []*backend.Email{}
+	}
+	if msg.BCCList == nil {
+		msg.BCCList = []*backend.Email{}
+	}
+	if msg.Attachments == nil {
+		msg.Attachments = []*backend.Attachment{}
+	}
+	if msg.LabelIDs == nil {
+		msg.LabelIDs = []string{}
+	}
+
+	if msg.Sender != nil {
+		msg.SenderAddress = msg.Sender.Address
+		msg.SenderName = msg.Sender.Name
+	}
+
+	if backend.IsEncrypted(msg.Body) {
+		msg.IsEncrypted = 1
+	}
+}
+
 func getMessagesFilter(ctx *macaron.Context) *backend.MessagesFilter {
 	return &backend.MessagesFilter{
 		Limit: ctx.QueryInt("Limit"),
@@ -78,6 +105,8 @@ func (api *Api) GetMessage(ctx *macaron.Context) (err error) {
 		return
 	}
 
+	populateMessage(msg)
+
 	ctx.JSON(200, &MessageResp{
 		Resp: Resp{Ok},
 		Message: msg,
@@ -98,6 +127,10 @@ func (api *Api) ListMessages(ctx *macaron.Context) (err error) {
 	msgs, total, err := api.backend.ListMessages(userId, filter)
 	if err != nil {
 		return
+	}
+
+	for _, msg := range msgs {
+		populateMessage(msg)
 	}
 
 	ctx.JSON(200, &MessagesListResp{
@@ -285,6 +318,8 @@ func (api *Api) CreateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 		return
 	}
 
+	populateMessage(msg)
+
 	ctx.JSON(200, &MessageResp{
 		Resp: Resp{Ok},
 		Message: msg,
@@ -314,6 +349,8 @@ func (api *Api) UpdateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 	if err != nil {
 		return
 	}
+
+	populateMessage(msg)
 
 	ctx.JSON(200, &MessageResp{
 		Resp: Resp{Ok},
@@ -379,6 +416,8 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 	if err != nil {
 		return
 	}
+
+	populateMessage(msg)
 
 	ctx.JSON(200, &SendMessageResp{
 		Resp: Resp{Ok},

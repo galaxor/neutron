@@ -20,54 +20,8 @@ import (
 
 type MessagesBackend struct {
 	*connBackend
-}
 
-func populateMessage(msg *backend.Message) {
-	if msg.ToList == nil {
-		msg.ToList = []*backend.Email{}
-	}
-	if msg.CCList == nil {
-		msg.CCList = []*backend.Email{}
-	}
-	if msg.BCCList == nil {
-		msg.BCCList = []*backend.Email{}
-	}
-	if msg.Attachments == nil {
-		msg.Attachments = []*backend.Attachment{}
-	}
-	if msg.LabelIDs == nil {
-		msg.LabelIDs = []string{}
-	}
-
-	if msg.Sender != nil {
-		msg.SenderAddress = msg.Sender.Address
-		msg.SenderName = msg.Sender.Name
-	}
-
-	if backend.IsEncrypted(msg.Body) {
-		msg.IsEncrypted = 1
-	}
-}
-
-func getLabelID(mailbox string) string {
-	lbl := mailbox
-	switch lbl {
-	case "INBOX":
-		lbl = backend.InboxLabel
-	case "Draft", "Drafts":
-		lbl = backend.DraftsLabel
-	case "Sent":
-		lbl = backend.SentLabel
-	case "Trash":
-		lbl = backend.TrashLabel
-	case "Spam", "Junk":
-		lbl = backend.SpamLabel
-	case "Archive", "Archives":
-		lbl = backend.ArchiveLabel
-	case "Important", "Starred":
-		lbl = backend.StarredLabel
-	}
-	return lbl
+	mailboxes map[string][]string
 }
 
 func getEmail(addr *mail.Address) *backend.Email {
@@ -280,8 +234,17 @@ func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilt
 	}
 	defer unlock()
 
-	mailbox := "INBOX" // TODO: use filter.Label
-	filter.Limit = 10
+	if filter.Label == "" {
+		err = errors.New("Cannot list messages without specifying a label")
+		return
+	}
+
+	mailbox := filter.Label
+	for _, name := range b.mailboxes[user] {
+		if getLabelID(name) == filter.Label {
+			mailbox = name
+		}
+	}
 
 	c.Select(mailbox, true)
 
@@ -301,7 +264,11 @@ func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilt
 		set.Add("1:*")
 	}
 
-	cmd, _ := c.Fetch(set, "UID", "FLAGS", "RFC822.SIZE", "ENVELOPE")
+	cmd, err := c.Fetch(set, "UID", "FLAGS", "RFC822.SIZE", "ENVELOPE")
+	if err != nil {
+		return
+	}
+
 	for cmd.InProgress() {
 		c.Recv(-1)
 
@@ -339,8 +306,11 @@ func (b *MessagesBackend) CountMessages(user string) (counts []*backend.Messages
 
 	cmd, _ := imap.Wait(c.List("", "%"))
 
+	names := make([]string, len(cmd.Data))
 	for _, rsp := range cmd.Data {
 		mailboxInfo := rsp.MailboxInfo()
+
+		names = append(names, mailboxInfo.Name)
 
 		cmd, _ = imap.Wait(c.Status(mailboxInfo.Name, "MESSAGES", "UNSEEN"))
 		mailboxStatus := cmd.Data[0].MailboxStatus()
@@ -352,6 +322,8 @@ func (b *MessagesBackend) CountMessages(user string) (counts []*backend.Messages
 		})
 	}
 
+	b.mailboxes[user] = names
+
 	return
 }
 
@@ -360,9 +332,41 @@ func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (*bac
 }
 
 func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
-	return nil, errors.New("Not yet implemented")
+	msgId := update.Message.ID
+
+	if update.IsRead {
+		item := "+FLAGS"
+		if update.Message.IsRead == 0 {
+			item = "-FLAGS"
+		}
+		value := imap.Field("\\Seen")
+
+		set, _ := imap.NewSeqSet(msgId)
+
+		c, unlock, err := b.getConn(user)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = imap.Wait(c.UIDStore(set, item, value))
+
+		unlock()
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return b.GetMessage(user, msgId)
 }
 
 func (b *MessagesBackend) DeleteMessage(user, id string) error {
 	return errors.New("Not yet implemented")
+}
+
+func newMessagesBackend(conn *connBackend) backend.MessagesBackend {
+	return &MessagesBackend{
+		connBackend: conn,
+		mailboxes: map[string][]string{},
+	}
 }

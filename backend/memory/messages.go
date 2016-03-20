@@ -10,33 +10,6 @@ type MessagesBackend struct {
 	messages map[string][]*backend.Message
 }
 
-func populateMessage(msg *backend.Message) {
-	if msg.ToList == nil {
-		msg.ToList = []*backend.Email{}
-	}
-	if msg.CCList == nil {
-		msg.CCList = []*backend.Email{}
-	}
-	if msg.BCCList == nil {
-		msg.BCCList = []*backend.Email{}
-	}
-	if msg.Attachments == nil {
-		msg.Attachments = []*backend.Attachment{}
-	}
-	if msg.LabelIDs == nil {
-		msg.LabelIDs = []string{}
-	}
-
-	if msg.Sender != nil {
-		msg.SenderAddress = msg.Sender.Address
-		msg.SenderName = msg.Sender.Name
-	}
-
-	if backend.IsEncrypted(msg.Body) {
-		msg.IsEncrypted = 1
-	}
-}
-
 func (b *MessagesBackend) getMessageIndex(user, id string) (int, error) {
 	for i, m := range b.messages[user] {
 		if m.ID == id {
@@ -54,7 +27,6 @@ func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err
 	}
 
 	msg = b.messages[user][i]
-	populateMessage(msg)
 	return
 }
 
@@ -79,7 +51,6 @@ func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilt
 
 		// TODO: other filter fields support
 
-		populateMessage(msg)
 		filtered = append(filtered, msg)
 	}
 
@@ -130,7 +101,6 @@ func (b *MessagesBackend) CountMessages(user string) (counts []*backend.Messages
 func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg.ID = generateId()
 	b.messages[user] = append(b.messages[user], msg)
-	populateMessage(msg)
 	return msg, nil
 }
 
@@ -207,7 +177,6 @@ func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpda
 		}
 	}
 
-	populateMessage(msg)
 	return
 }
 

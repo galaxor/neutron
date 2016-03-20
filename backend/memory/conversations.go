@@ -65,7 +65,6 @@ func populateConversation(conv *backend.Conversation, msg *backend.Message) {
 func (b *ConversationsBackend) ListConversationMessages(user, id string) (msgs []*backend.Message, err error) {
 	for _, msg := range b.messages[user] {
 		if msg.ConversationID == id {
-			populateMessage(msg)
 			msgs = append(msgs, msg)
 		}
 	}

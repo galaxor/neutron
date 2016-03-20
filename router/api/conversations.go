@@ -64,6 +64,10 @@ func (api *Api) GetConversation(ctx *macaron.Context) (err error) {
 		return
 	}
 
+	for _, msg := range msgs {
+		populateMessage(msg)
+	}
+
 	ctx.JSON(200, &ConversationResp{
 		Resp: Resp{Ok},
 		Conversation: conv,

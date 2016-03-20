@@ -29,7 +29,7 @@ func New() backend.Backend {
 		connBackend: newConnBackend(),
 	}
 
-	messages := &MessagesBackend{bkd.connBackend}
+	messages := newMessagesBackend(bkd.connBackend)
 	conversations := util.NewDummyConversationsBackend(messages)
 
 	// TODO: do not use memory backends
