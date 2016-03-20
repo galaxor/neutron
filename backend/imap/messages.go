@@ -11,6 +11,8 @@ import (
 	"strings"
 	"io"
 	"io/ioutil"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/charmap"
 
 	"github.com/mxk/go-imap/imap"
 	"github.com/emersion/neutron/backend"
@@ -210,9 +212,21 @@ func parseMessageBody(msg *backend.Message, m *mail.Message) error {
 				return err
 			}
 
-			partType := p.Header.Get("Content-Type")
-			if (strings.HasPrefix(partType, "text/plain") && gotType == "") || strings.HasPrefix(partType, "text/html") {
-				gotType = partType
+			mediaType, params, err = mime.ParseMediaType(p.Header.Get("Content-Type"))
+			if (mediaType == "text/plain" && gotType == "") || mediaType == "text/html" {
+				gotType = mediaType
+
+				var enc encoding.Encoding
+				switch params["charset"] {
+				case "iso-8859-1":
+					enc = charmap.ISO8859_1
+				case "windows-1252":
+					enc = charmap.Windows1252
+				}
+				if enc != nil {
+					slurp, _ = enc.NewDecoder().Bytes(slurp)
+				}
+
 				msg.Body = string(slurp)
 			}
 		}
