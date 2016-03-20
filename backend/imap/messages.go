@@ -4,8 +4,13 @@ import (
 	"errors"
 	"net/mail"
 	"bytes"
-	"io/ioutil"
 	"strconv"
+	"time"
+	"mime"
+	"mime/multipart"
+	"strings"
+	"io"
+	"io/ioutil"
 
 	"github.com/mxk/go-imap/imap"
 	"github.com/emersion/neutron/backend"
@@ -70,21 +75,10 @@ func getEmail(addr *mail.Address) *backend.Email {
 	}
 }
 
-func getMessage(msgInfo *imap.MessageInfo, b []byte) *backend.Message {
-	m, err := mail.ReadMessage(bytes.NewReader(b))
-	if m == nil || err != nil {
-		return nil
-	}
-
-	header := m.Header
-
-	msg := &backend.Message{
-		ID: strconv.Itoa(int(msgInfo.UID)),
-		Order: int(msgInfo.Seq),
-		Subject: header.Get("Subject"),
-		Size: int(msgInfo.Size),
-		LabelIDs: []string{backend.InboxLabel}, // TODO
-	}
+func parseMessageInfo(msg *backend.Message, msgInfo *imap.MessageInfo) {
+	msg.ID = strconv.Itoa(int(msgInfo.UID))
+	msg.Order = int(msgInfo.Seq)
+	msg.Size = int(msgInfo.Size)
 
 	if msgInfo.Flags["\\Seen"] {
 		msg.IsRead = 1
@@ -98,6 +92,71 @@ func getMessage(msgInfo *imap.MessageInfo, b []byte) *backend.Message {
 	if msgInfo.Flags["\\Draft"] {
 		msg.Type = backend.DraftType
 	}
+}
+
+func parseEnvelopeAddress(addr []imap.Field) *backend.Email {
+	return &backend.Email{
+		Name: imap.AsString(addr[0]),
+		Address: imap.AsString(addr[2]) + "@" + imap.AsString(addr[3]),
+	}
+}
+
+func parseEnvelopeAddressList(list []imap.Field) []*backend.Email {
+	emails := make([]*backend.Email, len(list))
+	for i, field := range list {
+		addr := imap.AsList(field)
+		emails[i] = parseEnvelopeAddress(addr)
+	}
+	return emails
+}
+
+func decodeRFC2047Word(word string) string {
+	// TODO: mime.WordDecoder cannot handle multiple encoded-words
+	// See https://github.com/golang/go/issues/4687#issuecomment-66073826
+
+	dec := new(mime.WordDecoder) // TODO: do not create one decoder per word
+	decoded, err := dec.Decode(word)
+	if err == nil {
+		return decoded
+	}
+	return word
+}
+
+func parseEnvelope(msg *backend.Message, envelope []imap.Field) {
+	t, err := time.Parse(time.RFC1123Z, imap.AsString(envelope[0]))
+	if err == nil {
+		msg.Time = t.Unix()
+	}
+
+	msg.Subject = decodeRFC2047Word(imap.AsString(envelope[1]))
+
+	// envelope[2] is From
+
+	senders := imap.AsList(envelope[3])
+	if len(senders) > 0 {
+		msg.Sender = parseEnvelopeAddress(imap.AsList(senders[0]))
+	}
+
+	replyTo := imap.AsList(envelope[4])
+	if len(replyTo) > 0 {
+		msg.ReplyTo = parseEnvelopeAddress(imap.AsList(replyTo[0]))
+	}
+
+	to := imap.AsList(envelope[5])
+	msg.ToList = parseEnvelopeAddressList(to)
+
+	cc := imap.AsList(envelope[6])
+	msg.CCList = parseEnvelopeAddressList(cc)
+
+	bcc := imap.AsList(envelope[6])
+	msg.BCCList = parseEnvelopeAddressList(bcc)
+
+	// envelope[7] is In-Reply-To
+	// envelope[8] is Message-Id
+}
+
+func parseMessageHeader(msg *backend.Message, header *mail.Header) {
+	msg.Subject = decodeRFC2047Word(header.Get("Subject"))
 
 	from, err := header.AddressList("From")
 	if err == nil && len(from) > 0 {
@@ -123,12 +182,49 @@ func getMessage(msgInfo *imap.MessageInfo, b []byte) *backend.Message {
 		msg.Time = time.Unix()
 	}
 
-	body, err := ioutil.ReadAll(m.Body)
-	if err == nil {
+	/*body, err := ioutil.ReadAll(m.Body)
+	if err == nil && len(body) > 0 {
+		msg.Body = string(body)
+	}*/
+}
+
+func parseMessageBody(msg *backend.Message, m *mail.Message) error {
+	mediaType, params, err := mime.ParseMediaType(m.Header.Get("Content-Type"))
+	if err != nil {
+		return err
+	}
+
+	gotType := ""
+	if strings.HasPrefix(mediaType, "multipart/") {
+		mr := multipart.NewReader(m.Body, params["boundary"])
+		for {
+			p, err := mr.NextPart()
+			if err == io.EOF {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			slurp, err := ioutil.ReadAll(p)
+			if err != nil {
+				return err
+			}
+
+			partType := p.Header.Get("Content-Type")
+			if (strings.HasPrefix(partType, "text/plain") && gotType == "") || strings.HasPrefix(partType, "text/html") {
+				gotType = partType
+				msg.Body = string(slurp)
+			}
+		}
+	} else {
+		body, err := ioutil.ReadAll(m.Body)
+		if err != nil {
+			return err
+		}
 		msg.Body = string(body)
 	}
 
-	return msg
+	return nil
 }
 
 func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err error) {
@@ -139,7 +235,7 @@ func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err
 	defer unlock()
 
 	set, _ := imap.NewSeqSet(id)
-	cmd, err := imap.Wait(c.UIDFetch(set, "UID", "FLAGS", "RFC822.SIZE", "RFC822.HEADER", "BODY"))
+	cmd, err := imap.Wait(c.UIDFetch(set, "UID", "FLAGS", "RFC822.SIZE", "RFC822.HEADER", "RFC822.TEXT"))
 	if err != nil {
 		return
 	}
@@ -147,12 +243,19 @@ func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err
 	rsp := cmd.Data[0]
 	msgInfo := rsp.MessageInfo()
 	header := imap.AsBytes(msgInfo.Attrs["RFC822.HEADER"])
-	msg = getMessage(msgInfo, header)
-	if msg == nil {
-		err = errors.New("Cannot parse message headers")
+	body := imap.AsBytes(msgInfo.Attrs["RFC822.TEXT"])
+	m, err := mail.ReadMessage(bytes.NewReader(header))
+	if err != nil {
 		return
 	}
-	msg.Body = imap.AsString(msgInfo.Attrs["BODY"])
+
+	m.Body = bytes.NewReader(body)
+
+	msg = &backend.Message{}
+	msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)} // TODO
+	parseMessageInfo(msg, msgInfo)
+	parseMessageHeader(msg, &m.Header)
+	parseMessageBody(msg, m)
 	return
 }
 
@@ -184,19 +287,21 @@ func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilt
 		set.Add("1:*")
 	}
 
-	cmd, _ := c.Fetch(set, "UID", "FLAGS", "RFC822.SIZE", "RFC822.HEADER")
+	cmd, _ := c.Fetch(set, "UID", "FLAGS", "RFC822.SIZE", "ENVELOPE")
 	for cmd.InProgress() {
 		c.Recv(-1)
 
 		// Process command data
 		for _, rsp := range cmd.Data {
 			msgInfo := rsp.MessageInfo()
-			header := imap.AsBytes(msgInfo.Attrs["RFC822.HEADER"])
+			envelope := imap.AsList(msgInfo.Attrs["ENVELOPE"])
 
-			msg := getMessage(msgInfo, header)
-			if msg != nil {
-				msgs = append(msgs, msg)
-			}
+			msg := &backend.Message{}
+			msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)} // TODO
+			parseMessageInfo(msg, msgInfo)
+			parseEnvelope(msg, envelope)
+
+			msgs = append(msgs, msg)
 		}
 		cmd.Data = nil
 	}
