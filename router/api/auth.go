@@ -81,7 +81,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		return
 	}
 
-	user, err := api.backend.Auth(req.Username, req.Password)
+	session, err := api.backend.Auth(req.Username, req.Password)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{Unauthorized},
@@ -91,7 +91,8 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		return
 	}
 
-	sessionToken := "access_token"
+	user := session.User
+	sessionToken := "access_token" // TODO: generate this
 
 	keyring := user.GetMainAddress().Keys[0] // TODO: find a better way to get the keyring
 	encryptedToken, err := keyring.EncryptToSelf(sessionToken)
@@ -118,7 +119,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		ExpiresIn: 360000,
 		TokenType: TokenBearer,
 		Scope: "full mail payments reset keys",
-		Uid: user.ID, // TODO: put something else there
+		Uid: session.ID,
 		RefreshToken: "refresh_token",
 		PrivateKey: user.EncPrivateKey,
 		EncPrivateKey: user.EncPrivateKey,
@@ -137,7 +138,17 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 		return
 	}
 
-	userId := uid // TODO
+	session, err := api.backend.GetSession(uid)
+	if err != nil {
+		ctx.JSON(200, &ErrorResp{
+			Resp: Resp{BadRequest},
+			Error: "invalid_grant",
+			ErrorDescription: "Invalid uid",
+		})
+		return
+	}
+
+	userId := session.User.ID
 
 	sessionToken := ""
 	for t, id := range api.sessions {

@@ -20,16 +20,16 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 	return
 }
 
-func (b *Backend) Auth(username, password string) (*backend.User, error) {
+func (b *Backend) Auth(username, password string) (session *backend.Session, err error) {
 	c, err := imap.DialTLS(b.config.Host, nil)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	email := username + b.config.Suffix
 	_, err = c.Login(email, password)
 	if err != nil {
-		return nil, err
+		return
 	}
 	c.Data = nil
 
@@ -58,10 +58,15 @@ func (b *Backend) Auth(username, password string) (*backend.User, error) {
 		},
 	}
 
+	session, err = b.InsertSession(&backend.Session{User: user})
+	if err != nil {
+		return
+	}
+
 	b.users[user.ID] = user
 	b.insertConn(user.ID, c)
 
-	return user, nil
+	return
 }
 
 func (b *Backend) InsertUser(u *backend.User, password string) (*backend.User, error) {

@@ -1,5 +1,26 @@
 package backend
 
+// Stores labels data.
+type LabelsBackend interface {
+	// List all user's labels.
+	ListLabels(user string) ([]*Label, error)
+	// Insert a new label.
+	InsertLabel(user string, label *Label) (*Label, error)
+	// Update an existing label.
+	UpdateLabel(user string, update *LabelUpdate) (*Label, error)
+	// Delete a label.
+	DeleteLabel(user, id string) error
+}
+
+// A message label.
+type Label struct {
+	ID string
+	Name string
+	Color string
+	Display int
+	Order int
+}
+
 // System labels
 const (
 	InboxLabel string = "0"
@@ -10,15 +31,6 @@ const (
 	ArchiveLabel = "6"
 	StarredLabel = "10"
 )
-
-// A message label.
-type Label struct {
-	ID string
-	Name string
-	Color string
-	Display int
-	Order int
-}
 
 // A request to update a label.
 // Fields set to true will be updated with values in Label.

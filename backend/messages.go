@@ -1,5 +1,27 @@
 package backend
 
+// Stores messages data.
+type MessagesBackend interface {
+	// Get a message.
+	GetMessage(user, id string) (*Message, error)
+	// List all user's messages. A message filter can be provided.
+	ListMessages(user string, filter *MessagesFilter) ([]*Message, int, error)
+	// Count all user's messages by label.
+	CountMessages(user string) ([]*MessagesCount, error)
+	// Insert a new message.
+	InsertMessage(user string, msg *Message) (*Message, error)
+	// Update an existing message.
+	UpdateMessage(user string, update *MessageUpdate) (*Message, error)
+	// Permanently delete a message.
+	DeleteMessage(user, id string) error
+}
+
+// Sends messages to email addresses.
+type SendBackend interface {
+	// Send a message to an e-mail address.
+	SendMessagePackage(user string, msg *Message, pkg *MessagePackage) error
+}
+
 // A message.
 type Message struct {
 	ID string

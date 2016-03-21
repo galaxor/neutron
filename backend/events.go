@@ -1,5 +1,15 @@
 package backend
 
+// Stores events data.
+type EventsBackend interface {
+	// Insert a new event.
+	InsertEvent(user string, event *Event) error
+	// Get the last event.
+	GetLastEvent(user string) (*Event, error)
+	// Get the sum of all events after a specific one.
+	GetEventsAfter(user, id string) (*Event, error)
+}
+
 type Event struct {
 	ID string `json:"EventID"`
 

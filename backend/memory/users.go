@@ -53,13 +53,22 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 	return
 }
 
-func (b *Backend) Auth(username, password string) (*backend.User, error) {
+func (b *Backend) Auth(username, password string) (session *backend.Session, err error) {
 	for id, item := range b.users {
 		if item.Name == username && item.password == password {
-			return b.GetUser(id)
+			var user *backend.User
+			user, err = b.GetUser(id)
+			if err != nil {
+				return
+			}
+
+			session, err = b.InsertSession(&backend.Session{User: user})
+			return
 		}
 	}
-	return nil, errors.New("Invalid username and password combination")
+
+	err = errors.New("Invalid username and password combination")
+	return
 }
 
 func (b *Backend) InsertUser(u *backend.User, password string) (*backend.User, error) {
