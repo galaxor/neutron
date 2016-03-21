@@ -6,17 +6,10 @@ import (
 	"bytes"
 	"strconv"
 	"time"
-	"mime"
-	"mime/multipart"
-	"strings"
-	"io"
-	"io/ioutil"
-	"log"
 
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/charmap"
 	"github.com/mxk/go-imap/imap"
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util/textproto"
 )
 
 type MessagesBackend struct {
@@ -38,27 +31,16 @@ func parseMessageInfo(msg *backend.Message, msgInfo *imap.MessageInfo) {
 	}
 	if msgInfo.Flags["\\Flagged"] {
 		msg.Starred = 1
+		msg.LabelIDs = append(msg.LabelIDs, backend.StarredLabel)
 	}
 	if msgInfo.Flags["\\Draft"] {
 		msg.Type = backend.DraftType
 	}
 }
 
-func decodeRFC2047Word(word string) string {
-	// TODO: mime.WordDecoder cannot handle multiple encoded-words
-	// See https://github.com/golang/go/issues/4687#issuecomment-66073826
-
-	dec := new(mime.WordDecoder) // TODO: do not create one decoder per word
-	decoded, err := dec.DecodeHeader(word)
-	if err == nil {
-		return decoded
-	}
-	return word
-}
-
 func parseEnvelopeAddress(addr []imap.Field) *backend.Email {
 	return &backend.Email{
-		Name: decodeRFC2047Word(imap.AsString(addr[0])),
+		Name: textproto.DecodeWord(imap.AsString(addr[0])),
 		Address: imap.AsString(addr[2]) + "@" + imap.AsString(addr[3]),
 	}
 }
@@ -81,7 +63,7 @@ func parseEnvelope(msg *backend.Message, envelope []imap.Field) {
 		msg.Time = t.Unix()
 	}
 
-	msg.Subject = decodeRFC2047Word(imap.AsString(envelope[1]))
+	msg.Subject = textproto.DecodeWord(imap.AsString(envelope[1]))
 
 	// envelope[2] is From
 
@@ -106,105 +88,6 @@ func parseEnvelope(msg *backend.Message, envelope []imap.Field) {
 
 	// envelope[7] is In-Reply-To
 	// envelope[8] is Message-Id
-}
-
-func getEmail(addr *mail.Address) *backend.Email {
-	return &backend.Email{
-		Name: addr.Name,
-		Address: addr.Address,
-	}
-}
-
-func parseMessageHeader(msg *backend.Message, header *mail.Header) {
-	msg.Subject = decodeRFC2047Word(header.Get("Subject"))
-
-	from, err := header.AddressList("From")
-	if err == nil && len(from) > 0 {
-		msg.Sender = getEmail(from[0])
-	}
-
-	to, err := header.AddressList("To")
-	if err == nil {
-		for _, addr := range to {
-			msg.ToList = append(msg.ToList, getEmail(addr))
-		}
-	}
-
-	// TODO: CCList, BCCList
-
-	replyTo, err := header.AddressList("From")
-	if err == nil && len(replyTo) > 0 {
-		msg.ReplyTo = getEmail(replyTo[0])
-	}
-
-	time, err := header.Date()
-	if err == nil {
-		msg.Time = time.Unix()
-	}
-
-	/*body, err := ioutil.ReadAll(m.Body)
-	if err == nil && len(body) > 0 {
-		msg.Body = string(body)
-	}*/
-}
-
-func decodeBytes(b []byte, charset string) []byte {
-	var enc encoding.Encoding
-	switch strings.ToLower(charset) {
-	case "iso-8859-1":
-		enc = charmap.ISO8859_1
-	case "windows-1252":
-		enc = charmap.Windows1252
-	case "utf-8":
-		// Nothing to do
-	default:
-		if charset != "" {
-			log.Println("WARN: unsupported charset:", charset)
-		}
-	}
-	if enc != nil {
-		b, _ = enc.NewDecoder().Bytes(b)
-	}
-	return b
-}
-
-func parseMessageBody(msg *backend.Message, m *mail.Message) error {
-	mediaType, params, err := mime.ParseMediaType(m.Header.Get("Content-Type"))
-	if err != nil {
-		return err
-	}
-
-	gotType := ""
-	if strings.HasPrefix(mediaType, "multipart/") {
-		mr := multipart.NewReader(m.Body, params["boundary"])
-		for {
-			p, err := mr.NextPart()
-			if err == io.EOF {
-				return nil
-			}
-			if err != nil {
-				return err
-			}
-			slurp, err := ioutil.ReadAll(p)
-			if err != nil {
-				return err
-			}
-
-			mediaType, params, err = mime.ParseMediaType(p.Header.Get("Content-Type"))
-			if (mediaType == "text/plain" && gotType == "") || mediaType == "text/html" {
-				gotType = mediaType
-				msg.Body = string(decodeBytes(slurp, params["charset"]))
-			}
-		}
-	} else {
-		body, err := ioutil.ReadAll(m.Body)
-		if err != nil {
-			return err
-		}
-		msg.Body = string(decodeBytes(body, params["charset"]))
-	}
-
-	return nil
 }
 
 func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err error) {
@@ -240,8 +123,8 @@ func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err
 	msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)} // TODO
 	msg.Header = string(header)
 	parseMessageInfo(msg, msgInfo)
-	parseMessageHeader(msg, &m.Header)
-	parseMessageBody(msg, m)
+	textproto.ParseMessageHeader(msg, &m.Header)
+	textproto.ParseMessageBody(msg, m)
 	return
 }
 

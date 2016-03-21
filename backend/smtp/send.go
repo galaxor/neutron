@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util/textproto"
 )
 
 type PasswordsBackend interface {
@@ -38,8 +39,8 @@ func (b *SendBackend) SendMessagePackage(user string, msg *backend.OutgoingMessa
 
 	auth := smtp.PlainAuth("", user + b.config.Suffix, password, b.config.Hostname)
 	recipients := []string{pkg.Address}
-	header := getMailHeader(msg)
-	mail := fomatHeader(header) + "\r\n" + pkg.Body
+	header := textproto.GetOutgoingMessageHeader(msg)
+	mail := textproto.FomatHeader(header) + "\r\n" + pkg.Body
 
 	err = smtp.SendMail(host, auth, msg.Sender.Address, recipients, []byte(mail))
 	if err != nil {

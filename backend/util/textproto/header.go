@@ -1,37 +1,37 @@
-package smtp
+package textproto
 
 import (
-	"net/mail"
 	"net/textproto"
 	"time"
 
 	"github.com/emersion/neutron/backend"
 )
 
-func formatEmail(email *backend.Email) string {
-	addr := &mail.Address{Name: email.Name, Address: email.Address}
-	return addr.String()
-}
-
-func getMailHeader(msg *backend.OutgoingMessage) textproto.MIMEHeader {
+func GetMessageHeader(msg *backend.Message) textproto.MIMEHeader {
 	h := textproto.MIMEHeader{}
 
 	h.Set("MIME-Version", "1")
 
 	h.Set("Subject", msg.Subject)
-	h.Set("From", formatEmail(msg.Sender))
+	h.Set("From", FormatEmail(msg.Sender))
 	h.Set("Date", time.Unix(msg.Time, 0).Format(time.RFC1123Z))
 
 	for _, to := range msg.ToList {
-		h.Add("To", formatEmail(to))
+		h.Add("To", FormatEmail(to))
 	}
 	for _, cc := range msg.CCList {
-		h.Add("Cc", formatEmail(cc))
+		h.Add("Cc", FormatEmail(cc))
 	}
 
 	if msg.ReplyTo != nil {
-		h.Set("Reply-To", formatEmail(msg.ReplyTo))
+		h.Set("Reply-To", FormatEmail(msg.ReplyTo))
 	}
+
+	return h
+}
+
+func GetOutgoingMessageHeader(msg *backend.OutgoingMessage) textproto.MIMEHeader {
+	h := GetMessageHeader(msg.Message)
 
 	if msg.InReplyTo != "" {
 		h.Set("In-Reply-To", msg.InReplyTo)
@@ -43,7 +43,7 @@ func getMailHeader(msg *backend.OutgoingMessage) textproto.MIMEHeader {
 	return h
 }
 
-func fomatHeader(h textproto.MIMEHeader) string {
+func FomatHeader(h textproto.MIMEHeader) string {
 	output := ""
 	for key, values := range h {
 		for _, value := range values {
