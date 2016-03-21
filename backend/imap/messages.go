@@ -120,7 +120,7 @@ func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err
 	m.Body = bytes.NewReader(body)
 
 	msg = &backend.Message{}
-	msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)} // TODO
+	msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)}
 	msg.Header = string(header)
 	parseMessageInfo(msg, msgInfo)
 	textproto.ParseMessageHeader(msg, &m.Header)
@@ -140,7 +140,7 @@ func (b *MessagesBackend) getMailboxes(user string) ([]*imap.MailboxInfo, error)
 	}
 	defer unlock()
 
-	// Since the connection was locked, the mailboxes list could new have been
+	// Since the connection was locked, the mailboxes list could now have been
 	// retrieved
 	if len(b.mailboxes[user]) > 0 {
 		return b.mailboxes[user], nil
