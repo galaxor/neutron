@@ -44,9 +44,21 @@ func parseMessageInfo(msg *backend.Message, msgInfo *imap.MessageInfo) {
 	}
 }
 
+func decodeRFC2047Word(word string) string {
+	// TODO: mime.WordDecoder cannot handle multiple encoded-words
+	// See https://github.com/golang/go/issues/4687#issuecomment-66073826
+
+	dec := new(mime.WordDecoder) // TODO: do not create one decoder per word
+	decoded, err := dec.DecodeHeader(word)
+	if err == nil {
+		return decoded
+	}
+	return word
+}
+
 func parseEnvelopeAddress(addr []imap.Field) *backend.Email {
 	return &backend.Email{
-		Name: imap.AsString(addr[0]),
+		Name: decodeRFC2047Word(imap.AsString(addr[0])),
 		Address: imap.AsString(addr[2]) + "@" + imap.AsString(addr[3]),
 	}
 }
@@ -58,18 +70,6 @@ func parseEnvelopeAddressList(list []imap.Field) []*backend.Email {
 		emails[i] = parseEnvelopeAddress(addr)
 	}
 	return emails
-}
-
-func decodeRFC2047Word(word string) string {
-	// TODO: mime.WordDecoder cannot handle multiple encoded-words
-	// See https://github.com/golang/go/issues/4687#issuecomment-66073826
-
-	dec := new(mime.WordDecoder) // TODO: do not create one decoder per word
-	decoded, err := dec.Decode(word)
-	if err == nil {
-		return decoded
-	}
-	return word
 }
 
 func parseEnvelope(msg *backend.Message, envelope []imap.Field) {
