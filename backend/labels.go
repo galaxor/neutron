@@ -24,7 +24,7 @@ type Label struct {
 // System labels
 const (
 	InboxLabel string = "0"
-	DraftsLabel = "1"
+	DraftLabel = "1"
 	SentLabel = "2"
 	TrashLabel = "3"
 	SpamLabel = "4"

@@ -291,7 +291,7 @@ func (api *Api) CreateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 
 	msg := req.getMessage()
 	msg.Attachments = []*backend.Attachment{}
-	msg.LabelIDs = []string{backend.DraftsLabel}
+	msg.LabelIDs = []string{backend.DraftLabel}
 	msg.Time = time.Now().Unix()
 	msg.Type = backend.DraftType
 

@@ -147,6 +147,12 @@ func (b *DummyConversationsBackend) DeleteConversation(user, id string) error {
 	return b.DeleteMessage(user, id)
 }
 
+func (b *DummyConversationsBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
+	msg, err := b.MessagesBackend.InsertMessage(user, msg)
+	msg.ConversationID = msg.ID
+	return msg, err
+}
+
 func NewDummyConversationsBackend(messages backend.MessagesBackend) backend.ConversationsBackend {
 	return &DummyConversationsBackend{messages}
 }

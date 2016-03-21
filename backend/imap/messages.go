@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"strconv"
 	"time"
+	"log"
 
 	"github.com/mxk/go-imap/imap"
 	"github.com/emersion/neutron/backend"
@@ -294,8 +295,34 @@ func (b *MessagesBackend) CountMessages(user string) (counts []*backend.Messages
 	return
 }
 
-func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
-	return nil, errors.New("Not yet implemented")
+func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (inserted *backend.Message, err error) {
+	mailbox, err := b.getLabelMailbox(user, backend.DraftLabel)
+	if err != nil {
+		return
+	}
+
+	flags := imap.NewFlagSet("\\Seen", "\\Draft")
+	mail := textproto.FormatMessage(msg)
+	literal := imap.NewLiteral([]byte(mail))
+
+	c, unlock, err := b.getConn(user)
+	if err != nil {
+		return
+	}
+	defer unlock()
+
+	_, res, err := wait(c.Append(mailbox, flags, nil, literal))
+	if err != nil {
+		return
+	}
+
+	if imap.AsString(res.Fields[0]) != "APPENDUID" {
+		err = errors.New("APPEND didn't returned an UID (this is not supported for now)")
+	}
+
+	msg.ID = strconv.Itoa(int(imap.AsNumber(res.Fields[2])))
+log.Println(msg.ID)
+	return msg, nil
 }
 
 func (b *MessagesBackend) updateMessageFlags(user string, seqset *imap.SeqSet, flag string, value bool) error {

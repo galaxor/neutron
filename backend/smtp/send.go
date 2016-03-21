@@ -35,12 +35,9 @@ func (b *SendBackend) SendMessagePackage(user string, msg *backend.OutgoingMessa
 		host += ":" + strconv.Itoa(b.config.Port)
 	}
 
-	pkg := msg.MessagePackage
-
 	auth := smtp.PlainAuth("", user + b.config.Suffix, password, b.config.Hostname)
-	recipients := []string{pkg.Address}
-	header := textproto.GetOutgoingMessageHeader(msg)
-	mail := textproto.FomatHeader(header) + "\r\n" + pkg.Body
+	recipients := []string{msg.MessagePackage.Address}
+	mail := textproto.FormatOutgoingMessage(msg)
 
 	err = smtp.SendMail(host, auth, msg.Sender.Address, recipients, []byte(mail))
 	if err != nil {

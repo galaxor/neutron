@@ -52,3 +52,17 @@ func FomatHeader(h textproto.MIMEHeader) string {
 	}
 	return output
 }
+
+func formatMessage(header textproto.MIMEHeader, body string) string {
+	return FomatHeader(header) + "\r\n" + body
+}
+
+func FormatMessage(msg *backend.Message) string {
+	header := GetMessageHeader(msg)
+	return formatMessage(header, msg.Body)
+}
+
+func FormatOutgoingMessage(msg *backend.OutgoingMessage) string {
+	header := GetOutgoingMessageHeader(msg)
+	return formatMessage(header, msg.MessagePackage.Body)
+}
