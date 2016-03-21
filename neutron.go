@@ -5,8 +5,8 @@ import (
 
 	"gopkg.in/macaron.v1"
 
-	//"github.com/emersion/neutron/backend/memory"
-	"github.com/emersion/neutron/backend/imap"
+	"github.com/emersion/neutron/backend/memory"
+	//"github.com/emersion/neutron/backend/imap"
 	"github.com/emersion/neutron/router/api"
 )
 
@@ -14,9 +14,9 @@ func main() {
 	publicDir := "public/build"
 	indexFile := "app.html"
 
-	//backend := memory.New()
-	//backend.(*memory.Backend).Populate()
-	backend := imap.New()
+	backend := memory.New()
+	backend.(*memory.Backend).Populate()
+	//backend := imap.New()
 
 	m := macaron.Classic()
 	m.Use(macaron.Renderer())

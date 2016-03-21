@@ -73,6 +73,9 @@ func populateMessage(msg *backend.Message) {
 		msg.SenderAddress = msg.Sender.Address
 		msg.SenderName = msg.Sender.Name
 	}
+	if msg.ReplyTo == nil {
+		msg.ReplyTo = msg.Sender
+	}
 
 	if backend.IsEncrypted(msg.Body) {
 		msg.IsEncrypted = 1
@@ -363,9 +366,14 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 	userId := api.getUserId(ctx)
 	msgId := ctx.Params("id")
 
+	msg, err := api.backend.GetMessage(userId, msgId)
+	if err != nil {
+		return
+	}
+
 	// Send each package
 	for _, pkg := range req.Packages {
-		err = api.backend.SendMessagePackage(userId, pkg)
+		err = api.backend.SendMessagePackage(userId, msg, pkg)
 		if err != nil {
 			return
 		}
@@ -373,12 +381,6 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 
 	// If clear body is available, send it to recipients without package
 	if req.ClearBody != "" {
-		var msg *backend.Message
-		msg, err = api.backend.GetMessage(userId, msgId)
-		if err != nil {
-			return
-		}
-
 		for _, email := range msg.ToList {
 			alreadySent := false
 			for _, pkg := range req.Packages {
@@ -396,7 +398,7 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 				Body: req.ClearBody,
 			}
 
-			err = api.backend.SendMessagePackage(userId, pkg)
+			err = api.backend.SendMessagePackage(userId, msg, pkg)
 			if err != nil {
 				return
 			}
@@ -404,7 +406,7 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 	}
 
 	// Move message to Sent folder
-	msg, err := api.backend.UpdateMessage(userId, &backend.MessageUpdate{
+	msg, err = api.backend.UpdateMessage(userId, &backend.MessageUpdate{
 		Message: &backend.Message{
 			ID: msgId,
 			LabelIDs: []string{backend.SentLabel},

@@ -59,7 +59,7 @@ func NewEventedMessagesBackend(bkd backend.MessagesBackend, events backend.Event
 // A SendBackend that does nothing.
 type NoopSendBackend struct {}
 
-func (b *NoopSendBackend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
+func (b *NoopSendBackend) SendMessagePackage(user string, msg *backend.Message, pkg *backend.MessagePackage) error {
 	return nil // Do nothing
 }
 
@@ -73,16 +73,14 @@ type EchoSendBackend struct {
 	target backend.MessagesBackend
 }
 
-func (b *EchoSendBackend) SendMessagePackage(user string, pkg *backend.MessagePackage) error {
-	// TODO: parse package headers
-	_, err := b.target.InsertMessage(user, &backend.Message{
-		Subject: "EchoSendBackend forwarded message",
-		Sender: &backend.Email{Address: pkg.Address},
-		ToList: []*backend.Email{ &backend.Email{Address: pkg.Address} },
-		Body: pkg.Body,
-		Time: time.Now().Unix(),
-		LabelIDs: []string{backend.InboxLabel},
-	})
+func (b *EchoSendBackend) SendMessagePackage(user string, msg *backend.Message, pkg *backend.MessagePackage) error {
+	newMsg := *msg // Copy msg
+	newMsg.Subject = "[EchoSendBackend forwarded message] " + newMsg.Subject
+	newMsg.Body = pkg.Body
+	newMsg.Time = time.Now().Unix()
+	newMsg.LabelIDs = []string{backend.InboxLabel}
+
+	_, err := b.target.InsertMessage(user, &newMsg)
 	return err
 }
 

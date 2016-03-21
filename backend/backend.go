@@ -93,7 +93,7 @@ type ConversationsBackend interface {
 // Sends messages to email addresses.
 type SendBackend interface {
 	// Send a message to an e-mail address.
-	SendMessagePackage(user string, pkg *MessagePackage) error
+	SendMessagePackage(user string, msg *Message, pkg *MessagePackage) error
 }
 
 // Stores domains data.
