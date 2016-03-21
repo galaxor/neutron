@@ -238,6 +238,7 @@ func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err
 
 	msg = &backend.Message{}
 	msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)} // TODO
+	msg.Header = string(header)
 	parseMessageInfo(msg, msgInfo)
 	parseMessageHeader(msg, &m.Header)
 	parseMessageBody(msg, m)

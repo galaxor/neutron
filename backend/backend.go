@@ -11,6 +11,8 @@ type Backend interface {
 	EventsBackend
 	SessionsBackend
 
+	// TODO: move all these methods to sub-backends
+
 	// Check if a username is available.
 	IsUsernameAvailable(username string) (bool, error)
 	// Get a user.
@@ -30,4 +32,8 @@ type Backend interface {
 
 	// Get a public key for a user.
 	GetPublicKey(email string) (string, error)
+
+	// Set a backend.
+	// TODO: remove this
+	Set(item interface{}) error
 }

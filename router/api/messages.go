@@ -371,9 +371,12 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 		return
 	}
 
+	outgoing := &backend.OutgoingMessage{Message: msg}
+
 	// Send each package
 	for _, pkg := range req.Packages {
-		err = api.backend.SendMessagePackage(userId, msg, pkg)
+		outgoing.MessagePackage = pkg
+		err = api.backend.SendMessagePackage(userId, outgoing)
 		if err != nil {
 			return
 		}
@@ -393,12 +396,12 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 				continue
 			}
 
-			pkg := &backend.MessagePackage{
+			outgoing.MessagePackage =&backend.MessagePackage{
 				Address: email.Address,
 				Body: req.ClearBody,
 			}
 
-			err = api.backend.SendMessagePackage(userId, msg, pkg)
+			err = api.backend.SendMessagePackage(userId, outgoing)
 			if err != nil {
 				return
 			}

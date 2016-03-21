@@ -3,14 +3,23 @@ package imap
 import (
 	"sync"
 	"errors"
-	"log"
+	"strconv"
 
 	"github.com/mxk/go-imap/imap"
 )
 
 type Config struct {
-	Host string
+	Hostname string
+	Port int
 	Suffix string
+}
+
+func (c *Config) Host() string {
+	host := c.Hostname
+	if c.Port > 0 {
+		host += ":" + strconv.Itoa(c.Port)
+	}
+	return host
 }
 
 type connBackend struct {
@@ -30,9 +39,7 @@ func (b *connBackend) getConn(user string) (*imap.Client, func(), error) {
 		return nil, nil, errors.New("No such user")
 	}
 
-	log.Println("LOCK")
 	lock.Lock()
-	log.Println("LOCKED")
 
 	conn, ok := b.conns[user]
 	if !ok {
@@ -40,20 +47,12 @@ func (b *connBackend) getConn(user string) (*imap.Client, func(), error) {
 		return nil, nil, errors.New("No such user")
 	}
 
-	return conn, func () {
-		log.Println("UNLOCK")
-		lock.Unlock()
-		log.Println("UNLOCKED")
-	}, nil
+	return conn, lock.Unlock, nil
 }
 
-func newConnBackend() *connBackend {
+func newConnBackend(config *Config) *connBackend {
 	return &connBackend{
-		// TODO: make this configurable
-		config: &Config{
-			Host: "mail.gandi.net",
-			Suffix: "@emersion.fr",
-		},
+		config: config,
 
 		conns: map[string]*imap.Client{},
 		locks: map[string]sync.Locker{},

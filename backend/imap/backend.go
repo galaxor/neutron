@@ -1,6 +1,8 @@
 package imap
 
 import (
+	"errors"
+
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/memory"
 	"github.com/emersion/neutron/backend/util"
@@ -18,12 +20,25 @@ type Backend struct {
 	*connBackend
 
 	users map[string]*backend.User
+	passwords map[string]string
 }
 
-func New() backend.Backend {
+func (b *Backend) Set(item interface{}) error {
+	switch val := item.(type) {
+	case backend.SendBackend:
+		b.SendBackend = val
+	default:
+		return errors.New("Unsupported backend")
+	}
+	return nil
+}
+
+func New(config *Config) backend.Backend {
 	bkd := &Backend{
+		connBackend: newConnBackend(config),
+
 		users: map[string]*backend.User{},
-		connBackend: newConnBackend(),
+		passwords: map[string]string{},
 	}
 
 	messages := newMessagesBackend(bkd.connBackend)
@@ -35,7 +50,7 @@ func New() backend.Backend {
 	bkd.ContactsBackend = util.NewEventedContactsBackend(memory.NewContactsBackend(), bkd.EventsBackend)
 	bkd.LabelsBackend = util.NewEventedLabelsBackend(memory.NewLabelsBackend(), bkd.EventsBackend)
 	bkd.ConversationsBackend = util.NewEventedConversationsBackend(conversations, bkd.EventsBackend)
-	bkd.SendBackend = util.NewEchoSendBackend(bkd.ConversationsBackend)
+	bkd.SendBackend = util.NewNoopSendBackend()
 	bkd.SessionsBackend = memory.NewSessionsBackend()
 
 	return bkd

@@ -21,7 +21,7 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 }
 
 func (b *Backend) Auth(username, password string) (session *backend.Session, err error) {
-	c, err := imap.DialTLS(b.config.Host, nil)
+	c, err := imap.DialTLS(b.config.Host(), nil)
 	if err != nil {
 		return
 	}
@@ -64,6 +64,7 @@ func (b *Backend) Auth(username, password string) (session *backend.Session, err
 	}
 
 	b.users[user.ID] = user
+	b.passwords[user.ID] = password
 	b.insertConn(user.ID, c)
 
 	return
@@ -87,4 +88,12 @@ func (b *Backend) UpdateKeypair(id, password string, keypair *backend.Keypair) e
 
 func (b *Backend) GetPublicKey(email string) (string, error) {
 	return "", errors.New("Not yet implemented")
+}
+
+// Allow other backends (e.g. a SMTP backend) to access users' password.
+func (b *Backend) GetPassword(user string) (string, error) {
+	if password, ok := b.passwords[user]; ok {
+		return password, nil
+	}
+	return "", errors.New("No password stored for such user")
 }

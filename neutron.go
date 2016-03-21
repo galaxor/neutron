@@ -7,6 +7,7 @@ import (
 
 	//"github.com/emersion/neutron/backend/memory"
 	"github.com/emersion/neutron/backend/imap"
+	"github.com/emersion/neutron/backend/smtp"
 	"github.com/emersion/neutron/router/api"
 )
 
@@ -16,7 +17,18 @@ func main() {
 
 	//backend := memory.New()
 	//backend.(*memory.Backend).Populate()
-	backend := imap.New()
+
+	imapConfig := &imap.Config{
+		Hostname: "mail.gandi.net",
+		Suffix: "@emersion.fr",
+	}
+	smtpConfig := &smtp.Config{
+		Hostname: "mail.gandi.net",
+		Suffix: "@emersion.fr",
+	}
+
+	backend := imap.New(imapConfig)
+	backend.Set(smtp.New(smtpConfig, backend.(smtp.PasswordsBackend)))
 
 	m := macaron.Classic()
 	m.Use(macaron.Renderer())

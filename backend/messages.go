@@ -16,12 +16,6 @@ type MessagesBackend interface {
 	DeleteMessage(user, id string) error
 }
 
-// Sends messages to email addresses.
-type SendBackend interface {
-	// Send a message to an e-mail address.
-	SendMessagePackage(user string, msg *Message, pkg *MessagePackage) error
-}
-
 // A message.
 type Message struct {
 	ID string
@@ -52,6 +46,12 @@ type Message struct {
 	Starred int
 	Location int
 	LabelIDs []string
+}
+
+// An email contains an address and a name.
+type Email struct {
+	Name string
+	Address string
 }
 
 // Message types.
