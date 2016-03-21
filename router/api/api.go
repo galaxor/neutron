@@ -66,7 +66,7 @@ type BatchRespItem struct {
 
 type Api struct {
 	backend backend.Backend
-	sessions map[string]string
+	sessions map[string]string // Session tokens
 }
 
 func (api *Api) getUid(ctx *macaron.Context) string {
@@ -119,6 +119,7 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 		}
 		if uid, ok := ctx.Req.Header["X-Pm-Uid"]; ok {
 			ctx.Data["uid"] = uid[0]
+			api.backend.KeepSessionAlive(uid[0])
 		}
 	})
 
