@@ -87,7 +87,8 @@ func (b *Backend) UpdateKeypair(id, password string, keypair *backend.Keypair) e
 }
 
 func (b *Backend) GetPublicKey(email string) (string, error) {
-	return "", errors.New("Not yet implemented")
+	// TODO
+	return "", nil
 }
 
 // Allow other backends (e.g. a SMTP backend) to access users' password.
