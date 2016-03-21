@@ -79,6 +79,8 @@ func (b *EchoSendBackend) SendMessagePackage(user string, msg *backend.Message, 
 	newMsg.Body = pkg.Body
 	newMsg.Time = time.Now().Unix()
 	newMsg.LabelIDs = []string{backend.InboxLabel}
+	newMsg.Type = 0
+	newMsg.IsRead = 0
 
 	_, err := b.target.InsertMessage(user, &newMsg)
 	return err

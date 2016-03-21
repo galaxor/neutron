@@ -100,6 +100,7 @@ func (b *MessagesBackend) CountMessages(user string) (counts []*backend.Messages
 
 func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg.ID = generateId()
+	msg.Order = len(b.messages[user])
 	b.messages[user] = append(b.messages[user], msg)
 	return msg, nil
 }
