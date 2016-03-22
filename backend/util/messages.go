@@ -59,7 +59,7 @@ func NewEventedMessagesBackend(bkd backend.MessagesBackend, events backend.Event
 // A SendBackend that does nothing.
 type NoopSendBackend struct {}
 
-func (b *NoopSendBackend) SendMessagePackage(user string, msg *backend.Message, pkg *backend.MessagePackage) error {
+func (b *NoopSendBackend) SendMessagePackage(user string, msg *backend.OutgoingMessage) error {
 	return nil // Do nothing
 }
 
@@ -73,10 +73,10 @@ type EchoSendBackend struct {
 	target backend.MessagesBackend
 }
 
-func (b *EchoSendBackend) SendMessagePackage(user string, msg *backend.Message, pkg *backend.MessagePackage) error {
-	newMsg := *msg // Copy msg
+func (b *EchoSendBackend) SendMessagePackage(user string, msg *backend.OutgoingMessage) error {
+	newMsg := *msg.Message // Copy msg
 	newMsg.Subject = "[EchoSendBackend forwarded message] " + newMsg.Subject
-	newMsg.Body = pkg.Body
+	newMsg.Body = msg.MessagePackage.Body
 	newMsg.Time = time.Now().Unix()
 	newMsg.LabelIDs = []string{backend.InboxLabel}
 	newMsg.Type = 0

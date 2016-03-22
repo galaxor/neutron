@@ -10,7 +10,7 @@ func getLabelID(mailbox string) string {
 	case "INBOX":
 		lbl = backend.InboxLabel
 	case "Draft", "Drafts":
-		lbl = backend.DraftsLabel
+		lbl = backend.DraftLabel
 	case "Sent":
 		lbl = backend.SentLabel
 	case "Trash":

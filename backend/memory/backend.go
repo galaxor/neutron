@@ -1,6 +1,8 @@
 package memory
 
 import (
+	"errors"
+
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/util"
 )
@@ -15,6 +17,10 @@ type Backend struct {
 	backend.SessionsBackend
 
 	users map[string]*user
+}
+
+func (b *Backend) Set(item interface{}) error {
+	return errors.New("Unsupported backend")
 }
 
 type user struct {
