@@ -409,8 +409,29 @@ func (b *MessagesBackend) updateMessageFlags(user string, seqset *imap.SeqSet, f
 	return nil
 }
 
+func (b *MessagesBackend) deleteMessages(user string, seqset *imap.SeqSet) (err error) {
+	c, unlock, err := b.getConn(user)
+	if err != nil {
+		return
+	}
+	defer unlock()
+
+	fields := imap.Field([]imap.Field{imap.Field("\\Deleted")})
+	_, _, err = wait(c.UIDStore(seqset, "+FLAGS", fields))
+	if err != nil {
+		return
+	}
+
+	_, _, err = wait(c.Expunge(seqset))
+	if err != nil {
+		return
+	}
+
+	return
+}
+
 // TODO: only supports moving one single message
-func (b *MessagesBackend) moveMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
+func (b *MessagesBackend) copyMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
 	c, unlock, err := b.getConn(user)
 	if err != nil {
 		return
@@ -426,19 +447,18 @@ func (b *MessagesBackend) moveMessages(user string, seqset *imap.SeqSet, mbox st
 		err = errors.New("COPY didn't returned an UID (this is not supported for now)")
 		return
 	}
+
 	uid = imap.AsNumber(res.Fields[2])
+	return
+}
 
-	fields := imap.Field([]imap.Field{imap.Field("\\Deleted")})
-	_, _, err = wait(c.UIDStore(seqset, "+FLAGS", fields))
+func (b *MessagesBackend) moveMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
+	uid, err = b.copyMessages(user, seqset, mbox)
 	if err != nil {
 		return
 	}
 
-	_, _, err = wait(c.Expunge(seqset))
-	if err != nil {
-		return
-	}
-
+	err = b.deleteMessages(user, seqset)
 	return
 }
 
@@ -482,9 +502,28 @@ func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpda
 		}
 	}
 
-	// TODO: support more scenarios
-	var newId string
-	if update.LabelIDs == backend.ReplaceLabels && len(update.Message.LabelIDs) == 1 {
+	if update.ToList || update.CCList || update.BCCList || update.Subject || update.AddressID || update.Body || update.Time {
+		// If one of those is modified, we have to re-send the whole message to the server
+
+		// Apply update to message so we can format it
+		update.Apply(msg)
+		msg.ID = "" // The message ID will be overwritten
+
+		// Insert the updated message
+		msg, err = b.InsertMessage(user, msg)
+		if err != nil {
+			return
+		}
+
+		// Delete the old message
+		err = b.deleteMessages(user, seqset)
+		if err != nil {
+			return
+		}
+	} else if update.LabelIDs == backend.ReplaceLabels && len(update.Message.LabelIDs) == 1 {
+		// Move the message from its mailbox to another one
+		// TODO: support more scenarios
+
 		label := update.Message.LabelIDs[0]
 
 		var newMailbox string
@@ -499,20 +538,31 @@ func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpda
 			return
 		}
 
-		newId = formatMessageId(newMailbox, newUid)
-	}
-
-	update.Apply(msg)
-
-	if newId != "" {
-		msg.ID = newId
+		update.Apply(msg)
+		msg.ID = formatMessageId(newMailbox, newUid)
+	} else {
+		update.Apply(msg)
 	}
 
 	return
 }
 
-func (b *MessagesBackend) DeleteMessage(user, id string) error {
-	return errors.New("Not yet implemented")
+func (b *MessagesBackend) DeleteMessage(user, id string) (err error) {
+	mailbox, uid, err := parseMessageId(id)
+	if err != nil {
+		return
+	}
+
+	err = b.selectMailbox(user, mailbox)
+	if err != nil {
+		return
+	}
+
+	seqset, _ := imap.NewSeqSet("")
+	seqset.AddNum(uid)
+
+	err = b.deleteMessages(user, seqset)
+	return
 }
 
 func newMessagesBackend(conn *connBackend) backend.MessagesBackend {

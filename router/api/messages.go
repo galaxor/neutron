@@ -52,7 +52,24 @@ type MessagesCountResp struct {
 	Counts []*backend.MessagesCount
 }
 
-func populateMessage(msg *backend.Message) {
+func getMessagesFilter(ctx *macaron.Context) *backend.MessagesFilter {
+	return &backend.MessagesFilter{
+		Limit: ctx.QueryInt("Limit"),
+		Page: ctx.QueryInt("Page"),
+		Label: ctx.Query("Label"),
+		Keyword: ctx.Query("Keyword"),
+		Address: ctx.Query("Address"),
+		Attachments: (ctx.Query("Attachments") == "1"),
+		From: ctx.Query("From"),
+		To: ctx.Query("To"),
+		Begin: ctx.QueryInt("Begin"),
+		End: ctx.QueryInt("End"),
+		Sort: ctx.Query("Sort"),
+		Desc: (ctx.Query("Desc") == "1"),
+	}
+}
+
+func (api *Api) populateMessage(userId string, msg *backend.Message) {
 	if msg.ToList == nil {
 		msg.ToList = []*backend.Email{}
 	}
@@ -80,22 +97,18 @@ func populateMessage(msg *backend.Message) {
 	if backend.IsEncrypted(msg.Body) {
 		msg.IsEncrypted = 1
 	}
-}
 
-func getMessagesFilter(ctx *macaron.Context) *backend.MessagesFilter {
-	return &backend.MessagesFilter{
-		Limit: ctx.QueryInt("Limit"),
-		Page: ctx.QueryInt("Page"),
-		Label: ctx.Query("Label"),
-		Keyword: ctx.Query("Keyword"),
-		Address: ctx.Query("Address"),
-		Attachments: (ctx.Query("Attachments") == "1"),
-		From: ctx.Query("From"),
-		To: ctx.Query("To"),
-		Begin: ctx.QueryInt("Begin"),
-		End: ctx.QueryInt("End"),
-		Sort: ctx.Query("Sort"),
-		Desc: (ctx.Query("Desc") == "1"),
+	// TODO: optimize this
+	if msg.AddressID == "" && msg.Sender != nil {
+		user, err := api.backend.GetUser(userId)
+		if err == nil {
+			for _, addr := range user.Addresses {
+				if addr.Email == msg.Sender.Address {
+					msg.AddressID = addr.ID
+					break
+				}
+			}
+		}
 	}
 }
 
@@ -108,7 +121,7 @@ func (api *Api) GetMessage(ctx *macaron.Context) (err error) {
 		return
 	}
 
-	populateMessage(msg)
+	api.populateMessage(userId, msg)
 
 	ctx.JSON(200, &MessageResp{
 		Resp: Resp{Ok},
@@ -133,7 +146,7 @@ func (api *Api) ListMessages(ctx *macaron.Context) (err error) {
 	}
 
 	for _, msg := range msgs {
-		populateMessage(msg)
+		api.populateMessage(userId, msg)
 	}
 
 	ctx.JSON(200, &MessagesListResp{
@@ -321,7 +334,7 @@ func (api *Api) CreateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 		return
 	}
 
-	populateMessage(msg)
+	api.populateMessage(userId, msg)
 
 	ctx.JSON(200, &MessageResp{
 		Resp: Resp{Ok},
@@ -353,7 +366,7 @@ func (api *Api) UpdateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 		return
 	}
 
-	populateMessage(msg)
+	api.populateMessage(userId, msg)
 
 	ctx.JSON(200, &MessageResp{
 		Resp: Resp{Ok},
@@ -422,7 +435,7 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 		return
 	}
 
-	populateMessage(msg)
+	api.populateMessage(userId, msg)
 
 	ctx.JSON(200, &SendMessageResp{
 		Resp: Resp{Ok},

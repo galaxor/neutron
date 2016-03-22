@@ -41,15 +41,6 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 		}
 	}
 
-	for _, addr := range user.Addresses {
-		if addr.DisplayName == "" {
-			addr.DisplayName = user.DisplayName
-		}
-		if len(addr.Keys) > 0 {
-			addr.HasKeys = 1
-		}
-	}
-
 	return
 }
 

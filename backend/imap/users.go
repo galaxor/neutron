@@ -33,8 +33,6 @@ func (b *Backend) Auth(username, password string) (session *backend.Session, err
 		ID: username,
 		Name: username,
 		DisplayName: username,
-		PublicKey: memory.DefaultPublicKey(),
-		EncPrivateKey: memory.DefaultPrivateKey(),
 		Addresses: []*backend.Address{
 			&backend.Address{
 				ID: username,

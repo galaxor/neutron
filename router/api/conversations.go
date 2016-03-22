@@ -65,7 +65,7 @@ func (api *Api) GetConversation(ctx *macaron.Context) (err error) {
 	}
 
 	for _, msg := range msgs {
-		populateMessage(msg)
+		api.populateMessage(userId, msg)
 	}
 
 	ctx.JSON(200, &ConversationResp{

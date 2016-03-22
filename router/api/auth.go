@@ -116,13 +116,13 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	ctx.JSON(200, &AuthResp{
 		Resp: Resp{Ok},
 		AccessToken: encryptedToken,
-		ExpiresIn: 360000,
+		ExpiresIn: 360000, // TODO: really expire
 		TokenType: TokenBearer,
 		Scope: "full mail payments reset keys",
 		Uid: session.ID,
 		RefreshToken: "refresh_token",
-		PrivateKey: user.EncPrivateKey,
-		EncPrivateKey: user.EncPrivateKey,
+		PrivateKey: keyring.PrivateKey,
+		EncPrivateKey: keyring.PrivateKey,
 		EventID: lastEvent.ID,
 	})
 }

@@ -24,6 +24,7 @@ func main() {
 	}
 	smtpConfig := &smtp.Config{
 		Hostname: "mail.gandi.net",
+		Port: 587,
 		Suffix: "@emersion.fr",
 	}
 

@@ -35,6 +35,23 @@ type UsernameAvailableResp struct {
 	Available int
 }
 
+func populateUser(user *backend.User) {
+	if user.EncPrivateKey == "" || user.PublicKey == "" {
+		keyring := user.GetMainAddress().Keys[0] // TODO: find a better way to get the keyring
+		user.EncPrivateKey = keyring.PrivateKey
+		user.PublicKey = keyring.PublicKey
+	}
+
+	for _, addr := range user.Addresses {
+		if addr.DisplayName == "" {
+			addr.DisplayName = user.DisplayName
+		}
+		if len(addr.Keys) > 0 {
+			addr.HasKeys = 1
+		}
+	}
+}
+
 func (api *Api) GetCurrentUser(ctx *macaron.Context) {
 	userId := api.getUserId(ctx)
 
@@ -47,6 +64,8 @@ func (api *Api) GetCurrentUser(ctx *macaron.Context) {
 		})
 		return
 	}
+
+	populateUser(user)
 
 	ctx.JSON(200, &UserResp{
 		Resp: Resp{Ok},
@@ -84,6 +103,8 @@ func (api *Api) CreateUser(ctx *macaron.Context, req CreateUserReq) (err error) 
 	if err != nil {
 		return
 	}
+
+	populateUser(user)
 
 	ctx.JSON(200, &UserResp{
 		Resp: Resp{Ok},

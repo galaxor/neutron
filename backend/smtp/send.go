@@ -30,11 +30,7 @@ func (b *SendBackend) SendMessagePackage(user string, msg *backend.OutgoingMessa
 		return err
 	}
 
-	host := b.config.Hostname
-	if b.config.Port > 0 {
-		host += ":" + strconv.Itoa(b.config.Port)
-	}
-
+	host := b.config.Hostname + ":" + strconv.Itoa(b.config.Port)
 	auth := smtp.PlainAuth("", user + b.config.Suffix, password, b.config.Hostname)
 	recipients := []string{msg.MessagePackage.Address}
 	mail := textproto.FormatOutgoingMessage(msg)
@@ -48,6 +44,10 @@ func (b *SendBackend) SendMessagePackage(user string, msg *backend.OutgoingMessa
 }
 
 func New(config *Config, passwords PasswordsBackend) backend.SendBackend {
+	if config.Port <= 0 {
+		config.Port = 25
+	}
+
 	return &SendBackend{
 		PasswordsBackend: passwords,
 

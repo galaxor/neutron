@@ -47,6 +47,14 @@ func (b *connBackend) getConn(user string) (*imap.Client, func(), error) {
 		return nil, nil, errors.New("No such user")
 	}
 
+	state := conn.State()
+	if state == imap.Logout || state == imap.Closed {
+		delete(b.conns, user)
+		delete(b.locks, user)
+		lock.Unlock()
+		return nil, nil, errors.New("Connection to IMAP server closed")
+	}
+
 	return conn, lock.Unlock, nil
 }
 

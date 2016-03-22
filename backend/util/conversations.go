@@ -147,8 +147,40 @@ func (b *DummyConversationsBackend) DeleteConversation(user, id string) error {
 	return b.DeleteMessage(user, id)
 }
 
+func (b *DummyConversationsBackend) GetMessage(user, id string) (*backend.Message, error) {
+	msg, err := b.MessagesBackend.GetMessage(user, id)
+
+	if err == nil {
+		msg.ConversationID = msg.ID
+	}
+
+	return msg, err
+}
+
+func (b *DummyConversationsBackend) ListMessages(user string, filter *backend.MessagesFilter) ([]*backend.Message, int, error) {
+	msgs, total, err := b.MessagesBackend.ListMessages(user, filter)
+
+	if err == nil {
+		for _, msg := range msgs {
+			msg.ConversationID = msg.ID
+		}
+	}
+
+	return msgs, total, err
+}
+
 func (b *DummyConversationsBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg, err := b.MessagesBackend.InsertMessage(user, msg)
+
+	if err == nil {
+		msg.ConversationID = msg.ID
+	}
+
+	return msg, err
+}
+
+func (b *DummyConversationsBackend) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
+	msg, err := b.MessagesBackend.UpdateMessage(user, update)
 
 	if err == nil {
 		msg.ConversationID = msg.ID
