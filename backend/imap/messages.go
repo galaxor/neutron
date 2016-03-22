@@ -305,7 +305,7 @@ func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilt
 
 			msg := &backend.Message{}
 			msg.ID = formatMessageId(c.Mailbox.Name, msgInfo.UID)
-			msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)} // TODO
+			msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)}
 			parseMessageInfo(msg, msgInfo)
 			parseEnvelope(msg, envelope)
 
