@@ -37,7 +37,7 @@ Default credentials:
 
 - [ ] Implement dummy server (see [#1](https://github.com/emersion/neutron/issues/1))
 - [x] Define backend interface (see https://github.com/emersion/neutron/blob/master/backend/backend.go)
-- [ ] Implement IMAP + SMTP interface (see [#4](https://github.com/emersion/neutron/issues/4))
+- [ ] Implement IMAP + SMTP interface (see [#4](https://github.com/emersion/neutron/issues/4) and [#5](https://github.com/emersion/neutron/issues/5))
 
 ## Backends
 
