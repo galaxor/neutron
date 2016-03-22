@@ -409,30 +409,37 @@ func (b *MessagesBackend) updateMessageFlags(user string, seqset *imap.SeqSet, f
 	return nil
 }
 
-func (b *MessagesBackend) moveMessages(user string, seqset *imap.SeqSet, mbox string) error {
+// TODO: only supports moving one single message
+func (b *MessagesBackend) moveMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
 	c, unlock, err := b.getConn(user)
 	if err != nil {
-		return err
+		return
 	}
 	defer unlock()
 
-	_, _, err = wait(c.UIDCopy(seqset, mbox))
+	_, res, err := wait(c.UIDCopy(seqset, mbox))
 	if err != nil {
-		return err
+		return
 	}
+
+	if imap.AsString(res.Fields[0]) != "COPYUID" {
+		err = errors.New("COPY didn't returned an UID (this is not supported for now)")
+		return
+	}
+	uid = imap.AsNumber(res.Fields[2])
 
 	fields := imap.Field([]imap.Field{imap.Field("\\Deleted")})
 	_, _, err = wait(c.UIDStore(seqset, "+FLAGS", fields))
 	if err != nil {
-		return err
+		return
 	}
 
 	_, _, err = wait(c.Expunge(seqset))
 	if err != nil {
-		return err
+		return
 	}
 
-	return nil
+	return
 }
 
 func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
@@ -476,26 +483,29 @@ func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpda
 	}
 
 	// TODO: support more scenarios
-	var newMailbox string
+	var newId string
 	if update.LabelIDs == backend.ReplaceLabels && len(update.Message.LabelIDs) == 1 {
 		label := update.Message.LabelIDs[0]
 
+		var newMailbox string
 		newMailbox, err = b.getLabelMailbox(user, label)
 		if err != nil {
 			return
 		}
 
-		err = b.moveMessages(user, seqset, newMailbox)
+		var newUid uint32
+		newUid, err = b.moveMessages(user, seqset, newMailbox)
 		if err != nil {
 			return
 		}
+
+		newId = formatMessageId(newMailbox, newUid)
 	}
 
 	update.Apply(msg)
 
-	if newMailbox != "" && mailbox != newMailbox {
-		// TODO: get back new message UID!
-		//msg.ID = formatMessageId(newMailbox, )
+	if newId != "" {
+		msg.ID = newId
 	}
 
 	return
