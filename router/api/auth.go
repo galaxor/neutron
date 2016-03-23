@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"strings"
 
 	"gopkg.in/macaron.v1"
 )
@@ -81,7 +82,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		return
 	}
 
-	session, err := api.backend.Auth(req.Username, req.Password)
+	user, err := api.backend.Auth(req.Username, req.Password)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{Unauthorized},
@@ -91,11 +92,14 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		return
 	}
 
-	user := session.User
-	sessionToken := "access_token" // TODO: generate this
+	session := &Session{
+		ID: "session_id", // TODO: generate this
+		Token: "access_token", // TODO: generate this
+		UserID: user.ID,
+	}
 
 	keyring := user.GetMainAddress().Keys[0] // TODO: find a better way to get the keyring
-	encryptedToken, err := keyring.EncryptToSelf(sessionToken)
+	encryptedToken, err := keyring.EncryptToSelf(session.Token)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{InternalServerError},
@@ -105,13 +109,13 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		return
 	}
 
-	api.sessions[sessionToken] = user.ID
-
 	lastEvent, err := api.backend.GetLastEvent(user.ID)
 	if err != nil {
 		ctx.JSON(500, newErrorResp(err))
 		return
 	}
+
+	api.sessions[session.ID] = session
 
 	ctx.JSON(200, &AuthResp{
 		Resp: Resp{Ok},
@@ -120,7 +124,7 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		TokenType: TokenBearer,
 		Scope: "full mail payments reset keys",
 		Uid: session.ID,
-		RefreshToken: "refresh_token",
+		RefreshToken: "refresh_token", // TODO
 		PrivateKey: keyring.PrivateKey,
 		EncPrivateKey: keyring.PrivateKey,
 		EventID: lastEvent.ID,
@@ -138,31 +142,44 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 		return
 	}
 
-	session, err := api.backend.GetSession(uid)
-	if err != nil {
+	session, ok := api.sessions[uid]
+	if !ok {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{BadRequest},
-			Error: "invalid_grant",
-			ErrorDescription: "Invalid uid",
+			Error: "invalid_session",
+			ErrorDescription: "Invalid UID",
 		})
 		return
 	}
 
-	userId := session.User.ID
-
-	sessionToken := ""
-	for t, id := range api.sessions {
-		if id == userId {
-			sessionToken = t
-			break
-		}
+	auth, ok := ctx.Req.Header["Authorization"]
+	if !ok || len(auth) == 0 {
+		ctx.JSON(200, &ErrorResp{
+			Resp: Resp{BadRequest},
+			Error: "invalid_authorization",
+			ErrorDescription: "Invalid authorization header",
+		})
+		return
 	}
 
-	if sessionToken == "" {
+	parts := strings.SplitN(auth[0], " ", 2)
+	if len(parts) != 2 {
 		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{Unauthorized},
-			Error: "invalid_session",
-			ErrorDescription: "Not logged in",
+			Resp: Resp{BadRequest},
+			Error: "invalid_authorization",
+			ErrorDescription: "Invalid authorization header",
+		})
+		return
+	}
+
+	tokenType := parts[0]
+	token := parts[1]
+
+	if TokenType(tokenType) != TokenBearer || token != session.Token {
+		ctx.JSON(200, &ErrorResp{
+			Resp: Resp{BadRequest},
+			Error: "invalid_authorization",
+			ErrorDescription: "Invalid authorization header",
 		})
 		return
 	}
@@ -177,14 +194,14 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 	}
 
 	authCookie, _ := json.Marshal(&AuthCookie{
-		AccessToken: sessionToken,
-		Uid: userId,
+		AccessToken: session.Token,
+		Uid: session.ID,
 	})
-	ctx.SetCookie("AUTH-" + sessionToken, string(authCookie), 0, "/api/", "", false, true)
+	ctx.SetCookie("AUTH-" + session.Token, string(authCookie), 0, "/api/", "", false, true)
 
 	ctx.JSON(200, &AuthCookiesResp{
 		Resp: Resp{Ok},
-		SessionToken: sessionToken,
+		SessionToken: session.Token,
 	})
 }
 

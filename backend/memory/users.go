@@ -44,17 +44,10 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 	return
 }
 
-func (b *Backend) Auth(username, password string) (session *backend.Session, err error) {
+func (b *Backend) Auth(username, password string) (user *backend.User, err error) {
 	for id, item := range b.users {
 		if item.Name == username && item.password == password {
-			var user *backend.User
-			user, err = b.GetUser(id)
-			if err != nil {
-				return
-			}
-
-			session, err = b.InsertSession(&backend.Session{User: user})
-			return
+			return b.GetUser(id)
 		}
 	}
 

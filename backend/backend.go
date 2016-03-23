@@ -9,7 +9,6 @@ type Backend interface {
 	SendBackend
 	DomainsBackend
 	EventsBackend
-	SessionsBackend
 
 	// TODO: move all these methods to sub-backends
 
@@ -18,7 +17,7 @@ type Backend interface {
 	// Get a user.
 	GetUser(id string) (*User, error)
 	// Check if the provided username and password are correct
-	Auth(username, password string) (*Session, error)
+	Auth(username, password string) (*User, error)
 	// Insert a new user. Returns the newly created user.
 	InsertUser(user *User, password string) (*User, error)
 	// Update an existing user.

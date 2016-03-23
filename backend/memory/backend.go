@@ -14,7 +14,6 @@ type Backend struct {
 	backend.ConversationsBackend
 	backend.SendBackend
 	backend.EventsBackend
-	backend.SessionsBackend
 
 	users map[string]*user
 }
@@ -39,7 +38,6 @@ func New() backend.Backend {
 	bkd.LabelsBackend = util.NewEventedLabelsBackend(NewLabelsBackend(), bkd.EventsBackend)
 	bkd.ConversationsBackend = util.NewEventedConversationsBackend(NewConversationsBackend(), bkd.EventsBackend)
 	bkd.SendBackend = util.NewEchoSendBackend(bkd.ConversationsBackend)
-	bkd.SessionsBackend = NewSessionsBackend()
 
 	return bkd
 }

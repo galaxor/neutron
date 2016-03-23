@@ -15,7 +15,6 @@ type Backend struct {
 	backend.ConversationsBackend
 	backend.SendBackend
 	backend.EventsBackend
-	backend.SessionsBackend
 
 	*connBackend
 
@@ -51,7 +50,6 @@ func New(config *Config) backend.Backend {
 	bkd.LabelsBackend = util.NewEventedLabelsBackend(memory.NewLabelsBackend(), bkd.EventsBackend)
 	bkd.ConversationsBackend = util.NewEventedConversationsBackend(conversations, bkd.EventsBackend)
 	bkd.SendBackend = util.NewNoopSendBackend()
-	bkd.SessionsBackend = memory.NewSessionsBackend()
 
 	return bkd
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"gopkg.in/macaron.v1"
 	"github.com/go-macaron/binding"
@@ -64,9 +65,16 @@ type BatchRespItem struct {
 	Response interface{}
 }
 
+type Session struct {
+	ID string
+	UserID string
+	Token string
+	Time time.Time
+}
+
 type Api struct {
 	backend backend.Backend
-	sessions map[string]string // Session tokens
+	sessions map[string]*Session
 }
 
 func (api *Api) getUid(ctx *macaron.Context) string {
@@ -93,18 +101,35 @@ func (api *Api) getUserId(ctx *macaron.Context) string {
 		return ""
 	}
 
-	userId, ok := api.sessions[sessionToken]
-	if !ok {
+	var session *Session
+	for _, s := range api.sessions {
+		if s.Token == sessionToken {
+			session = s
+			break
+		}
+	}
+	if session == nil {
 		return ""
 	}
 
-	return userId
+	return session.UserID
+}
+
+func (api *Api) keepSessionAlive(id string) {
+	// TODO: check session token
+
+	session, ok := api.sessions[id]
+	if !ok {
+		return
+	}
+
+	session.Time = time.Now()
 }
 
 func New(m *macaron.Macaron, backend backend.Backend) {
 	api := &Api{
 		backend: backend,
-		sessions: map[string]string{},
+		sessions: map[string]*Session{},
 	}
 
 	m.Use(func (ctx *macaron.Context) {
@@ -119,7 +144,7 @@ func New(m *macaron.Macaron, backend backend.Backend) {
 		}
 		if uid, ok := ctx.Req.Header["X-Pm-Uid"]; ok {
 			ctx.Data["uid"] = uid[0]
-			api.backend.KeepSessionAlive(uid[0])
+			api.keepSessionAlive(uid[0])
 		}
 	})
 
