@@ -5,7 +5,8 @@ import (
 
 	"gopkg.in/macaron.v1"
 
-	//"github.com/emersion/neutron/backend/memory"
+	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/memory"
 	"github.com/emersion/neutron/backend/imap"
 	"github.com/emersion/neutron/backend/smtp"
 	"github.com/emersion/neutron/router/api"
@@ -15,28 +16,34 @@ func main() {
 	publicDir := "public/build"
 	indexFile := "app.html"
 
-	//backend := memory.New()
-	//backend.(*memory.Backend).Populate()
+	// Create backend
+	backendName := "memory"
+	var bkd backend.Backend
+	switch backendName {
+	case "memory":
+		bkd = memory.New()
+		bkd.(*memory.Backend).Populate()
+	case "imap":
+		imapConfig := &imap.Config{
+			Hostname: "mail.gandi.net",
+			Suffix: "@emersion.fr",
+		}
+		smtpConfig := &smtp.Config{
+			Hostname: "mail.gandi.net",
+			Port: 587,
+			Suffix: "@emersion.fr",
+		}
 
-	imapConfig := &imap.Config{
-		Hostname: "mail.gandi.net",
-		Suffix: "@emersion.fr",
+		bkd = imap.New(imapConfig)
+		bkd.Set(smtp.New(smtpConfig, bkd.(smtp.PasswordsBackend)))
 	}
-	smtpConfig := &smtp.Config{
-		Hostname: "mail.gandi.net",
-		Port: 587,
-		Suffix: "@emersion.fr",
-	}
-
-	backend := imap.New(imapConfig)
-	backend.Set(smtp.New(smtpConfig, backend.(smtp.PasswordsBackend)))
 
 	m := macaron.Classic()
 	m.Use(macaron.Renderer())
 
 	// API
 	m.Group("/api", func() {
-		api.New(m, backend)
+		api.New(m, bkd)
 	})
 
 	// Serve static files
