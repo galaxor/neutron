@@ -74,13 +74,11 @@ const (
 	EncryptedPgpMime = 8
 )
 
-type Attachment struct {} // TODO
-
 type MessagePackage struct {
 	Address string
 	Type int
 	Body string
-	KeyPackets []interface{} // TODO
+	KeyPackets []string
 }
 
 // Contains message counts for one label.
