@@ -8,12 +8,6 @@ import (
 	"github.com/mxk/go-imap/imap"
 )
 
-type Config struct {
-	Hostname string
-	Port int
-	Suffix string
-}
-
 func (c *Config) Host() string {
 	host := c.Hostname
 	if c.Port > 0 {
@@ -22,18 +16,18 @@ func (c *Config) Host() string {
 	return host
 }
 
-type connBackend struct {
+type conns struct {
 	config *Config
-	conns map[string]*imap.Client
+	clients map[string]*imap.Client
 	locks map[string]sync.Locker
 }
 
-func (b *connBackend) insertConn(user string, conn *imap.Client) {
-	b.conns[user] = conn
+func (b *conns) insertConn(user string, conn *imap.Client) {
+	b.clients[user] = conn
 	b.locks[user] = &sync.Mutex{}
 }
 
-func (b *connBackend) getConn(user string) (*imap.Client, func(), error) {
+func (b *conns) getConn(user string) (*imap.Client, func(), error) {
 	lock, ok := b.locks[user]
 	if !ok {
 		return nil, nil, errors.New("No such user")
@@ -41,7 +35,7 @@ func (b *connBackend) getConn(user string) (*imap.Client, func(), error) {
 
 	lock.Lock()
 
-	conn, ok := b.conns[user]
+	conn, ok := b.clients[user]
 	if !ok {
 		lock.Unlock()
 		return nil, nil, errors.New("No such user")
@@ -49,7 +43,7 @@ func (b *connBackend) getConn(user string) (*imap.Client, func(), error) {
 
 	state := conn.State()
 	if state == imap.Logout || state == imap.Closed {
-		delete(b.conns, user)
+		delete(b.clients, user)
 		delete(b.locks, user)
 		lock.Unlock()
 		return nil, nil, errors.New("Connection to IMAP server closed")
@@ -58,11 +52,11 @@ func (b *connBackend) getConn(user string) (*imap.Client, func(), error) {
 	return conn, lock.Unlock, nil
 }
 
-func newConnBackend(config *Config) *connBackend {
-	return &connBackend{
+func newConns(config *Config) *conns {
+	return &conns{
 		config: config,
 
-		conns: map[string]*imap.Client{},
+		clients: map[string]*imap.Client{},
 		locks: map[string]sync.Locker{},
 	}
 }

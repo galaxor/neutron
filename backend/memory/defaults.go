@@ -99,58 +99,56 @@ kKPymjeuNF5GKhfkP1C09xZOAC+BGfPPOkZ+qKnZDgGaERDt/KNBHg==
 -----END PGP PUBLIC KEY BLOCK-----`
 }
 
-func (b *DomainsBackend) Populate() {
+/*func (b *Domains) Populate() {
 	b.domains = []*backend.Domain{
 		&backend.Domain{
 			ID: "domain_id",
 			Name: "example.org",
 		},
 	}
-}
+}*/
 
-func (b *Backend) Populate() {
-	b.DomainsBackend.(*DomainsBackend).Populate()
+func Populate(b *backend.Backend) (err error) {
+	// TODO
+	//b.DomainsBackend.(*Domains).Populate()
 
-	b.users["user_id"] = &user{
-		User: &backend.User{
-			ID: "user_id",
-			Name: "neutron",
-			DisplayName: "Neutron",
-			Addresses: []*backend.Address{
-				&backend.Address{
-					ID: "address_id",
-					DomainID: "domain_id",
-					Email: "neutron@example.org",
-					Send: 1,
-					Receive: 1,
-					Status: 1,
-					Type: 1,
-					Keys: []*backend.Keypair{
-						&backend.Keypair{
-							ID: "keypair_id",
-							PublicKey: DefaultPublicKey(),
-							PrivateKey: DefaultPrivateKey(),
-						},
+	user, err := b.InsertUser(&backend.User{
+		Name: "neutron",
+		DisplayName: "Neutron",
+		Addresses: []*backend.Address{
+			&backend.Address{
+				DomainID: "domain_id",
+				Email: "neutron@example.org",
+				Send: 1,
+				Receive: 1,
+				Status: 1,
+				Type: 1,
+				Keys: []*backend.Keypair{
+					&backend.Keypair{
+						PublicKey: DefaultPublicKey(),
+						PrivateKey: DefaultPrivateKey(),
 					},
 				},
 			},
 		},
-		password: "neutron",
+	}, "neutron")
+	if err != nil {
+		return
 	}
 
-	b.InsertContact("user_id", &backend.Contact{
+	b.InsertContact(user.ID, &backend.Contact{
 		Name: "Myself :)",
 		Email: "neutron@example.org",
 	})
 
-	b.InsertLabel("user_id", &backend.Label{
+	b.InsertLabel(user.ID, &backend.Label{
 		Name: "Hey!",
 		Color: "#7272a7",
 		Display: 1,
 		Order: 1,
 	})
 
-	b.InsertMessage("user_id", &backend.Message{
+	b.InsertMessage(user.ID, &backend.Message{
 		ID: "message_id",
 		ConversationID: "conversation_id",
 		AddressID: "address_id",
@@ -161,4 +159,6 @@ func (b *Backend) Populate() {
 		Body: "Hey! How are you today?",
 		LabelIDs: []string{"0"},
 	})
+
+	return
 }

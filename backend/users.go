@@ -1,5 +1,24 @@
 package backend
 
+type UsersBackend interface {
+	// Check if a username is available.
+	IsUsernameAvailable(username string) (bool, error)
+	// Get a user.
+	GetUser(id string) (*User, error)
+	// Check if the provided username and password are correct
+	Auth(username, password string) (*User, error)
+	// Insert a new user. Returns the newly created user.
+	InsertUser(user *User, password string) (*User, error)
+	// Update an existing user.
+	UpdateUser(update *UserUpdate) error
+	// Update a user's password.
+	UpdateUserPassword(id, current, new string) error
+	// Update a user's private key.
+	UpdateKeypair(id, password string, keypair *Keypair) error
+	// Delete a user.
+	//DeleteUser(id string) error
+}
+
 // A user.
 type User struct {
 	ID string

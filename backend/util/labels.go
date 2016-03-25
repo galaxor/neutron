@@ -4,12 +4,12 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-type EventedLabelsBackend struct {
+type EventedLabels struct {
 	backend.LabelsBackend
 	events backend.EventsBackend
 }
 
-func (b *EventedLabelsBackend) InsertLabel(user string, label *backend.Label) (*backend.Label, error) {
+func (b *EventedLabels) InsertLabel(user string, label *backend.Label) (*backend.Label, error) {
 	label, err := b.LabelsBackend.InsertLabel(user, label)
 
 	if err == nil {
@@ -20,7 +20,7 @@ func (b *EventedLabelsBackend) InsertLabel(user string, label *backend.Label) (*
 	return label, err
 }
 
-func (b *EventedLabelsBackend) UpdateLabel(user string, update *backend.LabelUpdate) (*backend.Label, error) {
+func (b *EventedLabels) UpdateLabel(user string, update *backend.LabelUpdate) (*backend.Label, error) {
 	label, err := b.LabelsBackend.UpdateLabel(user, update)
 
 	if err == nil {
@@ -31,7 +31,7 @@ func (b *EventedLabelsBackend) UpdateLabel(user string, update *backend.LabelUpd
 	return label, err
 }
 
-func (b *EventedLabelsBackend) DeleteLabel(user, id string) error {
+func (b *EventedLabels) DeleteLabel(user, id string) error {
 	err := b.LabelsBackend.DeleteLabel(user, id)
 
 	if err == nil {
@@ -42,8 +42,8 @@ func (b *EventedLabelsBackend) DeleteLabel(user, id string) error {
 	return err
 }
 
-func NewEventedLabelsBackend(bkd backend.LabelsBackend, events backend.EventsBackend) backend.LabelsBackend {
-	return &EventedLabelsBackend{
+func NewEventedLabels(bkd backend.LabelsBackend, events backend.EventsBackend) backend.LabelsBackend {
+	return &EventedLabels{
 		LabelsBackend: bkd,
 		events: events,
 	}

@@ -6,16 +6,16 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-type DomainsBackend struct {
+type Domains struct {
 	domains []*backend.Domain
 }
 
-func (b *DomainsBackend) ListDomains() (domains []*backend.Domain, err error) {
+func (b *Domains) ListDomains() (domains []*backend.Domain, err error) {
 	domains = b.domains
 	return
 }
 
-func (b *DomainsBackend) GetDomainByName(name string) (*backend.Domain, error) {
+func (b *Domains) GetDomainByName(name string) (*backend.Domain, error) {
 	for _, d := range b.domains {
 		if d.Name == name {
 			return d, nil
@@ -24,6 +24,6 @@ func (b *DomainsBackend) GetDomainByName(name string) (*backend.Domain, error) {
 	return nil, errors.New("No such domain")
 }
 
-func NewDomainsBackend() backend.DomainsBackend {
-	return &DomainsBackend{}
+func NewDomains() backend.DomainsBackend {
+	return &Domains{}
 }

@@ -18,11 +18,11 @@ func main() {
 
 	// Create backend
 	backendName := "memory"
-	var bkd backend.Backend
+	bkd := backend.New()
 	switch backendName {
 	case "memory":
-		bkd = memory.New()
-		bkd.(*memory.Backend).Populate()
+		memory.Use(bkd)
+		memory.Populate(bkd)
 	case "imap":
 		imapConfig := &imap.Config{
 			Hostname: "mail.gandi.net",
@@ -34,8 +34,9 @@ func main() {
 			Suffix: "@emersion.fr",
 		}
 
-		bkd = imap.New(imapConfig)
-		bkd.Set(smtp.New(smtpConfig, bkd.(smtp.PasswordsBackend)))
+		memory.Use(bkd)
+		passwords := imap.Use(imapConfig, bkd)
+		smtp.Use(smtpConfig, passwords, bkd)
 	}
 
 	m := macaron.Classic()

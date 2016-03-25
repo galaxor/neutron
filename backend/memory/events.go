@@ -10,7 +10,7 @@ import (
 
 const EventListenTimeout = 5 * time.Minute
 
-type EventsBackend struct {
+type Events struct {
 	events map[string][]*event
 }
 
@@ -53,13 +53,13 @@ func mergeEvents(dst, src *backend.Event) *backend.Event {
 	return dst
 }
 
-func (b *EventsBackend) insertEvent(user string, e *backend.Event) error {
+func (b *Events) insertEvent(user string, e *backend.Event) error {
 	e.ID = generateId()
 	b.events[user] = append(b.events[user], &event{Event: e})
 	return nil
 }
 
-func (b *EventsBackend) InsertEvent(user string, e *backend.Event) error {
+func (b *Events) InsertEvent(user string, e *backend.Event) error {
 	// If there is no listener, do not insert the event
 	insert := false
 	for _, e := range b.events[user] {
@@ -79,7 +79,7 @@ func (b *EventsBackend) InsertEvent(user string, e *backend.Event) error {
 }
 
 // Listen for an event.
-func (b *EventsBackend) listen(user string, e *event) {
+func (b *Events) listen(user string, e *event) {
 	// This channel will receive new events to listen to as long as the client
 	// reads newer events
 	c := make(chan *event)
@@ -120,7 +120,7 @@ func (b *EventsBackend) listen(user string, e *event) {
 	}
 }
 
-func (b *EventsBackend) GetLastEvent(user string) (*backend.Event, error) {
+func (b *Events) GetLastEvent(user string) (*backend.Event, error) {
 	// No events for this user, create an empty one
 	if len(b.events[user]) == 0 {
 		err := b.insertEvent(user, &backend.Event{})
@@ -137,7 +137,7 @@ func (b *EventsBackend) GetLastEvent(user string) (*backend.Event, error) {
 	return lastEvent.Event, nil
 }
 
-func (b *EventsBackend) GetEventsAfter(user, id string) (*backend.Event, error) {
+func (b *Events) GetEventsAfter(user, id string) (*backend.Event, error) {
 	log.Println("events:")
 	for i, e := range b.events[user] {
 		log.Println(i, e)
@@ -201,8 +201,8 @@ func (b *EventsBackend) GetEventsAfter(user, id string) (*backend.Event, error) 
 	return merged, nil
 }
 
-func NewEventsBackend() backend.EventsBackend {
-	return &EventsBackend{
+func NewEvents() backend.EventsBackend {
+	return &Events{
 		events: map[string][]*event{},
 	}
 }

@@ -6,7 +6,16 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-func (b *Backend) IsUsernameAvailable(username string) (bool, error) {
+type Users struct {
+	users map[string]*user
+}
+
+type user struct {
+	*backend.User
+	password string
+}
+
+func (b *Users) IsUsernameAvailable(username string) (bool, error) {
 	for _, d := range b.users {
 		if d.Name == username {
 			return false, nil
@@ -16,7 +25,7 @@ func (b *Backend) IsUsernameAvailable(username string) (bool, error) {
 	return true, nil
 }
 
-func (b *Backend) getUser(id string) (*user, error) {
+func (b *Users) getUser(id string) (*user, error) {
 	user, ok := b.users[id]
 	if !ok {
 		return nil, errors.New("No such user")
@@ -24,7 +33,7 @@ func (b *Backend) getUser(id string) (*user, error) {
 	return user, nil
 }
 
-func (b *Backend) GetUser(id string) (user *backend.User, err error) {
+func (b *Users) GetUser(id string) (user *backend.User, err error) {
 	item, err := b.getUser(id)
 	if err != nil {
 		return
@@ -44,7 +53,7 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 	return
 }
 
-func (b *Backend) Auth(username, password string) (user *backend.User, err error) {
+func (b *Users) Auth(username, password string) (user *backend.User, err error) {
 	for id, item := range b.users {
 		if item.Name == username && item.password == password {
 			return b.GetUser(id)
@@ -55,7 +64,7 @@ func (b *Backend) Auth(username, password string) (user *backend.User, err error
 	return
 }
 
-func (b *Backend) InsertUser(u *backend.User, password string) (*backend.User, error) {
+func (b *Users) InsertUser(u *backend.User, password string) (*backend.User, error) {
 	available, err := b.IsUsernameAvailable(u.Name)
 	if err != nil {
 		return nil, err
@@ -84,7 +93,7 @@ func (b *Backend) InsertUser(u *backend.User, password string) (*backend.User, e
 	return b.GetUser(u.ID)
 }
 
-func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
+func (b *Users) UpdateUser(update *backend.UserUpdate) error {
 	item, err := b.getUser(update.User.ID)
 	if err != nil {
 		return err
@@ -102,7 +111,7 @@ func checkUserPassword(item *user, password string) error {
 	return nil
 }
 
-func (b *Backend) UpdateUserPassword(id, current, new string) error {
+func (b *Users) UpdateUserPassword(id, current, new string) error {
 	item, err := b.getUser(id)
 	if err != nil {
 		return err
@@ -117,7 +126,7 @@ func (b *Backend) UpdateUserPassword(id, current, new string) error {
 	return nil
 }
 
-func (b *Backend) UpdateKeypair(id, password string, keypair *backend.Keypair) error {
+func (b *Users) UpdateKeypair(id, password string, keypair *backend.Keypair) error {
 	item, err := b.getUser(id)
 	if err != nil {
 		return err
@@ -141,7 +150,7 @@ func (b *Backend) UpdateKeypair(id, password string, keypair *backend.Keypair) e
 	return errors.New("Key not found")
 }
 
-func (b *Backend) GetPublicKey(email string) (string, error) {
+func (b *Users) GetPublicKey(email string) (string, error) {
 	for _, item := range b.users {
 		for _, address := range item.User.Addresses {
 			if address.Email == email && len(address.Keys) > 0 {
@@ -150,4 +159,10 @@ func (b *Backend) GetPublicKey(email string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func NewUsers() *Users {
+	return &Users{
+		users: map[string]*user{},
+	}
 }

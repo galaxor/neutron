@@ -4,13 +4,13 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-type EventedConversationsBackend struct {
+type EventedConversations struct {
 	backend.ConversationsBackend
 	messages backend.MessagesBackend
 	events backend.EventsBackend
 }
 
-func (b *EventedConversationsBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
+func (b *EventedConversations) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	hadConversation := (msg.ConversationID != "")
 
 	msg, err := b.messages.InsertMessage(user, msg)
@@ -33,7 +33,7 @@ func (b *EventedConversationsBackend) InsertMessage(user string, msg *backend.Me
 	return msg, err
 }
 
-func (b *EventedConversationsBackend) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
+func (b *EventedConversations) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
 	msg, err := b.messages.UpdateMessage(user, update)
 
 	if err == nil && msg.ConversationID != "" {
@@ -47,7 +47,7 @@ func (b *EventedConversationsBackend) UpdateMessage(user string, update *backend
 	return msg, err
 }
 
-func (b *EventedConversationsBackend) DeleteMessage(user, id string) error {
+func (b *EventedConversations) DeleteMessage(user, id string) error {
 	msg, _ := b.GetMessage(user, id)
 
 	err := b.messages.DeleteMessage(user, id)
@@ -69,21 +69,21 @@ func (b *EventedConversationsBackend) DeleteMessage(user, id string) error {
 	return err
 }
 
-func NewEventedConversationsBackend(bkd backend.ConversationsBackend, events backend.EventsBackend) backend.ConversationsBackend {
-	return &EventedConversationsBackend{
+func NewEventedConversations(bkd backend.ConversationsBackend, events backend.EventsBackend) backend.ConversationsBackend {
+	return &EventedConversations{
 		ConversationsBackend: bkd,
-		messages: NewEventedMessagesBackend(bkd, events),
+		messages: NewEventedMessages(bkd, events),
 		events: events,
 	}
 }
 
 
 // A conversations backend that builds one conversation per message (no threads).
-type DummyConversationsBackend struct {
+type DummyConversations struct {
 	backend.MessagesBackend
 }
 
-func (b *DummyConversationsBackend) ListConversationMessages(user, id string) ([]*backend.Message, error) {
+func (b *DummyConversations) ListConversationMessages(user, id string) ([]*backend.Message, error) {
 	msg, err := b.GetMessage(user, id)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (b *DummyConversationsBackend) ListConversationMessages(user, id string) ([
 	return []*backend.Message{msg}, nil
 }
 
-func (b *DummyConversationsBackend) buildConversation(msg *backend.Message) *backend.Conversation {
+func (b *DummyConversations) buildConversation(msg *backend.Message) *backend.Conversation {
 	conv := &backend.Conversation{
 		ID: msg.ID,
 		Order: msg.Order,
@@ -117,7 +117,7 @@ func (b *DummyConversationsBackend) buildConversation(msg *backend.Message) *bac
 	return conv
 }
 
-func (b *DummyConversationsBackend) GetConversation(user, id string) (*backend.Conversation, error) {
+func (b *DummyConversations) GetConversation(user, id string) (*backend.Conversation, error) {
 	msg, err := b.GetMessage(user, id)
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (b *DummyConversationsBackend) GetConversation(user, id string) (*backend.C
 	return b.buildConversation(msg), nil
 }
 
-func (b *DummyConversationsBackend) ListConversations(user string, filter *backend.MessagesFilter) ([]*backend.Conversation, int, error) {
+func (b *DummyConversations) ListConversations(user string, filter *backend.MessagesFilter) ([]*backend.Conversation, int, error) {
 	msgs, total, err := b.ListMessages(user, filter)
 	if err != nil {
 		return nil, -1, err
@@ -139,15 +139,15 @@ func (b *DummyConversationsBackend) ListConversations(user string, filter *backe
 	return convs, total, nil
 }
 
-func (b *DummyConversationsBackend) CountConversations(user string) ([]*backend.MessagesCount, error) {
+func (b *DummyConversations) CountConversations(user string) ([]*backend.MessagesCount, error) {
 	return b.CountMessages(user)
 }
 
-func (b *DummyConversationsBackend) DeleteConversation(user, id string) error {
+func (b *DummyConversations) DeleteConversation(user, id string) error {
 	return b.DeleteMessage(user, id)
 }
 
-func (b *DummyConversationsBackend) GetMessage(user, id string) (*backend.Message, error) {
+func (b *DummyConversations) GetMessage(user, id string) (*backend.Message, error) {
 	msg, err := b.MessagesBackend.GetMessage(user, id)
 
 	if err == nil {
@@ -157,7 +157,7 @@ func (b *DummyConversationsBackend) GetMessage(user, id string) (*backend.Messag
 	return msg, err
 }
 
-func (b *DummyConversationsBackend) ListMessages(user string, filter *backend.MessagesFilter) ([]*backend.Message, int, error) {
+func (b *DummyConversations) ListMessages(user string, filter *backend.MessagesFilter) ([]*backend.Message, int, error) {
 	msgs, total, err := b.MessagesBackend.ListMessages(user, filter)
 
 	if err == nil {
@@ -169,7 +169,7 @@ func (b *DummyConversationsBackend) ListMessages(user string, filter *backend.Me
 	return msgs, total, err
 }
 
-func (b *DummyConversationsBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
+func (b *DummyConversations) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg, err := b.MessagesBackend.InsertMessage(user, msg)
 
 	if err == nil {
@@ -179,7 +179,7 @@ func (b *DummyConversationsBackend) InsertMessage(user string, msg *backend.Mess
 	return msg, err
 }
 
-func (b *DummyConversationsBackend) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
+func (b *DummyConversations) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
 	msg, err := b.MessagesBackend.UpdateMessage(user, update)
 
 	if err == nil {
@@ -189,6 +189,6 @@ func (b *DummyConversationsBackend) UpdateMessage(user string, update *backend.M
 	return msg, err
 }
 
-func NewDummyConversationsBackend(messages backend.MessagesBackend) backend.ConversationsBackend {
-	return &DummyConversationsBackend{messages}
+func NewDummyConversations(messages backend.MessagesBackend) backend.ConversationsBackend {
+	return &DummyConversations{messages}
 }

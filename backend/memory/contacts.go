@@ -6,22 +6,22 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-type ContactsBackend struct {
+type Contacts struct {
 	contacts map[string][]*backend.Contact
 }
 
-func (b *ContactsBackend) ListContacts(user string) (contacts []*backend.Contact, err error) {
+func (b *Contacts) ListContacts(user string) (contacts []*backend.Contact, err error) {
 	contacts = b.contacts[user]
 	return
 }
 
-func (b *ContactsBackend) InsertContact(user string, contact *backend.Contact) (*backend.Contact, error) {
+func (b *Contacts) InsertContact(user string, contact *backend.Contact) (*backend.Contact, error) {
 	contact.ID = generateId()
 	b.contacts[user] = append(b.contacts[user], contact)
 	return contact, nil
 }
 
-func (b *ContactsBackend) getContactIndex(user, id string) (int, error) {
+func (b *Contacts) getContactIndex(user, id string) (int, error) {
 	for i, contact := range b.contacts[user] {
 		if contact.ID == id {
 			return i, nil
@@ -31,7 +31,7 @@ func (b *ContactsBackend) getContactIndex(user, id string) (int, error) {
 	return -1, errors.New("No such contact")
 }
 
-func (b *ContactsBackend) UpdateContact(user string, update *backend.ContactUpdate) (*backend.Contact, error) {
+func (b *Contacts) UpdateContact(user string, update *backend.ContactUpdate) (*backend.Contact, error) {
 	i, err := b.getContactIndex(user, update.Contact.ID)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (b *ContactsBackend) UpdateContact(user string, update *backend.ContactUpda
 	return contact, nil
 }
 
-func (b *ContactsBackend) DeleteContact(user, id string) error {
+func (b *Contacts) DeleteContact(user, id string) error {
 	i, err := b.getContactIndex(user, id)
 	if err != nil {
 		return err
@@ -54,13 +54,13 @@ func (b *ContactsBackend) DeleteContact(user, id string) error {
 	return nil
 }
 
-func (b *ContactsBackend) DeleteAllContacts(user string) error {
+func (b *Contacts) DeleteAllContacts(user string) error {
 	b.contacts[user] = nil
 	return nil
 }
 
-func NewContactsBackend() backend.ContactsBackend {
-	return &ContactsBackend{
+func NewContacts() backend.ContactsBackend {
+	return &Contacts{
 		contacts: map[string][]*backend.Contact{},
 	}
 }

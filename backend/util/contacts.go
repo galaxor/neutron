@@ -4,12 +4,12 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-type EventedContactsBackend struct {
+type EventedContacts struct {
 	backend.ContactsBackend
 	events backend.EventsBackend
 }
 
-func (b *EventedContactsBackend) InsertContact(user string, contact *backend.Contact) (*backend.Contact, error) {
+func (b *EventedContacts) InsertContact(user string, contact *backend.Contact) (*backend.Contact, error) {
 	contact, err := b.ContactsBackend.InsertContact(user, contact)
 
 	if err == nil {
@@ -20,7 +20,7 @@ func (b *EventedContactsBackend) InsertContact(user string, contact *backend.Con
 	return contact, err
 }
 
-func (b *EventedContactsBackend) UpdateContact(user string, update *backend.ContactUpdate) (*backend.Contact, error) {
+func (b *EventedContacts) UpdateContact(user string, update *backend.ContactUpdate) (*backend.Contact, error) {
 	contact, err := b.ContactsBackend.UpdateContact(user, update)
 
 	if err == nil {
@@ -31,7 +31,7 @@ func (b *EventedContactsBackend) UpdateContact(user string, update *backend.Cont
 	return contact, err
 }
 
-func (b *EventedContactsBackend) DeleteContact(user, id string) error {
+func (b *EventedContacts) DeleteContact(user, id string) error {
 	err := b.ContactsBackend.DeleteContact(user, id)
 
 	if err == nil {
@@ -42,8 +42,8 @@ func (b *EventedContactsBackend) DeleteContact(user, id string) error {
 	return err
 }
 
-func NewEventedContactsBackend(bkd backend.ContactsBackend, events backend.EventsBackend) backend.ContactsBackend {
-	return &EventedContactsBackend{
+func NewEventedContacts(bkd backend.ContactsBackend, events backend.EventsBackend) backend.ContactsBackend {
+	return &EventedContacts{
 		ContactsBackend: bkd,
 		events: events,
 	}

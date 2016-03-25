@@ -6,12 +6,12 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-type EventedMessagesBackend struct {
+type EventedMessages struct {
 	backend.MessagesBackend
 	events backend.EventsBackend
 }
 
-func (b *EventedMessagesBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
+func (b *EventedMessages) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg, err := b.MessagesBackend.InsertMessage(user, msg)
 
 	if err == nil {
@@ -24,7 +24,7 @@ func (b *EventedMessagesBackend) InsertMessage(user string, msg *backend.Message
 	return msg, err
 }
 
-func (b *EventedMessagesBackend) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
+func (b *EventedMessages) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
 	msg, err := b.MessagesBackend.UpdateMessage(user, update)
 
 	if err == nil {
@@ -35,7 +35,7 @@ func (b *EventedMessagesBackend) UpdateMessage(user string, update *backend.Mess
 	return msg, err
 }
 
-func (b *EventedMessagesBackend) DeleteMessage(user, id string) error {
+func (b *EventedMessages) DeleteMessage(user, id string) error {
 	err := b.MessagesBackend.DeleteMessage(user, id)
 
 	if err == nil {
@@ -48,8 +48,8 @@ func (b *EventedMessagesBackend) DeleteMessage(user, id string) error {
 	return err
 }
 
-func NewEventedMessagesBackend(bkd backend.MessagesBackend, events backend.EventsBackend) backend.MessagesBackend {
-	return &EventedMessagesBackend{
+func NewEventedMessages(bkd backend.MessagesBackend, events backend.EventsBackend) backend.MessagesBackend {
+	return &EventedMessages{
 		MessagesBackend: bkd,
 		events: events,
 	}
@@ -57,25 +57,25 @@ func NewEventedMessagesBackend(bkd backend.MessagesBackend, events backend.Event
 
 
 // A SendBackend that does nothing.
-type NoopSendBackend struct {}
+type NoopSend struct {}
 
-func (b *NoopSendBackend) SendMessagePackage(user string, msg *backend.OutgoingMessage) error {
+func (b *NoopSend) SendMessagePackage(user string, msg *backend.OutgoingMessage) error {
 	return nil // Do nothing
 }
 
-func NewNoopSendBackend() backend.SendBackend {
-	return &NoopSendBackend{}
+func NewNoopSend() backend.SendBackend {
+	return &NoopSend{}
 }
 
 
 // A SendBackend that forwards all sent messages to a MessagesBackend.
-type EchoSendBackend struct {
+type EchoSend struct {
 	target backend.MessagesBackend
 }
 
-func (b *EchoSendBackend) SendMessagePackage(user string, msg *backend.OutgoingMessage) error {
+func (b *EchoSend) SendMessagePackage(user string, msg *backend.OutgoingMessage) error {
 	newMsg := *msg.Message // Copy msg
-	newMsg.Subject = "[EchoSendBackend forwarded message] " + newMsg.Subject
+	newMsg.Subject = "[EchoSend forwarded message] " + newMsg.Subject
 	newMsg.Body = msg.MessagePackage.Body
 	newMsg.Time = time.Now().Unix()
 	newMsg.LabelIDs = []string{backend.InboxLabel}
@@ -86,8 +86,8 @@ func (b *EchoSendBackend) SendMessagePackage(user string, msg *backend.OutgoingM
 	return err
 }
 
-func NewEchoSendBackend(target backend.MessagesBackend) backend.SendBackend {
-	return &EchoSendBackend{
+func NewEchoSend(target backend.MessagesBackend) backend.SendBackend {
+	return &EchoSend{
 		target: target,
 	}
 }

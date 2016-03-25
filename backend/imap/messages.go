@@ -14,8 +14,8 @@ import (
 	"github.com/emersion/neutron/backend/util/textproto"
 )
 
-type MessagesBackend struct {
-	*connBackend
+type Messages struct {
+	*conns
 
 	mailboxes map[string][]*imap.MailboxInfo
 }
@@ -119,7 +119,7 @@ func parseEnvelope(msg *backend.Message, envelope []imap.Field) {
 	// envelope[8] is Message-Id
 }
 
-func (b *MessagesBackend) getMailboxes(user string) ([]*imap.MailboxInfo, error) {
+func (b *Messages) getMailboxes(user string) ([]*imap.MailboxInfo, error) {
 	// Mailboxes list already retrieved
 	if len(b.mailboxes[user]) > 0 {
 		return b.mailboxes[user], nil
@@ -157,7 +157,7 @@ func (b *MessagesBackend) getMailboxes(user string) ([]*imap.MailboxInfo, error)
 	return b.mailboxes[user], nil
 }
 
-func (b *MessagesBackend) getLabelMailbox(user, label string) (mailbox string, err error) {
+func (b *Messages) getLabelMailbox(user, label string) (mailbox string, err error) {
 	mailboxes, err := b.getMailboxes(user)
 	if err != nil {
 		return
@@ -174,7 +174,7 @@ func (b *MessagesBackend) getLabelMailbox(user, label string) (mailbox string, e
 	return
 }
 
-func (b *MessagesBackend) selectMailbox(user, mailbox string) (err error) {
+func (b *Messages) selectMailbox(user, mailbox string) (err error) {
 	c, unlock, err := b.getConn(user)
 	if err != nil {
 		return
@@ -191,7 +191,7 @@ func (b *MessagesBackend) selectMailbox(user, mailbox string) (err error) {
 	return
 }
 
-func (b *MessagesBackend) selectLabelMailbox(user, label string) (err error) {
+func (b *Messages) selectLabelMailbox(user, label string) (err error) {
 	mailbox, err := b.getLabelMailbox(user, label)
 	if err != nil {
 		return
@@ -200,7 +200,7 @@ func (b *MessagesBackend) selectLabelMailbox(user, label string) (err error) {
 	return b.selectMailbox(user, mailbox)
 }
 
-func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err error) {
+func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error) {
 	mailbox, uid, err := parseMessageId(id)
 	if err != nil {
 		return
@@ -257,7 +257,7 @@ func reverseMessagesList(msgs []*backend.Message) {
 	}
 }
 
-func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilter) (msgs []*backend.Message, total int, err error) {
+func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (msgs []*backend.Message, total int, err error) {
 	if filter.Label == "" {
 		err = errors.New("Cannot list messages without specifying a label")
 		return
@@ -326,7 +326,7 @@ func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilt
 	return
 }
 
-func (b *MessagesBackend) CountMessages(user string) (counts []*backend.MessagesCount, err error) {
+func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, err error) {
 	mailboxes, err := b.getMailboxes(user)
 	if err != nil {
 		return
@@ -356,7 +356,7 @@ func (b *MessagesBackend) CountMessages(user string) (counts []*backend.Messages
 	return
 }
 
-func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (inserted *backend.Message, err error) {
+func (b *Messages) InsertMessage(user string, msg *backend.Message) (inserted *backend.Message, err error) {
 	mailbox, err := b.getLabelMailbox(user, backend.DraftLabel)
 	if err != nil {
 		return
@@ -387,7 +387,7 @@ func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (inse
 	return
 }
 
-func (b *MessagesBackend) updateMessageFlags(user string, seqset *imap.SeqSet, flag string, value bool) error {
+func (b *Messages) updateMessageFlags(user string, seqset *imap.SeqSet, flag string, value bool) error {
 	item := "+FLAGS"
 	if !value {
 		item = "-FLAGS"
@@ -409,7 +409,7 @@ func (b *MessagesBackend) updateMessageFlags(user string, seqset *imap.SeqSet, f
 	return nil
 }
 
-func (b *MessagesBackend) deleteMessages(user string, seqset *imap.SeqSet) (err error) {
+func (b *Messages) deleteMessages(user string, seqset *imap.SeqSet) (err error) {
 	c, unlock, err := b.getConn(user)
 	if err != nil {
 		return
@@ -431,7 +431,7 @@ func (b *MessagesBackend) deleteMessages(user string, seqset *imap.SeqSet) (err 
 }
 
 // TODO: only supports moving one single message
-func (b *MessagesBackend) copyMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
+func (b *Messages) copyMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
 	c, unlock, err := b.getConn(user)
 	if err != nil {
 		return
@@ -452,7 +452,7 @@ func (b *MessagesBackend) copyMessages(user string, seqset *imap.SeqSet, mbox st
 	return
 }
 
-func (b *MessagesBackend) moveMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
+func (b *Messages) moveMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
 	uid, err = b.copyMessages(user, seqset, mbox)
 	if err != nil {
 		return
@@ -462,7 +462,7 @@ func (b *MessagesBackend) moveMessages(user string, seqset *imap.SeqSet, mbox st
 	return
 }
 
-func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
+func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
 	mailbox, uid, err := parseMessageId(update.Message.ID)
 	if err != nil {
 		return
@@ -547,7 +547,7 @@ func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpda
 	return
 }
 
-func (b *MessagesBackend) DeleteMessage(user, id string) (err error) {
+func (b *Messages) DeleteMessage(user, id string) (err error) {
 	mailbox, uid, err := parseMessageId(id)
 	if err != nil {
 		return
@@ -565,9 +565,9 @@ func (b *MessagesBackend) DeleteMessage(user, id string) (err error) {
 	return
 }
 
-func newMessagesBackend(conn *connBackend) backend.MessagesBackend {
-	return &MessagesBackend{
-		connBackend: conn,
+func newMessages(conns *conns) backend.MessagesBackend {
+	return &Messages{
+		conns: conns,
 		mailboxes: map[string][]*imap.MailboxInfo{},
 	}
 }

@@ -6,11 +6,11 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-type MessagesBackend struct {
+type Messages struct {
 	messages map[string][]*backend.Message
 }
 
-func (b *MessagesBackend) getMessageIndex(user, id string) (int, error) {
+func (b *Messages) getMessageIndex(user, id string) (int, error) {
 	for i, m := range b.messages[user] {
 		if m.ID == id {
 			return i, nil
@@ -20,7 +20,7 @@ func (b *MessagesBackend) getMessageIndex(user, id string) (int, error) {
 	return -1, errors.New("No such message")
 }
 
-func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err error) {
+func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error) {
 	i, err := b.getMessageIndex(user, id)
 	if err != nil {
 		return
@@ -30,7 +30,7 @@ func (b *MessagesBackend) GetMessage(user, id string) (msg *backend.Message, err
 	return
 }
 
-func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilter) (msgs []*backend.Message, total int, err error) {
+func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (msgs []*backend.Message, total int, err error) {
 	all := b.messages[user]
 	filtered := []*backend.Message{}
 
@@ -74,7 +74,7 @@ func (b *MessagesBackend) ListMessages(user string, filter *backend.MessagesFilt
 	return
 }
 
-func (b *MessagesBackend) CountMessages(user string) (counts []*backend.MessagesCount, err error) {
+func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, err error) {
 	indexes := map[string]int{}
 
 	for _, msg := range b.messages[user] {
@@ -98,14 +98,14 @@ func (b *MessagesBackend) CountMessages(user string) (counts []*backend.Messages
 	return
 }
 
-func (b *MessagesBackend) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
+func (b *Messages) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg.ID = generateId()
 	msg.Order = len(b.messages[user])
 	b.messages[user] = append(b.messages[user], msg)
 	return msg, nil
 }
 
-func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
+func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
 	i, err := b.getMessageIndex(user, update.Message.ID)
 	if err != nil {
 		return
@@ -116,7 +116,7 @@ func (b *MessagesBackend) UpdateMessage(user string, update *backend.MessageUpda
 	return
 }
 
-func (b *MessagesBackend) DeleteMessage(user, id string) error {
+func (b *Messages) DeleteMessage(user, id string) error {
 	i, err := b.getMessageIndex(user, id)
 	if err != nil {
 		return err
@@ -128,8 +128,8 @@ func (b *MessagesBackend) DeleteMessage(user, id string) error {
 	return nil
 }
 
-func NewMessagesBackend() backend.MessagesBackend {
-	return &MessagesBackend{
+func NewMessages() backend.MessagesBackend {
+	return &Messages{
 		messages: map[string][]*backend.Message{},
 	}
 }

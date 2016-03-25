@@ -73,7 +73,7 @@ type Session struct {
 }
 
 type Api struct {
-	backend backend.Backend
+	backend *backend.Backend
 	sessions map[string]*Session
 }
 
@@ -126,7 +126,7 @@ func (api *Api) keepSessionAlive(id string) {
 	session.Time = time.Now()
 }
 
-func New(m *macaron.Macaron, backend backend.Backend) {
+func New(m *macaron.Macaron, backend *backend.Backend) {
 	api := &Api{
 		backend: backend,
 		sessions: map[string]*Session{},

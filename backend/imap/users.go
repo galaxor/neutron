@@ -8,7 +8,14 @@ import (
 	"github.com/emersion/neutron/backend/memory"
 )
 
-func (b *Backend) GetUser(id string) (user *backend.User, err error) {
+type Users struct {
+	*conns
+
+	users map[string]*backend.User
+	passwords map[string]string
+}
+
+func (b *Users) GetUser(id string) (user *backend.User, err error) {
 	user, ok := b.users[id]
 	if !ok {
 		err = errors.New("No such user")
@@ -16,7 +23,7 @@ func (b *Backend) GetUser(id string) (user *backend.User, err error) {
 	return
 }
 
-func (b *Backend) Auth(username, password string) (user *backend.User, err error) {
+func (b *Users) Auth(username, password string) (user *backend.User, err error) {
 	c, err := imap.DialTLS(b.config.Host(), nil)
 	if err != nil {
 		return
@@ -59,35 +66,44 @@ func (b *Backend) Auth(username, password string) (user *backend.User, err error
 	return
 }
 
-func (b *Backend) IsUsernameAvailable(username string) (bool, error) {
+func (b *Users) IsUsernameAvailable(username string) (bool, error) {
 	return false, errors.New("Cannot check if a username is available with IMAP backend")
 }
 
-func (b *Backend) InsertUser(u *backend.User, password string) (*backend.User, error) {
+func (b *Users) InsertUser(u *backend.User, password string) (*backend.User, error) {
 	return nil, errors.New("Cannot register new user with IMAP backend")
 }
 
-func (b *Backend) UpdateUser(update *backend.UserUpdate) error {
+func (b *Users) UpdateUser(update *backend.UserUpdate) error {
 	return errors.New("Cannot update user with IMAP backend")
 }
 
-func (b *Backend) UpdateUserPassword(id, current, new string) error {
+func (b *Users) UpdateUserPassword(id, current, new string) error {
 	return errors.New("Cannot update user password with IMAP backend")
 }
 
-func (b *Backend) UpdateKeypair(id, password string, keypair *backend.Keypair) error {
+func (b *Users) UpdateKeypair(id, password string, keypair *backend.Keypair) error {
 	return errors.New("Not yet implemented")
 }
 
-func (b *Backend) GetPublicKey(email string) (string, error) {
+func (b *Users) GetPublicKey(email string) (string, error) {
 	// TODO
 	return "", nil
 }
 
 // Allow other backends (e.g. a SMTP backend) to access users' password.
-func (b *Backend) GetPassword(user string) (string, error) {
+func (b *Users) GetPassword(user string) (string, error) {
 	if password, ok := b.passwords[user]; ok {
 		return password, nil
 	}
 	return "", errors.New("No password stored for such user")
+}
+
+func newUsers(conns *conns) *Users {
+	return &Users{
+		conns: conns,
+
+		users: map[string]*backend.User{},
+		passwords: map[string]string{},
+	}
 }
