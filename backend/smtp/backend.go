@@ -14,7 +14,7 @@ type Config struct {
 	Suffix string
 }
 
-func Use(config *Config, passwords PasswordsBackend, bkd *backend.Backend) {
+func Use(bkd *backend.Backend, config *Config, passwords PasswordsBackend) {
 	send := New(config, passwords)
 
 	bkd.Set(send)

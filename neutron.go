@@ -35,8 +35,8 @@ func main() {
 		}
 
 		memory.Use(bkd)
-		passwords := imap.Use(imapConfig, bkd)
-		smtp.Use(smtpConfig, passwords, bkd)
+		passwords := imap.Use(bkd, imapConfig)
+		smtp.Use(bkd, smtpConfig, passwords)
 	}
 
 	m := macaron.Classic()

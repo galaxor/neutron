@@ -11,7 +11,7 @@ type Config struct {
 	Suffix string
 }
 
-func Use(config *Config, bkd *backend.Backend) *Users {
+func Use(bkd *backend.Backend, config *Config) *Users {
 	conns := newConns(config)
 	messages := newMessages(conns)
 	conversations := util.NewDummyConversations(messages)
