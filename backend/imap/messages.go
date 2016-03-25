@@ -20,30 +20,47 @@ type Messages struct {
 	mailboxes map[string][]*imap.MailboxInfo
 }
 
-func formatMessageId(mailbox string, uid uint32) string {
+func formatAttachmentId(mailbox string, uid uint32, part string) string {
 	raw := mailbox + "/" + strconv.Itoa(int(uid))
+	if part != "" {
+		raw += "#" + part
+	}
 	return base64.URLEncoding.EncodeToString([]byte(raw))
 }
 
-func parseMessageId(msgId string) (mailbox string, uid uint32, err error) {
-	decoded, err := base64.URLEncoding.DecodeString(msgId)
+func formatMessageId(mailbox string, uid uint32) string {
+	return formatAttachmentId(mailbox, uid, "")
+}
+
+func parseAttachmentId(id string) (mailbox string, uid uint32, part string, err error) {
+	decoded, err := base64.URLEncoding.DecodeString(id)
 	if err != nil {
 		return
 	}
 
-	parts := strings.SplitN(string(decoded), "/", 2)
-	if len(parts) != 2 {
+	fstParts := strings.SplitN(string(decoded), "/", 2)
+	if len(fstParts) != 2 {
 		err = errors.New("Invalid message ID: does not contain separator")
 		return
 	}
+	sndParts := strings.SplitN(fstParts[1], "#", 2)
 
-	uidInt, err := strconv.Atoi(parts[1])
+	uidInt, err := strconv.Atoi(sndParts[0])
 	if err != nil {
 		return
 	}
 
-	mailbox = parts[0]
+	mailbox = fstParts[0]
 	uid = uint32(uidInt)
+
+	if len(sndParts) == 2 {
+		part = sndParts[1]
+	}
+	return
+}
+
+func parseMessageId(id string) (mailbox string, uid uint32, err error) {
+	mailbox, uid, _, err = parseAttachmentId(id)
 	return
 }
 
@@ -117,6 +134,68 @@ func parseEnvelope(msg *backend.Message, envelope []imap.Field) {
 
 	// envelope[7] is In-Reply-To
 	// envelope[8] is Message-Id
+}
+
+func parseBodyStructureParams(params []imap.Field) map[string]string {
+	result := map[string]string{}
+
+	for i := 0; i < len(params); i += 2 {
+		key := imap.AsString(params[i])
+		val := imap.AsString(params[i+1])
+
+		result[key] = val
+	}
+
+	return result
+}
+
+func parseBodyStructure(structure []imap.Field) *textproto.BodyStructure {
+	var parse func(structure []imap.Field, id string) *textproto.BodyStructure
+	parse = func(structure []imap.Field, id string) *textproto.BodyStructure {
+		if imap.TypeOf(structure[0]) == imap.QuotedString {
+			if id == "" {
+				id = "1"
+			}
+
+			// Not a MIME message
+			return &textproto.BodyStructure{
+				ID: id,
+				Type: imap.AsString(structure[0]),
+				SubType: imap.AsString(structure[1]),
+				Params: parseBodyStructureParams(imap.AsList(structure[2])),
+				ContentId: imap.AsString(structure[3]),
+				ContentDescription: imap.AsString(structure[4]),
+				ContentEncoding: imap.AsString(structure[5]),
+				Size: int(imap.AsNumber(structure[6])),
+			}
+		}
+
+		var processedUntil int
+		var children []*textproto.BodyStructure
+		for i, field := range structure {
+			if imap.TypeOf(field) != imap.List {
+				processedUntil = i
+				break
+			}
+
+			childId := strconv.Itoa(i + 1)
+			if id != "" {
+				childId = id + "." + childId
+			}
+
+			child := parse(imap.AsList(field), childId)
+			children = append(children, child)
+		}
+
+		return &textproto.BodyStructure{
+			ID: id,
+			Type: "multipart",
+			SubType: imap.AsString(structure[processedUntil]),
+			Children: children,
+		}
+	}
+
+	return parse(structure, "")
 }
 
 func (b *Messages) getMailboxes(user string) ([]*imap.MailboxInfo, error) {
@@ -217,9 +296,12 @@ func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error)
 	}
 	defer unlock()
 
-	set, _ := imap.NewSeqSet("")
-	set.AddNum(uid)
-	cmd, _, err := wait(c.UIDFetch(set, "UID", "FLAGS", "RFC822.SIZE", "RFC822.HEADER", "RFC822.TEXT"))
+	seqset, _ := imap.NewSeqSet("")
+	seqset.AddNum(uid)
+
+	// Get message metadata
+
+	cmd, _, err := wait(c.UIDFetch(seqset, "FLAGS", "RFC822.SIZE", "RFC822.HEADER", "BODYSTRUCTURE"))
 	if err != nil {
 		return
 	}
@@ -231,22 +313,39 @@ func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error)
 
 	rsp := cmd.Data[0]
 	msgInfo := rsp.MessageInfo()
+	structure := parseBodyStructure(imap.AsList(msgInfo.Attrs["BODYSTRUCTURE"]))
+
 	header := imap.AsBytes(msgInfo.Attrs["RFC822.HEADER"])
-	body := imap.AsBytes(msgInfo.Attrs["RFC822.TEXT"])
 	m, err := mail.ReadMessage(bytes.NewReader(header))
 	if err != nil {
 		return
 	}
 
-	m.Body = bytes.NewReader(body)
-
 	msg = &backend.Message{}
-	msg.ID = formatMessageId(c.Mailbox.Name, msgInfo.UID)
+	msg.ID = id
 	msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)}
 	msg.Header = string(header)
 	parseMessageInfo(msg, msgInfo)
 	textproto.ParseMessageHeader(msg, &m.Header)
-	textproto.ParseMessageBody(msg, m)
+	textproto.ParseMessageStructure(msg, structure)
+
+	for _, a := range msg.Attachments {
+		a.ID = formatAttachmentId(mailbox, uid, a.ID)
+	}
+
+	// Get message content
+
+	preferred := textproto.GetMessagePreferredPart(structure)
+	cmd, _, err = wait(c.UIDFetch(seqset, "BODY.PEEK[" + preferred.ID + "]"))
+	if err != nil {
+		return
+	}
+
+	rsp = cmd.Data[0]
+	msgInfo = rsp.MessageInfo()
+	body := imap.AsBytes(msgInfo.Attrs["BODY[" + preferred.ID + "]"])
+
+	err = textproto.ParseMessagePartContent(msg, preferred, bytes.NewReader(body))
 	return
 }
 
@@ -283,291 +382,291 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 
 		if uint32(to) < c.Mailbox.Messages {
 			set.AddRange(c.Mailbox.Messages - uint32(from), c.Mailbox.Messages - uint32(to))
-		} else {
-			set.Add("1:*")
-		}
-	} else {
-		set.Add("1:*")
-	}
+			} else {
+				set.Add("1:*")
+			}
+			} else {
+				set.Add("1:*")
+			}
 
-	cmd, err := c.Fetch(set, "UID", "FLAGS", "RFC822.SIZE", "ENVELOPE")
-	if err != nil {
-		return
-	}
+			cmd, err := c.Fetch(set, "UID", "FLAGS", "RFC822.SIZE", "ENVELOPE")
+			if err != nil {
+				return
+			}
 
-	for cmd.InProgress() {
-		c.Recv(-1)
+			for cmd.InProgress() {
+				c.Recv(-1)
 
-		// Process command data
-		for _, rsp := range cmd.Data {
-			msgInfo := rsp.MessageInfo()
-			envelope := imap.AsList(msgInfo.Attrs["ENVELOPE"])
+				// Process command data
+				for _, rsp := range cmd.Data {
+					msgInfo := rsp.MessageInfo()
+					envelope := imap.AsList(msgInfo.Attrs["ENVELOPE"])
 
-			msg := &backend.Message{}
-			msg.ID = formatMessageId(c.Mailbox.Name, msgInfo.UID)
-			msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)}
-			parseMessageInfo(msg, msgInfo)
-			parseEnvelope(msg, envelope)
+					msg := &backend.Message{}
+					msg.ID = formatMessageId(c.Mailbox.Name, msgInfo.UID)
+					msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)}
+					parseMessageInfo(msg, msgInfo)
+					parseEnvelope(msg, envelope)
 
-			msgs = append(msgs, msg)
-		}
+					msgs = append(msgs, msg)
+				}
 
-		cmd.Data = nil
-	}
+				cmd.Data = nil
+			}
 
-	c.Data = nil
+			c.Data = nil
 
-	// Check command completion status
-	if _, err = cmd.Result(imap.OK); err != nil {
-		return
-	}
+			// Check command completion status
+			if _, err = cmd.Result(imap.OK); err != nil {
+				return
+			}
 
-	reverseMessagesList(msgs)
-	return
-}
-
-func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, err error) {
-	mailboxes, err := b.getMailboxes(user)
-	if err != nil {
-		return
-	}
-
-	c, unlock, err := b.getConn(user)
-	if err != nil {
-		return
-	}
-	defer unlock()
-
-	for _, mailbox := range mailboxes {
-		cmd, _ := imap.Wait(c.Status(mailbox.Name, "MESSAGES", "UNSEEN"))
-		if _, err = cmd.Result(imap.OK); err != nil {
+			reverseMessagesList(msgs)
 			return
 		}
 
-		mailboxStatus := cmd.Data[0].MailboxStatus()
+		func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, err error) {
+			mailboxes, err := b.getMailboxes(user)
+			if err != nil {
+				return
+			}
 
-		counts = append(counts, &backend.MessagesCount{
-			LabelID: getLabelID(mailboxStatus.Name),
-			Total: int(mailboxStatus.Messages),
-			Unread: int(mailboxStatus.Unseen),
-		})
-	}
+			c, unlock, err := b.getConn(user)
+			if err != nil {
+				return
+			}
+			defer unlock()
 
-	return
-}
+			for _, mailbox := range mailboxes {
+				cmd, _ := imap.Wait(c.Status(mailbox.Name, "MESSAGES", "UNSEEN"))
+				if _, err = cmd.Result(imap.OK); err != nil {
+					return
+				}
 
-func (b *Messages) InsertMessage(user string, msg *backend.Message) (inserted *backend.Message, err error) {
-	mailbox, err := b.getLabelMailbox(user, backend.DraftLabel)
-	if err != nil {
-		return
-	}
+				mailboxStatus := cmd.Data[0].MailboxStatus()
 
-	flags := imap.NewFlagSet("\\Seen", "\\Draft")
-	mail := textproto.FormatMessage(msg)
-	literal := imap.NewLiteral([]byte(mail))
+				counts = append(counts, &backend.MessagesCount{
+					LabelID: getLabelID(mailboxStatus.Name),
+					Total: int(mailboxStatus.Messages),
+					Unread: int(mailboxStatus.Unseen),
+				})
+			}
 
-	c, unlock, err := b.getConn(user)
-	if err != nil {
-		return
-	}
-	defer unlock()
-
-	_, res, err := wait(c.Append(mailbox, flags, nil, literal))
-	if err != nil {
-		return
-	}
-
-	if imap.AsString(res.Fields[0]) != "APPENDUID" {
-		err = errors.New("APPEND didn't returned an UID (this is not supported for now)")
-		return
-	}
-
-	inserted = msg
-	inserted.ID = formatMessageId(mailbox, imap.AsNumber(res.Fields[2]))
-	return
-}
-
-func (b *Messages) updateMessageFlags(user string, seqset *imap.SeqSet, flag string, value bool) error {
-	item := "+FLAGS"
-	if !value {
-		item = "-FLAGS"
-	}
-
-	fields := imap.Field([]imap.Field{imap.Field(flag)})
-
-	c, unlock, err := b.getConn(user)
-	if err != nil {
-		return err
-	}
-	defer unlock()
-
-	_, _, err = wait(c.UIDStore(seqset, item, fields))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (b *Messages) deleteMessages(user string, seqset *imap.SeqSet) (err error) {
-	c, unlock, err := b.getConn(user)
-	if err != nil {
-		return
-	}
-	defer unlock()
-
-	fields := imap.Field([]imap.Field{imap.Field("\\Deleted")})
-	_, _, err = wait(c.UIDStore(seqset, "+FLAGS", fields))
-	if err != nil {
-		return
-	}
-
-	_, _, err = wait(c.Expunge(seqset))
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-// TODO: only supports moving one single message
-func (b *Messages) copyMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
-	c, unlock, err := b.getConn(user)
-	if err != nil {
-		return
-	}
-	defer unlock()
-
-	_, res, err := wait(c.UIDCopy(seqset, mbox))
-	if err != nil {
-		return
-	}
-
-	if imap.AsString(res.Fields[0]) != "COPYUID" {
-		err = errors.New("COPY didn't returned an UID (this is not supported for now)")
-		return
-	}
-
-	uid = imap.AsNumber(res.Fields[2])
-	return
-}
-
-func (b *Messages) moveMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
-	uid, err = b.copyMessages(user, seqset, mbox)
-	if err != nil {
-		return
-	}
-
-	err = b.deleteMessages(user, seqset)
-	return
-}
-
-func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
-	mailbox, uid, err := parseMessageId(update.Message.ID)
-	if err != nil {
-		return
-	}
-
-	err = b.selectMailbox(user, mailbox)
-	if err != nil {
-		return
-	}
-
-	seqset, _ := imap.NewSeqSet("")
-	seqset.AddNum(uid)
-
-	msg, err = b.GetMessage(user, update.Message.ID)
-	if err != nil {
-		return
-	}
-
-	if update.IsRead {
-		err = b.updateMessageFlags(user, seqset, "\\Seen", (update.Message.IsRead == 1))
-		if err != nil {
-			return
-		}
-	}
-
-	if update.Starred {
-		err = b.updateMessageFlags(user, seqset, "\\Flagged", (update.Message.Starred == 1))
-		if err != nil {
-			return
-		}
-	}
-
-	if update.Type {
-		err = b.updateMessageFlags(user, seqset, "\\Draft", (update.Message.Type == backend.DraftType))
-		if err != nil {
-			return
-		}
-	}
-
-	if update.ToList || update.CCList || update.BCCList || update.Subject || update.AddressID || update.Body || update.Time {
-		// If one of those is modified, we have to re-send the whole message to the server
-
-		// Apply update to message so we can format it
-		update.Apply(msg)
-		msg.ID = "" // The message ID will be overwritten
-
-		// Insert the updated message
-		msg, err = b.InsertMessage(user, msg)
-		if err != nil {
 			return
 		}
 
-		// Delete the old message
-		err = b.deleteMessages(user, seqset)
-		if err != nil {
+		func (b *Messages) InsertMessage(user string, msg *backend.Message) (inserted *backend.Message, err error) {
+			mailbox, err := b.getLabelMailbox(user, backend.DraftLabel)
+			if err != nil {
+				return
+			}
+
+			flags := imap.NewFlagSet("\\Seen", "\\Draft")
+			mail := textproto.FormatMessage(msg)
+			literal := imap.NewLiteral([]byte(mail))
+
+			c, unlock, err := b.getConn(user)
+			if err != nil {
+				return
+			}
+			defer unlock()
+
+			_, res, err := wait(c.Append(mailbox, flags, nil, literal))
+			if err != nil {
+				return
+			}
+
+			if imap.AsString(res.Fields[0]) != "APPENDUID" {
+				err = errors.New("APPEND didn't returned an UID (this is not supported for now)")
+				return
+			}
+
+			inserted = msg
+			inserted.ID = formatMessageId(mailbox, imap.AsNumber(res.Fields[2]))
 			return
 		}
-	} else if update.LabelIDs == backend.ReplaceLabels && len(update.Message.LabelIDs) == 1 {
-		// Move the message from its mailbox to another one
-		// TODO: support more scenarios
 
-		label := update.Message.LabelIDs[0]
+		func (b *Messages) updateMessageFlags(user string, seqset *imap.SeqSet, flag string, value bool) error {
+			item := "+FLAGS"
+			if !value {
+				item = "-FLAGS"
+			}
 
-		var newMailbox string
-		newMailbox, err = b.getLabelMailbox(user, label)
-		if err != nil {
+			fields := imap.Field([]imap.Field{imap.Field(flag)})
+
+			c, unlock, err := b.getConn(user)
+			if err != nil {
+				return err
+			}
+			defer unlock()
+
+			_, _, err = wait(c.UIDStore(seqset, item, fields))
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		func (b *Messages) deleteMessages(user string, seqset *imap.SeqSet) (err error) {
+			c, unlock, err := b.getConn(user)
+			if err != nil {
+				return
+			}
+			defer unlock()
+
+			fields := imap.Field([]imap.Field{imap.Field("\\Deleted")})
+			_, _, err = wait(c.UIDStore(seqset, "+FLAGS", fields))
+			if err != nil {
+				return
+			}
+
+			_, _, err = wait(c.Expunge(seqset))
+			if err != nil {
+				return
+			}
+
 			return
 		}
 
-		var newUid uint32
-		newUid, err = b.moveMessages(user, seqset, newMailbox)
-		if err != nil {
+		// TODO: only supports moving one single message
+		func (b *Messages) copyMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
+			c, unlock, err := b.getConn(user)
+			if err != nil {
+				return
+			}
+			defer unlock()
+
+			_, res, err := wait(c.UIDCopy(seqset, mbox))
+			if err != nil {
+				return
+			}
+
+			if imap.AsString(res.Fields[0]) != "COPYUID" {
+				err = errors.New("COPY didn't returned an UID (this is not supported for now)")
+				return
+			}
+
+			uid = imap.AsNumber(res.Fields[2])
 			return
 		}
 
-		update.Apply(msg)
-		msg.ID = formatMessageId(newMailbox, newUid)
-	} else {
-		update.Apply(msg)
-	}
+		func (b *Messages) moveMessages(user string, seqset *imap.SeqSet, mbox string) (uid uint32, err error) {
+			uid, err = b.copyMessages(user, seqset, mbox)
+			if err != nil {
+				return
+			}
 
-	return
-}
+			err = b.deleteMessages(user, seqset)
+			return
+		}
 
-func (b *Messages) DeleteMessage(user, id string) (err error) {
-	mailbox, uid, err := parseMessageId(id)
-	if err != nil {
-		return
-	}
+		func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
+			mailbox, uid, err := parseMessageId(update.Message.ID)
+			if err != nil {
+				return
+			}
 
-	err = b.selectMailbox(user, mailbox)
-	if err != nil {
-		return
-	}
+			err = b.selectMailbox(user, mailbox)
+			if err != nil {
+				return
+			}
 
-	seqset, _ := imap.NewSeqSet("")
-	seqset.AddNum(uid)
+			seqset, _ := imap.NewSeqSet("")
+			seqset.AddNum(uid)
 
-	err = b.deleteMessages(user, seqset)
-	return
-}
+			msg, err = b.GetMessage(user, update.Message.ID)
+			if err != nil {
+				return
+			}
 
-func newMessages(conns *conns) backend.MessagesBackend {
-	return &Messages{
-		conns: conns,
-		mailboxes: map[string][]*imap.MailboxInfo{},
-	}
-}
+			if update.IsRead {
+				err = b.updateMessageFlags(user, seqset, "\\Seen", (update.Message.IsRead == 1))
+				if err != nil {
+					return
+				}
+			}
+
+			if update.Starred {
+				err = b.updateMessageFlags(user, seqset, "\\Flagged", (update.Message.Starred == 1))
+				if err != nil {
+					return
+				}
+			}
+
+			if update.Type {
+				err = b.updateMessageFlags(user, seqset, "\\Draft", (update.Message.Type == backend.DraftType))
+				if err != nil {
+					return
+				}
+			}
+
+			if update.ToList || update.CCList || update.BCCList || update.Subject || update.AddressID || update.Body || update.Time {
+				// If one of those is modified, we have to re-send the whole message to the server
+
+				// Apply update to message so we can format it
+				update.Apply(msg)
+				msg.ID = "" // The message ID will be overwritten
+
+				// Insert the updated message
+				msg, err = b.InsertMessage(user, msg)
+				if err != nil {
+					return
+				}
+
+				// Delete the old message
+				err = b.deleteMessages(user, seqset)
+				if err != nil {
+					return
+				}
+				} else if update.LabelIDs == backend.ReplaceLabels && len(update.Message.LabelIDs) == 1 {
+					// Move the message from its mailbox to another one
+					// TODO: support more scenarios
+
+					label := update.Message.LabelIDs[0]
+
+					var newMailbox string
+					newMailbox, err = b.getLabelMailbox(user, label)
+					if err != nil {
+						return
+					}
+
+					var newUid uint32
+					newUid, err = b.moveMessages(user, seqset, newMailbox)
+					if err != nil {
+						return
+					}
+
+					update.Apply(msg)
+					msg.ID = formatMessageId(newMailbox, newUid)
+					} else {
+						update.Apply(msg)
+					}
+
+					return
+				}
+
+				func (b *Messages) DeleteMessage(user, id string) (err error) {
+					mailbox, uid, err := parseMessageId(id)
+					if err != nil {
+						return
+					}
+
+					err = b.selectMailbox(user, mailbox)
+					if err != nil {
+						return
+					}
+
+					seqset, _ := imap.NewSeqSet("")
+					seqset.AddNum(uid)
+
+					err = b.deleteMessages(user, seqset)
+					return
+				}
+
+				func newMessages(conns *conns) backend.MessagesBackend {
+					return &Messages{
+						conns: conns,
+						mailboxes: map[string][]*imap.MailboxInfo{},
+					}
+				}

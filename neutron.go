@@ -17,7 +17,7 @@ func main() {
 	indexFile := "app.html"
 
 	// Create backend
-	backendName := "memory"
+	backendName := "imap"
 	bkd := backend.New()
 	switch backendName {
 	case "memory":

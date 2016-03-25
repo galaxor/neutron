@@ -55,7 +55,7 @@ func ParseMessageHeader(msg *backend.Message, header *mail.Header) {
 	}
 }
 
-func decodeBytes(b []byte, charset string) []byte {
+func decoder(r io.Reader, charset string) io.Reader {
 	var enc encoding.Encoding
 	switch strings.ToLower(charset) {
 	case "iso-8859-1":
@@ -70,9 +70,9 @@ func decodeBytes(b []byte, charset string) []byte {
 		}
 	}
 	if enc != nil {
-		b, _ = enc.NewDecoder().Bytes(b)
+		r = enc.NewDecoder().Reader(r)
 	}
-	return b
+	return r
 }
 
 func ParseMessageBody(msg *backend.Message, m *mail.Message) error {
@@ -92,23 +92,62 @@ func ParseMessageBody(msg *backend.Message, m *mail.Message) error {
 			if err != nil {
 				return err
 			}
-			slurp, err := ioutil.ReadAll(p)
+
+			mediaType, typeParams, _ := mime.ParseMediaType(p.Header.Get("Content-Type"))
+			disp, dispParams, _ :=  mime.ParseMediaType(p.Header.Get("Content-Disposition"))
+
+			var r io.Reader
+			r = p
+			if typeParams["charset"] != "" {
+				r = decoder(r, typeParams["charset"])
+			}
+
+			slurp, err := ioutil.ReadAll(r)
 			if err != nil {
 				return err
 			}
 
-			mediaType, params, err = mime.ParseMediaType(p.Header.Get("Content-Type"))
-			if (mediaType == "text/plain" && gotType == "") || mediaType == "text/html" {
+			if mediaType == "text/plain" {
+				if gotType == "" {
+					disp = "inline"
+				} else {
+					disp = "attachment"
+				}
+			} else if mediaType == "text/html" {
+				disp = "inline"
+			} else {
+				disp = "attachment"
+			}
+
+			switch disp {
+			case "inline":
 				gotType = mediaType
-				msg.Body = string(decodeBytes(slurp, params["charset"]))
+				msg.Body = string(slurp)
+			case "attachment":
+				attachment := &backend.Attachment{
+					Name: dispParams["filename"],
+					Size: len(slurp),
+					MIMEType: mediaType,
+				}
+
+				msg.Attachments = append(msg.Attachments, attachment)
+			default:
+				log.Println("WARN: unsupported Content-Disposition:", disp)
 			}
 		}
 	} else {
+		var r io.Reader
+		r = m.Body
+		if params["charset"] != "" {
+			r = decoder(r, params["charset"])
+		}
+
 		body, err := ioutil.ReadAll(m.Body)
 		if err != nil {
 			return err
 		}
-		msg.Body = string(decodeBytes(body, params["charset"]))
+
+		msg.Body = string(body)
 	}
 
 	return nil

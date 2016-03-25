@@ -98,6 +98,8 @@ func (api *Api) populateMessage(userId string, msg *backend.Message) {
 		msg.IsEncrypted = 1
 	}
 
+	msg.NumAttachments = len(msg.Attachments)
+
 	// TODO: optimize this
 	if msg.AddressID == "" && msg.Sender != nil {
 		user, err := api.backend.GetUser(userId)
