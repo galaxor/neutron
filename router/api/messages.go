@@ -413,6 +413,10 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 	// If clear body is available, send it to recipients without package
 	if req.ClearBody != "" {
 		// Decrypt attachments
+		if len(req.AttachmentKeys) != len(outgoing.Attachments) {
+			err = errors.New("AttachmentKeys count doesn't match Attachments count")
+			return
+		}
 		for i, att := range outgoing.Attachments {
 			attKey := req.AttachmentKeys[i]
 
@@ -424,6 +428,7 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 			att.Data = data
 		}
 
+		// Send clear text message to remaining recipients
 		// TODO: send to CCList and BCCList
 		for _, email := range msg.ToList {
 			alreadySent := false
