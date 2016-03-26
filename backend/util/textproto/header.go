@@ -11,7 +11,6 @@ func GetMessageHeader(msg *backend.Message) textproto.MIMEHeader {
 	h := textproto.MIMEHeader{}
 
 	h.Set("MIME-Version", "1")
-	h.Set("Content-Type", "text/html") // TODO: multipart support
 
 	h.Set("Subject", msg.Subject)
 	h.Set("From", FormatEmail(msg.Sender))
@@ -44,7 +43,7 @@ func GetOutgoingMessageHeader(msg *backend.OutgoingMessage) textproto.MIMEHeader
 	return h
 }
 
-func FomatHeader(h textproto.MIMEHeader) string {
+func FormatHeader(h textproto.MIMEHeader) string {
 	output := ""
 	for key, values := range h {
 		for _, value := range values {

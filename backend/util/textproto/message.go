@@ -1,10 +1,13 @@
 package textproto
 
 import (
+	"bytes"
+	"encoding/base64"
 	"net/mail"
 	"net/textproto"
 	"mime"
 	"mime/multipart"
+	"mime/quotedprintable"
 	"strings"
 	"io"
 	"io/ioutil"
@@ -62,7 +65,7 @@ func decoder(r io.Reader, charset string) io.Reader {
 		enc = charmap.ISO8859_1
 	case "windows-1252":
 		enc = charmap.Windows1252
-	case "utf-8":
+	case "utf-8", "us-ascii":
 		// Nothing to do
 	default:
 		if charset != "" {
@@ -155,15 +158,44 @@ func ParseMessageBody(msg *backend.Message, m *mail.Message) error {
 
 
 func formatMessage(header textproto.MIMEHeader, body string) string {
-	return FomatHeader(header) + "\r\n" + body
+	return FormatHeader(header) + "\r\n" + body
 }
 
 func FormatMessage(msg *backend.Message) string {
 	header := GetMessageHeader(msg)
+	header.Set("Content-Type", "text/html")
 	return formatMessage(header, msg.Body)
 }
 
 func FormatOutgoingMessage(msg *backend.OutgoingMessage) string {
-	header := GetOutgoingMessageHeader(msg)
-	return formatMessage(header, msg.MessagePackage.Body)
+	var b bytes.Buffer
+	m := multipart.NewWriter(&b)
+
+	h := textproto.MIMEHeader{}
+	h.Set("Content-Type", "text/html; charset=UTF-8")
+	h.Set("Content-Disposition", "inline")
+	h.Set("Content-Transfer-Encoding", "quoted-printable")
+	w, _ := m.CreatePart(h)
+	enc := quotedprintable.NewWriter(w)
+	enc.Write([]byte(msg.MessagePackage.Body))
+	enc.Close()
+
+	for _, att := range msg.Attachments {
+		h := textproto.MIMEHeader{}
+		h.Set("Content-Type", att.MIMEType)
+		h.Set("Content-Disposition", "attachment; filename=\"" + att.Name + "\"")
+		h.Set("Content-Transfer-Encoding", "base64")
+
+		w, _ := m.CreatePart(h)
+		enc := base64.NewEncoder(base64.StdEncoding, w)
+		enc.Write(att.Data)
+		enc.Close()
+	}
+
+	m.Close()
+
+	mh := GetOutgoingMessageHeader(msg)
+	mh.Set("Content-Type", "multipart/mixed; boundary=" + m.Boundary())
+
+	return formatMessage(mh, b.String())
 }
