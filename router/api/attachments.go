@@ -92,3 +92,20 @@ func (api *Api) UploadAttachment(ctx *macaron.Context, req UploadAttachmentReq) 
 	})
 	return
 }
+
+type RemoveAttachmentReq struct {
+	AttachmentID string
+	MessageID string
+}
+
+func (api *Api) RemoveAttachment(ctx *macaron.Context, req RemoveAttachmentReq) (err error) {
+	userId := api.getUserId(ctx)
+
+	err = api.backend.DeleteAttachment(userId, req.AttachmentID)
+	if err != nil {
+		return
+	}
+
+	ctx.JSON(200, &Resp{Ok})
+	return
+}

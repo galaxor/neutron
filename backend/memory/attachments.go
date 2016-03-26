@@ -59,7 +59,7 @@ func (b *Attachments) DeleteAttachment(user, id string) (err error) {
 		return
 	}
 
-	b.attachments[user] = append(b.attachments[user][:i], b.attachments[user][:i+1]...)
+	b.attachments[user] = append(b.attachments[user][:i], b.attachments[user][i+1:]...)
 	return
 }
 

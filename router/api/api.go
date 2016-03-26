@@ -151,6 +151,7 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 	m.Group("/attachments", func() {
 		m.Get("/:id", api.GetAttachment)
 		m.Post("/upload", binding.MultipartForm(UploadAttachmentReq{}), api.UploadAttachment)
+		m.Put("/remove", binding.Json(RemoveAttachmentReq{}), api.RemoveAttachment)
 	})
 
 	m.Group("/auth", func() {
