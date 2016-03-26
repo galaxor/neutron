@@ -4,12 +4,18 @@ import (
 	"bytes"
 	"errors"
 	"strings"
+	"io"
 
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 )
 
 const PgpMessageType = "PGP MESSAGE"
+
+// Encode a PGP message armor.
+func ArmorMessage(w io.Writer) (io.WriteCloser, error) {
+	return armor.Encode(w, PgpMessageType, map[string]string{})
+}
 
 // A keypair contains a private and a public key.
 type Keypair struct {
@@ -32,7 +38,7 @@ func (kp *Keypair) EncryptToSelf(data string) (encrypted string, err error) {
 	entity := entitiesList[0]
 
 	var tokenBuffer bytes.Buffer
-	armorWriter, err := armor.Encode(&tokenBuffer, PgpMessageType, map[string]string{})
+	armorWriter, err := ArmorMessage(&tokenBuffer)
 	if err != nil {
 		return
 	}
