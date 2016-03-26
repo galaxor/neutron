@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"io/ioutil"
 	"net/mail"
 	"strconv"
 	"strings"
@@ -345,7 +346,12 @@ func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error)
 	msgInfo = rsp.MessageInfo()
 	body := imap.AsBytes(msgInfo.Attrs["BODY["+preferred.ID+"]"])
 
-	err = textproto.ParseMessagePartContent(msg, preferred, bytes.NewReader(body))
+	r := preferred.DecodeContent(bytes.NewReader(body))
+	slurp, err := ioutil.ReadAll(r)
+	if err != nil {
+		return
+	}
+	msg.Body = string(slurp)
 	return
 }
 
@@ -455,15 +461,16 @@ func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, 
 	return
 }
 
-func (b *Messages) InsertMessage(user string, msg *backend.Message) (inserted *backend.Message, err error) {
+func (b *Messages) insertMessage(user string, outgoing *backend.OutgoingMessage) (inserted *backend.Message, err error) {
 	mailbox, err := b.getLabelMailbox(user, backend.DraftLabel)
 	if err != nil {
 		return
 	}
 
+	raw := textproto.FormatOutgoingMessage(outgoing)
+
 	flags := imap.NewFlagSet("\\Seen", "\\Draft")
-	mail := textproto.FormatMessage(msg)
-	literal := imap.NewLiteral([]byte(mail))
+	literal := imap.NewLiteral([]byte(raw))
 
 	c, unlock, err := b.getConn(user)
 	if err != nil {
@@ -481,9 +488,23 @@ func (b *Messages) InsertMessage(user string, msg *backend.Message) (inserted *b
 		return
 	}
 
-	inserted = msg
+	inserted = outgoing.Message
 	inserted.ID = formatMessageId(mailbox, imap.AsNumber(res.Fields[2]))
 	return
+}
+
+func (b *Messages) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
+	outgoing := &backend.OutgoingMessage{
+		Message: msg,
+	}
+
+	// If message contains attachments, we have to include them
+	err := b.listAttachments(user, outgoing)
+	if err != nil {
+		return nil, err
+	}
+
+	return b.insertMessage(user, outgoing)
 }
 
 func (b *Messages) updateMessageFlags(user string, seqset *imap.SeqSet, flag string, value bool) error {

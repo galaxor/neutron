@@ -1,10 +1,7 @@
 package textproto
 
 import (
-	"encoding/base64"
 	"io"
-	"io/ioutil"
-	"mime/quotedprintable"
 	"strings"
 	"strconv"
 
@@ -19,6 +16,7 @@ type BodyStructure struct {
 	ContentId string
 	ContentDescription string
 	ContentEncoding string
+	Content io.Reader
 	Size int
 	Children []*BodyStructure
 }
@@ -65,18 +63,17 @@ func (s *BodyStructure) GetPreferredPart() (preferred *BodyStructure) {
 }
 
 func (s *BodyStructure) DecodeContent(r io.Reader) io.Reader {
-	switch s.ContentEncoding {
-	case "quoted-printable":
-		r = quotedprintable.NewReader(r)
-	case "base64":
-		r = base64.NewDecoder(base64.StdEncoding, r)
+	contentEncoding := s.ContentEncoding
+	if contentEncoding != "" {
+		r = decodeContentEncoding(r, contentEncoding)
 	}
 
 	charset := s.Params["charset"]
 	if charset != "" {
-		r = decoder(r, charset)
+		r = decodeCharset(r, charset)
 	}
 
+	s.Content = r
 	return r
 }
 
@@ -108,16 +105,4 @@ func ParseMessageStructure(msg *backend.Message, structure *BodyStructure) {
 
 		msg.Attachments = append(msg.Attachments, child.Attachment())
 	}
-}
-
-func ParseMessagePartContent(msg *backend.Message, structure *BodyStructure, r io.Reader) error {
-	r = structure.DecodeContent(r)
-
-	slurp, err := ioutil.ReadAll(r)
-	if err != nil {
-		return err
-	}
-
-	msg.Body = string(slurp)
-	return nil
 }

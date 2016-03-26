@@ -10,11 +10,7 @@ import (
 	"mime/quotedprintable"
 	"strings"
 	"io"
-	"io/ioutil"
-	"log"
 
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/charmap"
 	"github.com/emersion/neutron/backend"
 )
 
@@ -58,102 +54,53 @@ func ParseMessageHeader(msg *backend.Message, header *mail.Header) {
 	}
 }
 
-func decoder(r io.Reader, charset string) io.Reader {
-	var enc encoding.Encoding
-	switch strings.ToLower(charset) {
-	case "iso-8859-1":
-		enc = charmap.ISO8859_1
-	case "windows-1252":
-		enc = charmap.Windows1252
-	case "utf-8", "us-ascii":
-		// Nothing to do
-	default:
-		if charset != "" {
-			log.Println("WARN: unsupported charset:", charset)
-		}
-	}
-	if enc != nil {
-		r = enc.NewDecoder().Reader(r)
-	}
-	return r
-}
-
-func ParseMessageBody(msg *backend.Message, m *mail.Message) error {
-	mediaType, params, err := mime.ParseMediaType(m.Header.Get("Content-Type"))
+func ParseMessagePart(header textproto.MIMEHeader, body io.Reader) (structure *BodyStructure, err error) {
+	mediaType, params, err := mime.ParseMediaType(header.Get("Content-Type"))
 	if err != nil {
-		return err
+		return
 	}
 
-	gotType := ""
+	disp, dispParams, err :=  mime.ParseMediaType(header.Get("Content-Disposition"))
+	if err != nil {
+		return
+	}
+	if disp == "attachment" && dispParams["filename"] != "" {
+		params["name"] = dispParams["filename"]
+	}
+
+	typeParts := strings.SplitN(mediaType, "/", 2)
+
+	structure = &BodyStructure{
+		Type: typeParts[0],
+		SubType: typeParts[1],
+		Params: params,
+		ContentId: header.Get("Content-Id"),
+		ContentDescription: header.Get("Content-Description"),
+		ContentEncoding: header.Get("Content-Encoding"),
+		Content: body,
+	}
+
 	if strings.HasPrefix(mediaType, "multipart/") {
-		mr := multipart.NewReader(m.Body, params["boundary"])
+		mr := multipart.NewReader(body, params["boundary"])
 		for {
 			p, err := mr.NextPart()
 			if err == io.EOF {
-				return nil
+				break
 			}
 			if err != nil {
-				return err
+				return nil, err
 			}
 
-			mediaType, typeParams, _ := mime.ParseMediaType(p.Header.Get("Content-Type"))
-			disp, dispParams, _ :=  mime.ParseMediaType(p.Header.Get("Content-Disposition"))
-
-			var r io.Reader
-			r = p
-			if typeParams["charset"] != "" {
-				r = decoder(r, typeParams["charset"])
-			}
-
-			slurp, err := ioutil.ReadAll(r)
+			child, err := ParseMessagePart(p.Header, p)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
-			if mediaType == "text/plain" {
-				if gotType == "" {
-					disp = "inline"
-				} else {
-					disp = "attachment"
-				}
-			} else if mediaType == "text/html" {
-				disp = "inline"
-			} else {
-				disp = "attachment"
-			}
-
-			switch disp {
-			case "inline":
-				gotType = mediaType
-				msg.Body = string(slurp)
-			case "attachment":
-				attachment := &backend.Attachment{
-					Name: dispParams["filename"],
-					Size: len(slurp),
-					MIMEType: mediaType,
-				}
-
-				msg.Attachments = append(msg.Attachments, attachment)
-			default:
-				log.Println("WARN: unsupported Content-Disposition:", disp)
-			}
+			structure.Children = append(structure.Children, child)
 		}
-	} else {
-		var r io.Reader
-		r = m.Body
-		if params["charset"] != "" {
-			r = decoder(r, params["charset"])
-		}
-
-		body, err := ioutil.ReadAll(m.Body)
-		if err != nil {
-			return err
-		}
-
-		msg.Body = string(body)
 	}
 
-	return nil
+	return
 }
 
 
@@ -171,13 +118,20 @@ func FormatOutgoingMessage(msg *backend.OutgoingMessage) string {
 	var b bytes.Buffer
 	m := multipart.NewWriter(&b)
 
+	var body string
+	if msg.MessagePackage != nil {
+		body = msg.MessagePackage.Body
+	} else {
+		body = msg.Message.Body
+	}
+
 	h := textproto.MIMEHeader{}
 	h.Set("Content-Type", "text/html; charset=UTF-8")
 	h.Set("Content-Disposition", "inline")
 	h.Set("Content-Transfer-Encoding", "quoted-printable")
 	w, _ := m.CreatePart(h)
 	enc := quotedprintable.NewWriter(w)
-	enc.Write([]byte(msg.MessagePackage.Body))
+	enc.Write([]byte(body))
 	enc.Close()
 
 	for _, att := range msg.Attachments {
