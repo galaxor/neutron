@@ -10,3 +10,5 @@ before:
   - git submodule init
   - git submodule update
   - make build-client
+after:
+  - mv bin/neutron neutron
