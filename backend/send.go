@@ -15,4 +15,12 @@ type OutgoingMessage struct {
 
 	InReplyTo string
 	References string
+	Attachments []*OutgoingAttachment
+}
+
+// An attachment that is going to be sent.
+type OutgoingAttachment struct {
+	*Attachment
+
+	Data []byte
 }

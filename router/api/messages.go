@@ -34,17 +34,11 @@ type MessageResp struct {
 	Message *backend.Message
 }
 
-type AttachmentKey struct {
-	ID string
-	Key string
-	Algo string
-}
-
 type SendMessageReq struct {
 	Req
 	ID string `json:"id"`
 	Packages []*backend.MessagePackage
-	AttachmentKeys []*AttachmentKey
+	AttachmentKeys []*backend.AttachmentKey
 	ClearBody string
 }
 
@@ -394,6 +388,19 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 
 	outgoing := &backend.OutgoingMessage{Message: msg}
 
+	outgoing.Attachments = make([]*backend.OutgoingAttachment, len(msg.Attachments))
+	for i, att := range msg.Attachments {
+		att, data, err := api.backend.ReadAttachment(userId, att.ID)
+		if err != nil {
+			return err
+		}
+
+		outgoing.Attachments[i] = &backend.OutgoingAttachment{
+			Attachment: att,
+			Data: data,
+		}
+	}
+
 	// Send each package
 	for _, pkg := range req.Packages {
 		outgoing.MessagePackage = pkg
@@ -405,6 +412,19 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 
 	// If clear body is available, send it to recipients without package
 	if req.ClearBody != "" {
+		// Decrypt attachments
+		for i, att := range outgoing.Attachments {
+			attKey := req.AttachmentKeys[i]
+
+			data, err := attKey.Decrypt(att.Data)
+			if err != nil {
+				return err
+			}
+
+			att.Data = data
+		}
+
+		// TODO: send to CCList and BCCList
 		for _, email := range msg.ToList {
 			alreadySent := false
 			for _, pkg := range req.Packages {
@@ -417,7 +437,7 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 				continue
 			}
 
-			outgoing.MessagePackage =&backend.MessagePackage{
+			outgoing.MessagePackage = &backend.MessagePackage{
 				Address: email.Address,
 				Body: req.ClearBody,
 			}

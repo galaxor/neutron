@@ -31,7 +31,7 @@ func (b *EchoSend) SendMessagePackage(user string, msg *backend.OutgoingMessage)
 	newMsg.LabelIDs = []string{backend.InboxLabel}
 	newMsg.Type = 0
 	newMsg.IsRead = 0
-	newMsg.Attachments = msg.Attachments
+	newMsg.Attachments = msg.Message.Attachments
 
 	_, err := b.target.InsertMessage(user, &newMsg)
 	return err
