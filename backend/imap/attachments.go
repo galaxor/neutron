@@ -70,6 +70,9 @@ func (b *Messages) InsertAttachment(user string, attachment *backend.Attachment,
 		return nil, err
 	}
 
+	seqset, _ := imap.NewSeqSet("")
+	seqset.AddNum(uid)
+
 	msg, err := b.GetMessage(user, msgId)
 	if err != nil {
 		return nil, err
@@ -90,6 +93,12 @@ func (b *Messages) InsertAttachment(user string, attachment *backend.Attachment,
 	})
 
 	msg, err = b.insertMessage(user, outgoing)
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete the old message
+	err = b.deleteMessages(user, seqset)
 	if err != nil {
 		return nil, err
 	}
