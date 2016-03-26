@@ -4,4 +4,8 @@ start:
 build:
 	go build -o neutron neutron.go
 build-client:
-	cd public && npm install && sed -i 's/https:\/\/dev\.protonmail\.com//g' src/app/config.js && node_modules/.bin/grunt build
+	cd public && \
+	npm install --ignore-scripts && \
+	bower install -F && \
+	sed -i 's/https:\/\/dev\.protonmail\.com//g' src/app/config.js && \
+	node_modules/.bin/grunt build
