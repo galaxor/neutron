@@ -8,7 +8,11 @@ Keep in mind that Neutron is less secure than ProtonMail: most servers don't
 use full-disk encryption and aren't under 1,000 meters of granite rock.
 If you use Neutron, make sure to [donate to ProtonMail](https://protonmail.com/donate)!
 
-## Installation
+## Install
+
+Install from https://packager.io/gh/emersion/neutron
+
+## Build
 
 Requirements:
 * Go (to build the server)
@@ -35,7 +39,7 @@ Default credentials:
 
 ## Roadmap
 
-- [ ] Implement dummy server (see [#1](https://github.com/emersion/neutron/issues/1))
+- [x] Implement dummy server (see [#1](https://github.com/emersion/neutron/issues/1))
 - [x] Define backend interface (see https://github.com/emersion/neutron/blob/master/backend/backend.go)
 - [ ] Implement IMAP + SMTP interface (see [#4](https://github.com/emersion/neutron/issues/4) and [#5](https://github.com/emersion/neutron/issues/5))
 
