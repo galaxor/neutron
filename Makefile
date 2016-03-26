@@ -6,6 +6,6 @@ build:
 build-client:
 	cd public && \
 	npm install --ignore-scripts && \
-	bower install -F && \
+	node_modules/.bin/bower install -F && \
 	sed -i 's/https:\/\/dev\.protonmail\.com//g' src/app/config.js && \
 	node_modules/.bin/grunt build
