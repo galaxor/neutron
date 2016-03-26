@@ -11,6 +11,7 @@ type Backend struct {
 	EventsBackend
 	UsersBackend
 	KeysBackend
+	AttachmentsBackend
 }
 
 // Set one or some of this backend's components.
@@ -39,6 +40,9 @@ func (b *Backend) Set(backends ...interface{}) {
 		}
 		if keys, ok := bkd.(KeysBackend); ok {
 			b.KeysBackend = keys
+		}
+		if attachments, ok := bkd.(AttachmentsBackend); ok {
+			b.AttachmentsBackend = attachments
 		}
 	}
 }

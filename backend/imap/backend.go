@@ -17,7 +17,7 @@ func Use(bkd *backend.Backend, config *Config) *Users {
 	conversations := util.NewDummyConversations(messages)
 	users := newUsers(conns)
 
-	bkd.Set(conversations, users)
+	bkd.Set(messages, conversations, users)
 
 	// TODO: do not return users backend
 	return users

@@ -148,6 +148,10 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 		}
 	})
 
+	m.Group("/attachments", func() {
+		m.Get("/:id", api.GetAttachment)
+	})
+
 	m.Group("/auth", func() {
 		m.Post("/", binding.Json(AuthReq{}), api.Auth)
 		m.Delete("/", api.DeleteAuth)
