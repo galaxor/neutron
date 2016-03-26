@@ -3,7 +3,7 @@ package backend
 // Sends messages to email addresses.
 type SendBackend interface {
 	// Send a message to an e-mail address.
-	SendMessagePackage(user string, msg *OutgoingMessage) error
+	SendMessage(user string, msg *OutgoingMessage) error
 }
 
 // A message that is going to be sent.

@@ -9,7 +9,7 @@ import (
 // A SendBackend that does nothing.
 type NoopSend struct {}
 
-func (b *NoopSend) SendMessagePackage(user string, msg *backend.OutgoingMessage) error {
+func (b *NoopSend) SendMessage(user string, msg *backend.OutgoingMessage) error {
 	return nil // Do nothing
 }
 
@@ -23,7 +23,7 @@ type EchoSend struct {
 	target backend.MessagesBackend
 }
 
-func (b *EchoSend) SendMessagePackage(user string, msg *backend.OutgoingMessage) error {
+func (b *EchoSend) SendMessage(user string, msg *backend.OutgoingMessage) error {
 	newMsg := *msg.Message // Copy msg
 	newMsg.Subject = "[EchoSend forwarded message] " + newMsg.Subject
 	newMsg.Body = msg.MessagePackage.Body

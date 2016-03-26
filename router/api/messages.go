@@ -404,7 +404,7 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 	// Send each package
 	for _, pkg := range req.Packages {
 		outgoing.MessagePackage = pkg
-		err = api.backend.SendMessagePackage(userId, outgoing)
+		err = api.backend.SendMessage(userId, outgoing)
 		if err != nil {
 			return
 		}
@@ -447,7 +447,7 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 				Body: req.ClearBody,
 			}
 
-			err = api.backend.SendMessagePackage(userId, outgoing)
+			err = api.backend.SendMessage(userId, outgoing)
 			if err != nil {
 				return
 			}

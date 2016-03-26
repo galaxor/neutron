@@ -14,7 +14,7 @@ type SendBackend struct {
 	config *Config
 }
 
-func (b *SendBackend) SendMessagePackage(user string, msg *backend.OutgoingMessage) error {
+func (b *SendBackend) SendMessage(user string, msg *backend.OutgoingMessage) error {
 	password, err := b.GetPassword(user)
 	if err != nil {
 		return err
