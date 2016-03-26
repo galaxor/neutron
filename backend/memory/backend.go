@@ -9,10 +9,12 @@ func Use(bkd *backend.Backend) {
 	events := NewEvents()
 	contacts := util.NewEventedContacts(NewContacts(), events)
 	labels := util.NewEventedLabels(NewLabels(), events)
-	conversations := util.NewEventedConversations(NewConversations(), events)
+	attachments := NewAttachments()
+	messages := NewMessages(attachments.(*Attachments))
+	conversations := util.NewEventedConversations(NewConversations(messages.(*Messages)), events)
 	send := util.NewEchoSend(conversations)
 	domains := NewDomains()
 	users := NewUsers()
 
-	bkd.Set(contacts, labels, conversations, send, domains, events, users)
+	bkd.Set(contacts, labels, conversations, send, domains, events, users, attachments)
 }

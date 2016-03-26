@@ -1,7 +1,12 @@
 package api
 
 import (
+	"io/ioutil"
+	"mime/multipart"
+	"encoding/base64"
+
 	"gopkg.in/macaron.v1"
+	"github.com/emersion/neutron/backend"
 )
 
 func (api *Api) GetAttachment(ctx *macaron.Context) (b []byte, err error) {
@@ -13,11 +18,77 @@ func (api *Api) GetAttachment(ctx *macaron.Context) (b []byte, err error) {
 		return
 	}
 
-	ctx.Resp.Header().Set("Content-Type", att.MIMEType)
+	if att.KeyPackets != "" {
+		ctx.Resp.Header().Set("Content-Type", "application/pgp")
+	} else {
+		ctx.Resp.Header().Set("Content-Type", att.MIMEType)
+	}
+
 	ctx.Resp.Header().Set("Content-Disposition", "attachment; filename=\""+att.Name+"\"")
 	ctx.Resp.Header().Set("Content-Transfer-Encoding", "binary")
 	ctx.Resp.Header().Set("Expires", "0")
 	ctx.Resp.Header().Set("Cache-Control", "must-revalidate")
 	ctx.Resp.Header().Set("Pragma", "public")
+	return
+}
+
+// form: attributes are needed to parse multipart form
+// See https://github.com/go-macaron/binding/issues/10
+type UploadAttachmentReq struct {
+	Filename string `form:"Filename"`
+	MessageID string `form:"MessageID"`
+	MIMEType string `form:"MIMEType"`
+	KeyPackets *multipart.FileHeader `form:"KeyPackets"`
+	DataPacket *multipart.FileHeader `form:"DataPacket"`
+}
+
+type UploadAttachmentResp struct {
+	Resp
+	AttachmentID string
+	Size int
+}
+
+func (api *Api) UploadAttachment(ctx *macaron.Context, req UploadAttachmentReq) (err error) {
+	userId := api.getUserId(ctx)
+
+	kpf, err := req.KeyPackets.Open()
+	if err != nil {
+		return
+	}
+	defer kpf.Close()
+
+	kp, err := ioutil.ReadAll(kpf)
+	if err != nil {
+		return
+	}
+
+	df, err := req.DataPacket.Open()
+	if err != nil {
+		return
+	}
+	defer df.Close()
+
+	data, err := ioutil.ReadAll(df)
+	if err != nil {
+		return
+	}
+
+	att := &backend.Attachment{
+		Name: req.Filename,
+		MessageID: req.MessageID,
+		MIMEType: req.MIMEType,
+		KeyPackets: base64.StdEncoding.EncodeToString(kp),
+	}
+
+	att, err = api.backend.InsertAttachment(userId, att, data)
+	if err != nil {
+		return
+	}
+
+	ctx.JSON(200, &UploadAttachmentResp{
+		Resp: Resp{Ok},
+		AttachmentID: att.ID,
+		Size: att.Size,
+	})
 	return
 }

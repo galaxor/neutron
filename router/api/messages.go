@@ -34,11 +34,17 @@ type MessageResp struct {
 	Message *backend.Message
 }
 
+type AttachmentKey struct {
+	ID string
+	Key string
+	Algo string
+}
+
 type SendMessageReq struct {
 	Req
 	ID string `json:"id"`
 	Packages []*backend.MessagePackage
-	AttachmentKeys []string // TODO
+	AttachmentKeys []*AttachmentKey
 	ClearBody string
 }
 

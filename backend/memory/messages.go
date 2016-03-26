@@ -7,6 +7,8 @@ import (
 )
 
 type Messages struct {
+	*Attachments
+
 	messages map[string][]*backend.Message
 }
 
@@ -27,6 +29,12 @@ func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error)
 	}
 
 	msg = b.messages[user][i]
+
+	atts, err := b.listAttachments(user, id)
+	if err != nil {
+		return
+	}
+	msg.Attachments = atts
 	return
 }
 
@@ -51,6 +59,7 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 
 		// TODO: other filter fields support
 
+		msg.Attachments, _ = b.listAttachments(user, msg.ID)
 		filtered = append(filtered, msg)
 	}
 
@@ -101,6 +110,7 @@ func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, 
 func (b *Messages) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg.ID = generateId()
 	msg.Order = len(b.messages[user])
+	msg.NumAttachments = len(msg.Attachments)
 	b.messages[user] = append(b.messages[user], msg)
 	return msg, nil
 }
@@ -128,8 +138,9 @@ func (b *Messages) DeleteMessage(user, id string) error {
 	return nil
 }
 
-func NewMessages() backend.MessagesBackend {
+func NewMessages(attachments *Attachments) backend.MessagesBackend {
 	return &Messages{
+		Attachments: attachments,
 		messages: map[string][]*backend.Message{},
 	}
 }

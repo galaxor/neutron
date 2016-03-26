@@ -211,8 +211,8 @@ func (b *Conversations) DeleteConversation(user, id string) (err error) {
 	return
 }
 
-func NewConversations() backend.ConversationsBackend {
+func NewConversations(messages *Messages) backend.ConversationsBackend {
 	return &Conversations{
-		Messages: NewMessages().(*Messages),
+		Messages: messages,
 	}
 }
