@@ -2,6 +2,7 @@ package imap
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 
 	"github.com/emersion/neutron/backend"
@@ -43,4 +44,12 @@ func (b *Messages) ReadAttachment(user, id string) (att *backend.Attachment, out
 	r := part.DecodeContent(bytes.NewReader(body))
 	out, err = ioutil.ReadAll(r)
 	return
+}
+
+func (b *Messages) InsertAttachment(user string, attachment *backend.Attachment, contents []byte) (*backend.Attachment, error) {
+	return nil, errors.New("Not yet implemented")
+}
+
+func (b *Messages) DeleteAttachment(user, id string) error {
+	return errors.New("Not yet implemented")
 }
