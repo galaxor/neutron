@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"io/ioutil"
 	"net/mail"
 	"strconv"
 	"strings"
@@ -347,43 +346,6 @@ func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error)
 	body := imap.AsBytes(msgInfo.Attrs["BODY["+preferred.ID+"]"])
 
 	err = textproto.ParseMessagePartContent(msg, preferred, bytes.NewReader(body))
-	return
-}
-
-func (b *Messages) ReadAttachment(user, id string) (att *backend.Attachment, out []byte, err error) {
-	mailbox, uid, partId, err := parseAttachmentId(id)
-	if err != nil {
-		return
-	}
-
-	err = b.selectMailbox(user, mailbox)
-	if err != nil {
-		return
-	}
-
-	c, unlock, err := b.getConn(user)
-	if err != nil {
-		return
-	}
-	defer unlock()
-
-	seqset, _ := imap.NewSeqSet("")
-	seqset.AddNum(uid)
-
-	cmd, _, err := wait(c.UIDFetch(seqset, "BODYSTRUCTURE", "BODY.PEEK["+partId+"]"))
-	if err != nil {
-		return
-	}
-
-	rsp := cmd.Data[0]
-	msgInfo := rsp.MessageInfo()
-	structure := parseBodyStructure(imap.AsList(msgInfo.Attrs["BODYSTRUCTURE"]))
-	body := imap.AsBytes(msgInfo.Attrs["BODY["+partId+"]"])
-
-	part := structure.Get(partId)
-	att = part.Attachment()
-	r := part.DecodeContent(bytes.NewReader(body))
-	out, err = ioutil.ReadAll(r)
 	return
 }
 
