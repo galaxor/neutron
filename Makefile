@@ -5,7 +5,7 @@ build:
 	go build -o neutron neutron.go
 build-client:
 	cd public && \
-	npm install --ignore-scripts && \
-	node_modules/.bin/bower install -F && \
+	sed -i 's/"angular"\: "1.4.9"/"angular": "~1.4.9"/g' bower.json && \
+	npm install && \
 	sed -i 's/https:\/\/dev\.protonmail\.com//g' src/app/config.js && \
 	node_modules/.bin/grunt build
