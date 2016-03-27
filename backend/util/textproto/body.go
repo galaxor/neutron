@@ -78,9 +78,14 @@ func (s *BodyStructure) DecodeContent(r io.Reader) io.Reader {
 }
 
 func (s *BodyStructure) Attachment() *backend.Attachment {
+	name := s.Params["name"]
+	if name == "" {
+		name = s.Params["filename"]
+	}
+
 	return &backend.Attachment{
 		ID: s.ID,
-		Name: s.Params["name"],
+		Name: name,
 		MIMEType: s.Type + "/" + s.SubType,
 		Size: s.Size,
 	}
