@@ -24,7 +24,7 @@ func (b *Attachments) getAttachmentIndex(user, id string) (int, error) {
 	return -1, errors.New("No such attachment")
 }
 
-func (b *Attachments) listAttachments(user, msgId string) (atts []*backend.Attachment, err error) {
+func (b *Attachments) ListAttachments(user, msgId string) (atts []*backend.Attachment, err error) {
 	for _, att := range b.attachments[user] {
 		if att.MessageID == msgId {
 			atts = append(atts, att.Attachment)
@@ -61,6 +61,17 @@ func (b *Attachments) DeleteAttachment(user, id string) (err error) {
 
 	b.attachments[user] = append(b.attachments[user][:i], b.attachments[user][i+1:]...)
 	return
+}
+
+// Additional function needed for imap.Messages backend
+func (b *Attachments) UpdateAttachmentMessage(user, id, msgId string) error {
+	i, err := b.getAttachmentIndex(user, id)
+	if err != nil {
+		return err
+	}
+
+	b.attachments[user][i].MessageID = msgId
+	return nil
 }
 
 func NewAttachments() backend.AttachmentsBackend {

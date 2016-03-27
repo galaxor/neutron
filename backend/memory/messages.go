@@ -30,7 +30,7 @@ func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error)
 
 	msg = b.messages[user][i]
 
-	atts, err := b.listAttachments(user, id)
+	atts, err := b.ListAttachments(user, id)
 	if err != nil {
 		return
 	}
@@ -59,7 +59,7 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 
 		// TODO: other filter fields support
 
-		msg.Attachments, _ = b.listAttachments(user, msg.ID)
+		msg.Attachments, _ = b.ListAttachments(user, msg.ID)
 		filtered = append(filtered, msg)
 	}
 

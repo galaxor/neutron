@@ -4,29 +4,24 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
-	"strconv"
 
 	"github.com/emersion/neutron/backend"
 	"github.com/mxk/go-imap/imap"
 )
 
-func (b *Messages) listAttachments(user string, msg *backend.OutgoingMessage) error {
-	for _, att := range msg.Attachments {
-		att, d, err := b.ReadAttachment(user, att.ID)
-		if err != nil {
-			return err
-		}
-
-		msg.Attachments = append(msg.Attachments, &backend.OutgoingAttachment{
-			Attachment: att,
-			Data: d,
-		})
-	}
-
-	return nil
+func (b *Messages) ListAttachments(user, msg string) ([]*backend.Attachment, error) {
+	return nil, errors.New("Not yet implemented")
 }
 
 func (b *Messages) ReadAttachment(user, id string) (att *backend.Attachment, out []byte, err error) {
+	// First, try to get attachment from temporary backend
+	att, out, err = b.tmpAtts.ReadAttachment(user, id)
+	if err == nil {
+		return
+	}
+
+	// Not found in tmp backend, get it from the server
+
 	mailbox, uid, partId, err := parseAttachmentId(id)
 	if err != nil {
 		return
@@ -64,53 +59,9 @@ func (b *Messages) ReadAttachment(user, id string) (att *backend.Attachment, out
 }
 
 func (b *Messages) InsertAttachment(user string, attachment *backend.Attachment, data []byte) (*backend.Attachment, error) {
-	msgId := attachment.MessageID
-	mailbox, uid, err := parseMessageId(msgId)
-	if err != nil {
-		return nil, err
-	}
-
-	seqset, _ := imap.NewSeqSet("")
-	seqset.AddNum(uid)
-
-	msg, err := b.GetMessage(user, msgId)
-	if err != nil {
-		return nil, err
-	}
-
-	outgoing := &backend.OutgoingMessage{
-		Message: msg,
-	}
-
-	err = b.listAttachments(user, outgoing)
-	if err != nil {
-		return nil, err
-	}
-
-	outgoing.Attachments = append(outgoing.Attachments, &backend.OutgoingAttachment{
-		Attachment: attachment,
-		Data: data,
-	})
-
-	msg, err = b.insertMessage(user, outgoing)
-	if err != nil {
-		return nil, err
-	}
-
-	// Delete the old message
-	err = b.deleteMessages(user, seqset)
-	if err != nil {
-		return nil, err
-	}
-
-	mailbox, uid, _ = parseMessageId(msg.ID)
-	id := strconv.Itoa(len(outgoing.Attachments) + 1 /* body part */)
-	attachment.ID = formatAttachmentId(mailbox, uid, id)
-	attachment.Size = len(data)
-	attachment.MessageID = msg.ID
-	return attachment, nil
+	return b.tmpAtts.InsertAttachment(user, attachment, data)
 }
 
 func (b *Messages) DeleteAttachment(user, id string) error {
-	return errors.New("Not yet implemented")
+	return b.tmpAtts.DeleteAttachment(user, id)
 }

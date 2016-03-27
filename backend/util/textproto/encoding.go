@@ -37,6 +37,8 @@ func decodeContentEncoding(r io.Reader, contentEncoding string) io.Reader {
 		r = quotedprintable.NewReader(r)
 	case "base64":
 		r = base64.NewDecoder(base64.StdEncoding, r)
+	case "7bit":
+		// Nothing to do
 	default:
 		if contentEncoding != "" {
 			log.Println("WARN: unsupported content encoding:", contentEncoding)

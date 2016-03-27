@@ -11,6 +11,8 @@ import (
 
 // Stores attachments.
 type AttachmentsBackend interface {
+	// List all message's attachments.
+	ListAttachments(user, msg string) ([]*Attachment, error)
 	// Get an attachment content.
 	ReadAttachment(user, id string) (*Attachment, []byte, error)
 	// Insert a new attachment.
