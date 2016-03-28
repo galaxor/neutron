@@ -682,15 +682,15 @@ func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (ms
 
 		// Apply update and change message ID
 		update.Apply(msg)
-		newId := formatMessageId(newMailbox, newUid)
+
+		oldId := msg.ID
+		msg.ID = formatMessageId(newMailbox, newUid)
 
 		// Update temporary attachments IDs
-		tmpAtts, _ := b.tmpAtts.ListAttachments(user, msg.ID)
+		tmpAtts, _ := b.tmpAtts.ListAttachments(user, oldId)
 		for _, att := range tmpAtts {
-			b.tmpAtts.UpdateAttachmentMessage(user, att.ID, newId)
+			b.tmpAtts.UpdateAttachmentMessage(user, att.ID, msg.ID)
 		}
-
-		msg.ID = newId
 	} else {
 		update.Apply(msg)
 	}
