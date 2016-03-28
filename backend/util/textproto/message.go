@@ -12,6 +12,7 @@ import (
 	"io"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util/textproto/chunksplit"
 )
 
 func ParseMessageHeader(msg *backend.Message, header *mail.Header) {
@@ -135,13 +136,16 @@ func FormatOutgoingMessage(msg *backend.OutgoingMessage) string {
 	enc.Close()
 
 	for _, att := range msg.Attachments {
+		// TODO: support encrypted attachments
+
 		h := textproto.MIMEHeader{}
-		h.Set("Content-Type", att.MIMEType)
-		h.Set("Content-Disposition", "attachment; filename=\"" + att.Name + "\"")
+		h.Set("Content-Type", att.MIMEType + "; name=\"" + att.Name + "\"")
+		h.Set("Content-Disposition", "attachment")
 		h.Set("Content-Transfer-Encoding", "base64")
 
 		w, _ := m.CreatePart(h)
-		enc := base64.NewEncoder(base64.StdEncoding, w)
+		splitter := chunksplit.New("\r\n", 76, w)
+		enc := base64.NewEncoder(base64.StdEncoding, splitter)
 		enc.Write(att.Data)
 		enc.Close()
 	}

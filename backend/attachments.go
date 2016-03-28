@@ -73,6 +73,21 @@ func (at *AttachmentKey) Decrypt(encrypted []byte) (decrypted []byte, err error)
 	}
 	defer r.Close()
 
-	decrypted, err = ioutil.ReadAll(r)
+	pr := packet.NewReader(r)
+	for {
+		pkt, err := pr.Next()
+		if err != nil {
+			break
+		}
+
+		literal, ok := pkt.(*packet.LiteralData)
+		if !ok {
+			continue
+		}
+
+		return ioutil.ReadAll(literal.Body)
+	}
+
+	err = errors.New("Encrypted data doesn't contain any LiteralData")
 	return
 }
