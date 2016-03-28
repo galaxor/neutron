@@ -75,12 +75,10 @@ func (b *Labels) ListLabels(user string) (labels []*backend.Label, err error) {
 			continue // This is a system mailbox, not a custom one
 		}
 
-		color := getLabelColor(i)
-
 		labels = append(labels, &backend.Label{
 			ID: name,
 			Name: name,
-			Color: color,
+			Color: getLabelColor(i),
 			Display: 1,
 			Order: i,
 		})
@@ -109,15 +107,39 @@ func (b *Labels) InsertLabel(user string, label *backend.Label) (inserted *backe
 		return
 	}
 
+	// Refresh mailbox list
+	b.mailboxes[user] = nil
+
 	inserted = label
-	label.ID = label.Name
-	label.Color = getLabelColor(i)
-	label.Order = i
+	inserted.ID = label.Name
+	inserted.Color = getLabelColor(i)
+	inserted.Order = i
 	return
 }
 
-func (b *Labels) UpdateLabel(user string, update *backend.LabelUpdate) (*backend.Label, error) {
-	return nil, errors.New("Not yet implemented")
+func (b *Labels) UpdateLabel(user string, update *backend.LabelUpdate) (label *backend.Label, err error) {
+	label = update.Label
+
+	if label.ID == label.Name {
+		return // Nothing to do
+	}
+
+	c, unlock, err := b.getConn(user)
+	if err != nil {
+		return
+	}
+	defer unlock()
+
+	_, _, err = wait(c.Rename(label.ID, label.Name))
+	if err != nil {
+		return
+	}
+
+	// Refresh mailbox list
+	b.mailboxes[user] = nil
+
+	label.ID = label.Name
+	return
 }
 
 func (b *Labels) DeleteLabel(user, id string) (err error) {
@@ -137,6 +159,13 @@ func (b *Labels) DeleteLabel(user, id string) (err error) {
 	}
 
 	_, _, err = wait(c.Delete(id))
+	if err != nil {
+		return
+	}
+
+	// Refresh mailbox list
+	b.mailboxes[user] = nil
+
 	return
 }
 

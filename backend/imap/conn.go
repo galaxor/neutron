@@ -111,10 +111,12 @@ func (b *conns) getMailboxes(user string) ([]*imap.MailboxInfo, error) {
 		mailboxInfo := rsp.MailboxInfo()
 		b.mailboxes[user][i] = mailboxInfo
 
-		_, _, err := wait(c.Subscribe(mailboxInfo.Name))
+		// TODO: listen for incoming messages
+		// Note: do not do this here, this slows down the loop
+		/*_, _, err := wait(c.Subscribe(mailboxInfo.Name))
 		if err != nil {
 			return nil, err
-		}
+		}*/
 	}
 
 	return b.mailboxes[user], nil
