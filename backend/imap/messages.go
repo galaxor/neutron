@@ -24,7 +24,6 @@ type updatableAttachments interface {
 type Messages struct {
 	*conns
 	tmpAtts updatableAttachments
-	mailboxes map[string][]*imap.MailboxInfo
 }
 
 func formatAttachmentId(mailbox string, uid uint32, part string) string {
@@ -205,87 +204,6 @@ func parseBodyStructure(structure []imap.Field) *textproto.BodyStructure {
 	return parse(structure, "")
 }
 
-func (b *Messages) getMailboxes(user string) ([]*imap.MailboxInfo, error) {
-	// Mailboxes list already retrieved
-	if len(b.mailboxes[user]) > 0 {
-		return b.mailboxes[user], nil
-	}
-
-	c, unlock, err := b.getConn(user)
-	if err != nil {
-		return nil, err
-	}
-	defer unlock()
-
-	// Since the connection was locked, the mailboxes list could now have been
-	// retrieved
-	if len(b.mailboxes[user]) > 0 {
-		return b.mailboxes[user], nil
-	}
-
-	cmd, _, err := wait(c.List("", "%"))
-	if err != nil {
-		return nil, err
-	}
-
-	// Retrieve mailboxes info and subscribe to them
-	b.mailboxes[user] = make([]*imap.MailboxInfo, len(cmd.Data))
-	for i, rsp := range cmd.Data {
-		mailboxInfo := rsp.MailboxInfo()
-		b.mailboxes[user][i] = mailboxInfo
-
-		_, _, err := wait(c.Subscribe(mailboxInfo.Name))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return b.mailboxes[user], nil
-}
-
-func (b *Messages) getLabelMailbox(user, label string) (mailbox string, err error) {
-	mailboxes, err := b.getMailboxes(user)
-	if err != nil {
-		return
-	}
-
-	mailbox = label
-	for _, m := range mailboxes {
-		if getLabelID(m.Name) == label {
-			mailbox = m.Name
-			break
-		}
-	}
-
-	return
-}
-
-func (b *Messages) selectMailbox(user, mailbox string) (err error) {
-	c, unlock, err := b.getConn(user)
-	if err != nil {
-		return
-	}
-	defer unlock()
-
-	if c.Mailbox == nil || c.Mailbox.Name != mailbox {
-		_, err = c.Select(mailbox, false)
-		if err != nil {
-			return
-		}
-	}
-
-	return
-}
-
-func (b *Messages) selectLabelMailbox(user, label string) (err error) {
-	mailbox, err := b.getLabelMailbox(user, label)
-	if err != nil {
-		return
-	}
-
-	return b.selectMailbox(user, mailbox)
-}
-
 func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error) {
 	mailbox, uid, err := parseMessageId(id)
 	if err != nil {
@@ -390,7 +308,12 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 	}
 	defer unlock()
 
-	total = int(c.Mailbox.Messages) // TODO: not filtered
+	total = int(c.Mailbox.Messages)
+
+	// No messages to fetch
+	if c.Mailbox.Messages == 0 {
+		return
+	}
 
 	set, _ := imap.NewSeqSet("")
 	if filter.Limit > 0 && filter.Page >= 0 {
@@ -460,9 +383,9 @@ func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, 
 	defer unlock()
 
 	for _, mailbox := range mailboxes {
-		cmd, _ := imap.Wait(c.Status(mailbox.Name, "MESSAGES", "UNSEEN"))
-		if _, err = cmd.Result(imap.OK); err != nil {
-			return
+		cmd, _, err := wait(c.Status(mailbox.Name, "MESSAGES", "UNSEEN"))
+		if err != nil {
+			return nil, err
 		}
 
 		mailboxStatus := cmd.Data[0].MailboxStatus()
@@ -702,11 +625,12 @@ func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (ms
 		for _, att := range tmpAtts {
 			b.tmpAtts.UpdateAttachmentMessage(user, att.ID, msg.ID)
 		}
-	} else if update.LabelIDs == backend.ReplaceLabels && len(update.Message.LabelIDs) == 1 {
+	} else if update.LabelIDs != backend.RemoveLabels && len(update.Message.LabelIDs) == 1 {
 		// Move the message from its mailbox to another one
 		// TODO: support more scenarios
 
-		label := update.Message.LabelIDs[0]
+		msg.LabelIDs = update.Message.LabelIDs
+		label := msg.LabelIDs[0]
 
 		var newMailbox string
 		newMailbox, err = b.getLabelMailbox(user, label)
@@ -756,6 +680,5 @@ func newMessages(conns *conns) *Messages {
 	return &Messages{
 		conns:     conns,
 		tmpAtts:   memory.NewAttachments().(updatableAttachments),
-		mailboxes: map[string][]*imap.MailboxInfo{},
 	}
 }

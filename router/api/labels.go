@@ -21,6 +21,10 @@ func (api *Api) GetLabels(ctx *macaron.Context) (err error) {
 		return
 	}
 
+	if labels == nil {
+		labels = []*backend.Label{}
+	}
+
 	ctx.JSON(200, &LabelsResp{
 		Resp: Resp{Ok},
 		Labels: labels,

@@ -21,6 +21,7 @@ type conns struct {
 	clients map[string]*imap.Client
 	passwords map[string]string
 	locks map[string]sync.Locker
+	mailboxes map[string][]*imap.MailboxInfo
 }
 
 func (b *conns) connect(username, password string) (email string, err error) {
@@ -81,6 +82,87 @@ func (b *conns) GetPassword(user string) (string, error) {
 	return "", errors.New("No password stored for such user")
 }
 
+func (b *conns) getMailboxes(user string) ([]*imap.MailboxInfo, error) {
+	// Mailboxes list already retrieved
+	if len(b.mailboxes[user]) > 0 {
+		return b.mailboxes[user], nil
+	}
+
+	c, unlock, err := b.getConn(user)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
+
+	// Since the connection was locked, the mailboxes list could now have been
+	// retrieved
+	if len(b.mailboxes[user]) > 0 {
+		return b.mailboxes[user], nil
+	}
+
+	cmd, _, err := wait(c.List("", "%"))
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieve mailboxes info and subscribe to them
+	b.mailboxes[user] = make([]*imap.MailboxInfo, len(cmd.Data))
+	for i, rsp := range cmd.Data {
+		mailboxInfo := rsp.MailboxInfo()
+		b.mailboxes[user][i] = mailboxInfo
+
+		_, _, err := wait(c.Subscribe(mailboxInfo.Name))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return b.mailboxes[user], nil
+}
+
+func (b *conns) getLabelMailbox(user, label string) (mailbox string, err error) {
+	mailboxes, err := b.getMailboxes(user)
+	if err != nil {
+		return
+	}
+
+	mailbox = label
+	for _, m := range mailboxes {
+		if getLabelID(m.Name) == label {
+			mailbox = m.Name
+			break
+		}
+	}
+
+	return
+}
+
+func (b *conns) selectMailbox(user, mailbox string) (err error) {
+	c, unlock, err := b.getConn(user)
+	if err != nil {
+		return
+	}
+	defer unlock()
+
+	if c.Mailbox == nil || c.Mailbox.Name != mailbox {
+		_, err = c.Select(mailbox, false)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func (b *conns) selectLabelMailbox(user, label string) (err error) {
+	mailbox, err := b.getLabelMailbox(user, label)
+	if err != nil {
+		return
+	}
+
+	return b.selectMailbox(user, mailbox)
+}
+
 func newConns(config *Config) *conns {
 	return &conns{
 		config: config,
@@ -88,5 +170,6 @@ func newConns(config *Config) *conns {
 		clients: map[string]*imap.Client{},
 		passwords: map[string]string{},
 		locks: map[string]sync.Locker{},
+		mailboxes: map[string][]*imap.MailboxInfo{},
 	}
 }

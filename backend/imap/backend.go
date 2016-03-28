@@ -11,14 +11,15 @@ type Config struct {
 	Suffix string
 }
 
-func Use(bkd *backend.Backend, config *Config) *Users {
+func Use(bkd *backend.Backend, config *Config) *conns {
 	conns := newConns(config)
 	messages := newMessages(conns)
 	conversations := util.NewDummyConversations(messages)
 	users := newUsers(conns)
+	labels := util.NewEventedLabels(newLabels(conns), bkd)
 
-	bkd.Set(messages, conversations, users)
+	bkd.Set(messages, conversations, users, labels)
 
-	// TODO: do not return users backend
-	return users
+	// TODO: do not return conns backend
+	return conns
 }
