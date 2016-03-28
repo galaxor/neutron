@@ -5,12 +5,14 @@ Self-hosted server for [Protonmail client](https://github.com/ProtonMail/WebClie
 Demo: http://neutron.emersion.fr (username: `neutron`, passwords: `neutron`)
 
 Keep in mind that Neutron is less secure than ProtonMail: most servers don't
-use full-disk encryption and aren't under 1,000 meters of granite rock.
+use full-disk encryption and aren't under 1,000 meters of granite rock in
+Switzerland.
 If you use Neutron, make sure to [donate to ProtonMail](https://protonmail.com/donate)!
 
 ## Install
 
-Install from https://packager.io/gh/emersion/neutron
+* Debian & Ubuntu: install from https://packager.io/gh/emersion/neutron
+* Other platforms: no packages yet, you'll have to build from source
 
 ### Configuration
 
