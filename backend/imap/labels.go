@@ -96,6 +96,7 @@ func (b *Labels) InsertLabel(user string, label *backend.Label) (inserted *backe
 	if err != nil {
 		return
 	}
+	i := len(labels)
 
 	c, unlock, err := b.getConn(user)
 	if err != nil {
@@ -108,7 +109,6 @@ func (b *Labels) InsertLabel(user string, label *backend.Label) (inserted *backe
 		return
 	}
 
-	i := len(labels)
 	inserted = label
 	label.ID = label.Name
 	label.Color = getLabelColor(i)
@@ -120,8 +120,24 @@ func (b *Labels) UpdateLabel(user string, update *backend.LabelUpdate) (*backend
 	return nil, errors.New("Not yet implemented")
 }
 
-func (b *Labels) DeleteLabel(user, id string) error {
-	return errors.New("Not yet implemented")
+func (b *Labels) DeleteLabel(user, id string) (err error) {
+	err = b.selectMailbox(user, id)
+	if err != nil {
+		return
+	}
+
+	c, unlock, err := b.getConn(user)
+	if err != nil {
+		return
+	}
+	defer unlock()
+
+	if c.Mailbox.Messages > 0 {
+		return errors.New("This label contains mesages, please move all of them before deleting it")
+	}
+
+	_, _, err = wait(c.Delete(id))
+	return
 }
 
 func newLabels(conns *conns) *Labels {
