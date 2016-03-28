@@ -136,16 +136,24 @@ func FormatOutgoingMessage(msg *backend.OutgoingMessage) string {
 	enc.Close()
 
 	for _, att := range msg.Attachments {
-		// TODO: support encrypted attachments
+		mimeType := att.MIMEType
+		if att.KeyPackets != "" {
+			mimeType = "application/pgp"
+		}
 
 		h := textproto.MIMEHeader{}
-		h.Set("Content-Type", att.MIMEType + "; name=\"" + att.Name + "\"")
+		h.Set("Content-Type", mimeType + "; name=\"" + att.Name + "\"")
 		h.Set("Content-Disposition", "attachment")
 		h.Set("Content-Transfer-Encoding", "base64")
 
 		w, _ := m.CreatePart(h)
 		splitter := chunksplit.New("\r\n", 76, w)
 		enc := base64.NewEncoder(base64.StdEncoding, splitter)
+
+		if att.KeyPackets != "" {
+			kp, _ := base64.StdEncoding.DecodeString(att.KeyPackets)
+			enc.Write(kp)
+		}
 		enc.Write(att.Data)
 		enc.Close()
 	}

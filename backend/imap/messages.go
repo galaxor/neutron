@@ -477,15 +477,8 @@ func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, 
 	return
 }
 
-func (b *Messages) InsertMessage(user string, msg *backend.Message) (inserted *backend.Message, err error) {
-	mailbox, err := b.getLabelMailbox(user, backend.DraftLabel)
-	if err != nil {
-		return
-	}
-
-	flags := imap.NewFlagSet("\\Seen", "\\Draft")
-	mail := textproto.FormatMessage(msg)
-	literal := imap.NewLiteral([]byte(mail))
+func (b *Messages) insertMessage(user, mailbox string, flags imap.FlagSet, mail []byte) (uid uint32, err error) {
+	literal := imap.NewLiteral(mail)
 
 	c, unlock, err := b.getConn(user)
 	if err != nil {
@@ -503,8 +496,23 @@ func (b *Messages) InsertMessage(user string, msg *backend.Message) (inserted *b
 		return
 	}
 
+	uid = imap.AsNumber(res.Fields[2])
+	return
+}
+
+func (b *Messages) InsertMessage(user string, msg *backend.Message) (inserted *backend.Message, err error) {
+	mailbox, err := b.getLabelMailbox(user, backend.DraftLabel)
+	if err != nil {
+		return
+	}
+
+	flags := imap.NewFlagSet("\\Seen", "\\Draft")
+	mail := textproto.FormatMessage(msg)
+
+	uid, err := b.insertMessage(user, mailbox, flags, []byte(mail))
+
 	inserted = msg
-	inserted.ID = formatMessageId(mailbox, imap.AsNumber(res.Fields[2]))
+	inserted.ID = formatMessageId(mailbox, uid)
 	return
 }
 
@@ -584,6 +592,7 @@ func (b *Messages) moveMessages(user string, seqset *imap.SeqSet, mbox string) (
 }
 
 func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (msg *backend.Message, err error) {
+	// Retrieve message from mailbox
 	mailbox, uid, err := parseMessageId(update.Message.ID)
 	if err != nil {
 		return
@@ -601,6 +610,9 @@ func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (ms
 	if err != nil {
 		return
 	}
+
+	// Apply update to message
+	update.Apply(msg)
 
 	if update.IsRead {
 		err = b.updateMessageFlags(user, seqset, "\\Seen", (update.Message.IsRead == 1))
@@ -626,24 +638,52 @@ func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (ms
 	// Mark a message as sent
 	// Correctly handle temporary attachments
 	if update.Type && update.Message.Type == backend.SentType {
-		// Delete temporary attachments
+		// Retrieve temporary attachments
 		tmpAtts, _ := b.tmpAtts.ListAttachments(user, update.Message.ID)
+
+		// Insert temporary attachments to message and send it to the server
+
+		outgoing := &backend.OutgoingMessage{
+			Message: msg,
+		}
+
+		for _, att := range tmpAtts {
+			var d []byte
+			att, d, err = b.tmpAtts.ReadAttachment(user, att.ID)
+
+			outgoing.Attachments = append(outgoing.Attachments, &backend.OutgoingAttachment{
+				Attachment: att,
+				Data: d,
+			})
+		}
+
+		var mailbox string
+		mailbox, err = b.getLabelMailbox(user, backend.SentLabel)
+		if err != nil {
+			return
+		}
+
+		flags := imap.NewFlagSet("\\Seen")
+		mail := textproto.FormatOutgoingMessage(outgoing)
+
+		var uid uint32
+		uid, err = b.insertMessage(user, mailbox, flags, []byte(mail))
+		if err != nil {
+			return
+		}
+
+		msg.ID = formatMessageId(mailbox, uid)
+
+		// Remove temporary attachments
 		for _, att := range tmpAtts {
 			b.tmpAtts.DeleteAttachment(user, att.ID)
 		}
-
-		if len(tmpAtts) > 0 {
-			// TODO: insert temporary attachments to message and send it to the server
-		}
-	}
-
-	if update.ToList || update.CCList || update.BCCList || update.Subject || update.AddressID || update.Body || update.Time {
+	} else if update.ToList || update.CCList || update.BCCList || update.Subject || update.AddressID || update.Body || update.Time {
 		// If one of those is modified, we have to re-send the whole message to the server
 
-		// Apply update to message so we can format it
-		update.Apply(msg)
+		// The message ID will change
 		oldId := msg.ID
-		msg.ID = "" // The message ID will be overwritten
+		msg.ID = "" // Will be overwritten
 
 		// Insert the updated message
 		msg, err = b.InsertMessage(user, msg)
@@ -657,7 +697,7 @@ func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (ms
 			return
 		}
 
-		// Update temporary attachments IDs
+		// Update temporary attachments message ID
 		tmpAtts, _ := b.tmpAtts.ListAttachments(user, oldId)
 		for _, att := range tmpAtts {
 			b.tmpAtts.UpdateAttachmentMessage(user, att.ID, msg.ID)
@@ -680,19 +720,15 @@ func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (ms
 			return
 		}
 
-		// Apply update and change message ID
-		update.Apply(msg)
-
+		// Update message ID
 		oldId := msg.ID
 		msg.ID = formatMessageId(newMailbox, newUid)
 
-		// Update temporary attachments IDs
+		// Update temporary attachments message ID
 		tmpAtts, _ := b.tmpAtts.ListAttachments(user, oldId)
 		for _, att := range tmpAtts {
 			b.tmpAtts.UpdateAttachmentMessage(user, att.ID, msg.ID)
 		}
-	} else {
-		update.Apply(msg)
 	}
 
 	return
