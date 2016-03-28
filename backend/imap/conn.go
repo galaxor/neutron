@@ -19,12 +19,26 @@ func (c *Config) Host() string {
 type conns struct {
 	config *Config
 	clients map[string]*imap.Client
+	passwords map[string]string
 	locks map[string]sync.Locker
 }
 
-func (b *conns) insertConn(user string, conn *imap.Client) {
-	b.clients[user] = conn
-	b.locks[user] = &sync.Mutex{}
+func (b *conns) connect(username, password string) (email string, err error) {
+	c, err := imap.DialTLS(b.config.Host(), nil)
+	if err != nil {
+		return
+	}
+
+	email = username + b.config.Suffix
+	_, err = c.Login(email, password)
+	if err != nil {
+		return
+	}
+
+	b.passwords[username] = password
+	b.clients[username] = c
+	b.locks[username] = &sync.Mutex{}
+	return
 }
 
 func (b *conns) getConn(user string) (*imap.Client, func(), error) {
@@ -35,21 +49,36 @@ func (b *conns) getConn(user string) (*imap.Client, func(), error) {
 
 	lock.Lock()
 
-	conn, ok := b.clients[user]
+	c, ok := b.clients[user]
 	if !ok {
 		lock.Unlock()
 		return nil, nil, errors.New("No such user")
 	}
 
-	state := conn.State()
+	state := c.State()
 	if state == imap.Logout || state == imap.Closed {
-		delete(b.clients, user)
-		delete(b.locks, user)
-		lock.Unlock()
-		return nil, nil, errors.New("Connection to IMAP server closed")
+		// Connection closed, reconnect
+		_, err := b.connect(user, b.passwords[user])
+		if err != nil {
+			delete(b.clients, user)
+			delete(b.passwords, user)
+			delete(b.locks, user)
+			lock.Unlock()
+			return nil, nil, err
+		}
+
+		c = b.clients[user]
 	}
 
-	return conn, lock.Unlock, nil
+	return c, lock.Unlock, nil
+}
+
+// Allow other backends (e.g. a SMTP backend) to access users' password.
+func (b *conns) GetPassword(user string) (string, error) {
+	if password, ok := b.passwords[user]; ok {
+		return password, nil
+	}
+	return "", errors.New("No password stored for such user")
 }
 
 func newConns(config *Config) *conns {
@@ -57,6 +86,7 @@ func newConns(config *Config) *conns {
 		config: config,
 
 		clients: map[string]*imap.Client{},
+		passwords: map[string]string{},
 		locks: map[string]sync.Locker{},
 	}
 }

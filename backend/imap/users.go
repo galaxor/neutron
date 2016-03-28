@@ -3,7 +3,6 @@ package imap
 import (
 	"errors"
 
-	"github.com/mxk/go-imap/imap"
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/memory"
 )
@@ -12,7 +11,6 @@ type Users struct {
 	*conns
 
 	users map[string]*backend.User
-	passwords map[string]string
 }
 
 func (b *Users) GetUser(id string) (user *backend.User, err error) {
@@ -24,17 +22,10 @@ func (b *Users) GetUser(id string) (user *backend.User, err error) {
 }
 
 func (b *Users) Auth(username, password string) (user *backend.User, err error) {
-	c, err := imap.DialTLS(b.config.Host(), nil)
+	email, err := b.connect(username, password)
 	if err != nil {
 		return
 	}
-
-	email := username + b.config.Suffix
-	_, err = c.Login(email, password)
-	if err != nil {
-		return
-	}
-	c.Data = nil
 
 	user = &backend.User{
 		ID: username,
@@ -60,8 +51,6 @@ func (b *Users) Auth(username, password string) (user *backend.User, err error) 
 	}
 
 	b.users[user.ID] = user
-	b.passwords[user.ID] = password
-	b.insertConn(user.ID, c)
 
 	return
 }
@@ -91,19 +80,10 @@ func (b *Users) GetPublicKey(email string) (string, error) {
 	return "", nil
 }
 
-// Allow other backends (e.g. a SMTP backend) to access users' password.
-func (b *Users) GetPassword(user string) (string, error) {
-	if password, ok := b.passwords[user]; ok {
-		return password, nil
-	}
-	return "", errors.New("No password stored for such user")
-}
-
 func newUsers(conns *conns) *Users {
 	return &Users{
 		conns: conns,
 
 		users: map[string]*backend.User{},
-		passwords: map[string]string{},
 	}
 }
