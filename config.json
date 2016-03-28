@@ -1,0 +1,17 @@
+{
+	"Memory": {
+		"Enabled": true,
+		"Populate": false
+	},
+	"Imap": {
+		"Enabled": true,
+		"Hostname": "mail.gandi.net",
+		"Suffix": "@emersion.fr"
+	},
+	"Smtp": {
+		"Enabled": true,
+		"Hostname": "mail.gandi.net",
+		"Port": 587,
+		"Suffix": "@emersion.fr"
+	}
+}

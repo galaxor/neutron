@@ -5,6 +5,7 @@ import (
 
 	"gopkg.in/macaron.v1"
 
+	"github.com/emersion/neutron/config"
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/memory"
 	"github.com/emersion/neutron/backend/imap"
@@ -12,31 +13,32 @@ import (
 	"github.com/emersion/neutron/router/api"
 )
 
+const (
+	publicDir = "public/build"
+	indexFile = "app.html"
+)
+
 func main() {
-	publicDir := "public/build"
-	indexFile := "app.html"
+	// Load config
+	c, err := config.Load("config.json")
+	if err != nil {
+		panic(err)
+	}
 
 	// Create backend
-	backendName := "imap"
 	bkd := backend.New()
-	switch backendName {
-	case "memory":
+	if c.Memory != nil && c.Memory.Enabled {
 		memory.Use(bkd)
-		memory.Populate(bkd)
-	case "imap":
-		imapConfig := &imap.Config{
-			Hostname: "mail.gandi.net",
-			Suffix: "@emersion.fr",
+		if c.Memory.Populate {
+			memory.Populate(bkd)
 		}
-		smtpConfig := &smtp.Config{
-			Hostname: "mail.gandi.net",
-			Port: 587,
-			Suffix: "@emersion.fr",
-		}
+	}
+	if c.Imap != nil && c.Imap.Enabled {
+		passwords := imap.Use(bkd, &c.Imap.Config)
 
-		memory.Use(bkd)
-		passwords := imap.Use(bkd, imapConfig)
-		smtp.Use(bkd, smtpConfig, passwords)
+		if c.Smtp != nil && c.Smtp.Enabled {
+			smtp.Use(bkd, &c.Smtp.Config, passwords)
+		}
 	}
 
 	m := macaron.Classic()
