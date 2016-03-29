@@ -10,6 +10,7 @@ import (
 	"github.com/emersion/neutron/backend/memory"
 	"github.com/emersion/neutron/backend/imap"
 	"github.com/emersion/neutron/backend/smtp"
+	"github.com/emersion/neutron/backend/disk"
 	"github.com/emersion/neutron/router/api"
 )
 
@@ -39,6 +40,9 @@ func main() {
 		if c.Smtp != nil && c.Smtp.Enabled {
 			smtp.Use(bkd, &c.Smtp.Config, passwords)
 		}
+	}
+	if c.Disk != nil && c.Disk.Enabled {
+		disk.Use(bkd, &c.Disk.Config)
 	}
 
 	m := macaron.Classic()

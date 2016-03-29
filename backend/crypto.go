@@ -25,7 +25,7 @@ type Keypair struct {
 }
 
 // Encrypt a message to the keypair's owner.
-func (kp *Keypair) EncryptToSelf(data string) (encrypted string, err error) {
+func (kp *Keypair) Encrypt(data string) (encrypted string, err error) {
 	entitiesList, err := openpgp.ReadArmoredKeyRing(strings.NewReader(kp.PrivateKey))
 	if err != nil {
 		return

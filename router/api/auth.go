@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"gopkg.in/macaron.v1"
+	"github.com/emersion/neutron/backend"
 )
 
 type GrantType string
@@ -92,14 +93,29 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		return
 	}
 
+	for _, addr := range user.Addresses {
+		var kp *backend.Keypair
+		kp, err = api.backend.GetKeypair(addr.Email, req.Password)
+		if err != nil {
+			ctx.JSON(200, &ErrorResp{
+				Resp: Resp{BadRequest},
+				Error: "invalid_grant",
+				ErrorDescription: err.Error(),
+			})
+			return
+		}
+
+		addr.Keys = []*backend.Keypair{kp}
+	}
+
 	session := &Session{
 		ID: "session_id", // TODO: generate this
 		Token: "access_token", // TODO: generate this
 		UserID: user.ID,
 	}
 
-	keyring := user.GetMainAddress().Keys[0] // TODO: find a better way to get the keyring
-	encryptedToken, err := keyring.EncryptToSelf(session.Token)
+	kp := user.GetMainAddress().Keys[0] // TODO: find a better way to get the keypair
+	encryptedToken, err := kp.Encrypt(session.Token)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{InternalServerError},
@@ -125,8 +141,8 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		Scope: "full mail payments reset keys",
 		Uid: session.ID,
 		RefreshToken: "refresh_token", // TODO
-		PrivateKey: keyring.PrivateKey,
-		EncPrivateKey: keyring.PrivateKey,
+		PrivateKey: kp.PrivateKey,
+		EncPrivateKey: kp.PrivateKey,
 		EventID: lastEvent.ID,
 	})
 }

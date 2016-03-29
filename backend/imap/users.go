@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/emersion/neutron/backend"
-	"github.com/emersion/neutron/backend/memory"
 )
 
 type Users struct {
@@ -39,13 +38,6 @@ func (b *Users) Auth(username, password string) (user *backend.User, err error) 
 				Receive: 1,
 				Status: 1,
 				Type: 1,
-				Keys: []*backend.Keypair{
-					&backend.Keypair{
-						ID: username,
-						PublicKey: memory.DefaultPublicKey(),
-						PrivateKey: memory.DefaultPrivateKey(),
-					},
-				},
 			},
 		},
 	}
@@ -69,15 +61,6 @@ func (b *Users) UpdateUser(update *backend.UserUpdate) error {
 
 func (b *Users) UpdateUserPassword(id, current, new string) error {
 	return errors.New("Cannot update user password with IMAP backend")
-}
-
-func (b *Users) UpdateKeypair(id, password string, keypair *backend.Keypair) error {
-	return errors.New("Not yet implemented")
-}
-
-func (b *Users) GetPublicKey(email string) (string, error) {
-	// TODO
-	return "", nil
 }
 
 func newUsers(conns *conns) *Users {

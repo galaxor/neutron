@@ -3,17 +3,20 @@ package config
 import (
 	"github.com/emersion/neutron/backend/imap"
 	"github.com/emersion/neutron/backend/smtp"
+	"github.com/emersion/neutron/backend/disk"
 )
 
 // Configuration for all backends.
 // Backends omitted or set to null won't be activated.
 type Config struct {
-	// Activate the memory backend.
+	// Memory config.
 	Memory *MemoryConfig
 	// IMAP config.
 	Imap *ImapConfig
 	// SMTP config.
 	Smtp *SmtpConfig
+	// Disk config.
+	Disk *DiskConfig
 }
 
 type BackendConfig struct {
@@ -33,4 +36,9 @@ type ImapConfig struct {
 type SmtpConfig struct {
 	BackendConfig
 	smtp.Config
+}
+
+type DiskConfig struct {
+	BackendConfig
+	disk.Config
 }

@@ -13,5 +13,9 @@
 		"Hostname": "mail.gandi.net",
 		"Port": 587,
 		"Suffix": "@emersion.fr"
+	},
+	"Disk": {
+		"Enabled": true,
+		"Directory": "keys"
 	}
 }
