@@ -21,13 +21,25 @@ func (b *Users) GetUser(id string) (user *backend.User, err error) {
 }
 
 func (b *Users) Auth(username, password string) (user *backend.User, err error) {
+	id := username
+
+	// User already logged in, just checking password
+	if p, ok := b.passwords[id]; ok {
+		if p != password {
+			err = errors.New("Invalid username or password")
+		} else {
+			user = b.users[id]
+		}
+		return
+	}
+
 	email, err := b.connect(username, password)
 	if err != nil {
 		return
 	}
 
 	user = &backend.User{
-		ID: username,
+		ID: id,
 		Name: username,
 		DisplayName: username,
 		Addresses: []*backend.Address{

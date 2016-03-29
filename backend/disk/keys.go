@@ -1,7 +1,6 @@
 package disk
 
 import (
-	"errors"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -17,10 +16,17 @@ type Keys struct {
 	users backend.UsersBackend
 }
 
-func (b *Keys) getKeyPath(email string, priv bool) (path string) {
+func parseEmail(email string) (username, domain string) {
 	parts := strings.SplitN(email, "@", 2)
+	username = parts[0]
+	domain = parts[1]
+	return
+}
 
-	path = b.config.Directory + "/" + parts[1] + "/" + parts[0]
+func (b *Keys) getKeyPath(email string, priv bool) (path string) {
+	username, domain := parseEmail(email)
+
+	path = b.config.Directory + "/" + domain + "/" + username
 	if priv {
 		path += ".priv"
 	} else {
@@ -70,8 +76,29 @@ func (b *Keys) GetKeypair(email, password string) (keypair *backend.Keypair, err
 	return
 }
 
-func (b *Keys) UpdateKeypair(email, password string, keypair *backend.Keypair) error {
-	return errors.New("Not yet implemented")
+func (b *Keys) UpdateKeypair(email, password string, keypair *backend.Keypair) (err error) {
+	_, domain := parseEmail(email)
+	parentPath := b.config.Directory + "/" + domain
+	err = os.MkdirAll(parentPath, 0644)
+	if err != nil {
+		return
+	}
+
+	if keypair.PublicKey != "" {
+		pubPath := b.getKeyPath(email, false)
+		err = ioutil.WriteFile(pubPath, []byte(keypair.PublicKey), 0644)
+		if err != nil {
+			return
+		}
+	}
+
+	privPath := b.getKeyPath(email, true)
+	err = ioutil.WriteFile(privPath, []byte(keypair.PrivateKey), 0644)
+	if err != nil {
+		return
+	}
+
+	return
 }
 
 func NewKeys(config *Config, users backend.UsersBackend) backend.KeysBackend {
