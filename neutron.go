@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io/ioutil"
 
 	"gopkg.in/macaron.v1"
@@ -20,8 +21,12 @@ const (
 )
 
 func main() {
+	// CLI arguments
+	cfgPath := flag.String("c", "config.json", "Config file path")
+	flag.Parse()
+
 	// Load config
-	c, err := config.Load("config.json")
+	c, err := config.Load(*cfgPath)
 	if err != nil {
 		panic(err)
 	}
