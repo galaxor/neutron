@@ -49,7 +49,7 @@ func (b *Keys) getKey(email string, priv bool) (key string, err error) {
 
 func (b *Keys) GetPublicKey(email string) (string, error) {
 	key, err := b.getKey(email, false)
-	if err == os.ErrNotExist {
+	if os.IsNotExist(err) {
 		return "", nil
 	}
 	return key, err
@@ -79,7 +79,7 @@ func (b *Keys) GetKeypair(email, password string) (keypair *backend.Keypair, err
 func (b *Keys) UpdateKeypair(email, password string, keypair *backend.Keypair) (err error) {
 	_, domain := parseEmail(email)
 	parentPath := b.config.Directory + "/" + domain
-	err = os.MkdirAll(parentPath, 0644)
+	err = os.MkdirAll(parentPath, 0744)
 	if err != nil {
 		return
 	}
@@ -106,4 +106,8 @@ func NewKeys(config *Config, users backend.UsersBackend) backend.KeysBackend {
 		config: config,
 		users: users,
 	}
+}
+
+func UseKeys(bkd *backend.Backend, config *Config) {
+	bkd.Set(NewKeys(config, bkd))
 }

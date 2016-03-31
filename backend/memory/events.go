@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util"
 )
 
 type Events struct {
@@ -50,7 +51,7 @@ func mergeEvents(dst, src *backend.Event) *backend.Event {
 }
 
 func (b *Events) insertEvent(user string, e *backend.Event) error {
-	e.ID = generateId()
+	e.ID = util.GenerateId()
 	b.events[user] = append(b.events[user], &event{Event: e})
 	return nil
 }

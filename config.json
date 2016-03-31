@@ -16,6 +16,7 @@
 	},
 	"Disk": {
 		"Enabled": true,
-		"Directory": "keys"
+		"Keys": { "Directory": "keys" },
+		"Contacts": { "Directory": "contacts" }
 	}
 }

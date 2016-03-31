@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util"
 )
 
 type Contacts struct {
@@ -16,7 +17,7 @@ func (b *Contacts) ListContacts(user string) (contacts []*backend.Contact, err e
 }
 
 func (b *Contacts) InsertContact(user string, contact *backend.Contact) (*backend.Contact, error) {
-	contact.ID = generateId()
+	contact.ID = util.GenerateId()
 	b.contacts[user] = append(b.contacts[user], contact)
 	return contact, nil
 }

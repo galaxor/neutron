@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util"
 )
 
 type Conversations struct {
@@ -188,7 +189,7 @@ func (b *Conversations) GetConversation(user, id string) (conv *backend.Conversa
 
 func (b *Conversations) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	if msg.ConversationID == "" {
-		msg.ConversationID = generateId()
+		msg.ConversationID = util.GenerateId()
 	}
 
 	return b.Messages.InsertMessage(user, msg)

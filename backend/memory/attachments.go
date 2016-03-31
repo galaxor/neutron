@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util"
 )
 
 type attachment struct {
@@ -44,7 +45,7 @@ func (b *Attachments) ReadAttachment(user, id string) (*backend.Attachment, []by
 }
 
 func (b *Attachments) InsertAttachment(user string, att *backend.Attachment, contents []byte) (*backend.Attachment, error) {
-	att.ID = generateId()
+	att.ID = util.GenerateId()
 	att.Size = len(contents)
 	b.attachments[user] = append(b.attachments[user], &attachment{
 		Attachment: att,

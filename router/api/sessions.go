@@ -2,6 +2,8 @@ package api
 
 import (
 	"time"
+
+	"github.com/emersion/neutron/backend/util"
 )
 
 const SessionTimeout = 10 * time.Minute
@@ -15,8 +17,8 @@ type Session struct {
 
 func NewSession(user string, expire func()) *Session {
 	return &Session{
-		ID: generateId(),
-		Token: generateId(),
+		ID: util.GenerateId(),
+		Token: util.GenerateId(),
 		UserID: user,
 		Timeout: time.AfterFunc(SessionTimeout, expire),
 	}

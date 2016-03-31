@@ -35,6 +35,10 @@ func (api *Api) GetContacts(ctx *macaron.Context) (err error) {
 		return
 	}
 
+	if contacts == nil {
+		contacts = []*backend.Contact{}
+	}
+
 	ctx.JSON(200, &ContactsResp{
 		Resp: Resp{Ok},
 		Contacts: contacts,

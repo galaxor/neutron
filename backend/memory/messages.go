@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util"
 )
 
 type Messages struct {
@@ -108,7 +109,7 @@ func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, 
 }
 
 func (b *Messages) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
-	msg.ID = generateId()
+	msg.ID = util.GenerateId()
 	msg.Order = len(b.messages[user])
 	msg.NumAttachments = len(msg.Attachments)
 	b.messages[user] = append(b.messages[user], msg)

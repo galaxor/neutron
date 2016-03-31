@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util"
 )
 
 type Users struct {
@@ -64,10 +65,10 @@ func (b *Users) InsertUser(u *backend.User, password string) (*backend.User, err
 	}
 
 	// Generate new IDs
-	u.ID = generateId()
+	u.ID = util.GenerateId()
 
 	for _, addr := range u.Addresses {
-		addr.ID = generateId()
+		addr.ID = util.GenerateId()
 	}
 
 	// Insert new user

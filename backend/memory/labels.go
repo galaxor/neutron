@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util"
 )
 
 type Labels struct {
@@ -25,7 +26,7 @@ func (b *Labels) ListLabels(user string) (labels []*backend.Label, err error) {
 }
 
 func (b *Labels) InsertLabel(user string, label *backend.Label) (*backend.Label, error) {
-	label.ID = generateId()
+	label.ID = util.GenerateId()
 	label.Order = len(b.labels[user])
 	b.labels[user] = append(b.labels[user], label)
 	return label, nil

@@ -40,14 +40,22 @@ func main() {
 		}
 	}
 	if c.Imap != nil && c.Imap.Enabled {
-		passwords := imap.Use(bkd, &c.Imap.Config)
+		passwords := imap.Use(bkd, c.Imap.Config)
 
 		if c.Smtp != nil && c.Smtp.Enabled {
-			smtp.Use(bkd, &c.Smtp.Config, passwords)
+			smtp.Use(bkd, c.Smtp.Config, passwords)
 		}
 	}
 	if c.Disk != nil && c.Disk.Enabled {
-		disk.Use(bkd, &c.Disk.Config)
+		if c.Disk.Config != nil {
+			disk.Use(bkd, c.Disk.Config)
+		}
+		if c.Disk.Keys != nil {
+			disk.UseKeys(bkd, c.Disk.Keys.Config)
+		}
+		if c.Disk.Contacts != nil {
+			disk.UseContacts(bkd, c.Disk.Contacts.Config)
+		}
 	}
 
 	m := macaron.Classic()
