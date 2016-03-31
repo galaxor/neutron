@@ -254,15 +254,6 @@ func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error)
 	textproto.ParseMessageHeader(msg, &m.Header)
 	textproto.ParseMessageStructure(msg, structure)
 
-	for _, a := range msg.Attachments {
-		a.ID = formatAttachmentId(mailbox, uid, a.ID)
-	}
-
-	tmpAtts, err := b.tmpAtts.ListAttachments(user, id)
-	if err == nil {
-		msg.Attachments = append(msg.Attachments, tmpAtts...)
-	}
-
 	// Get message content
 
 	preferred := structure.GetPreferredPart()
@@ -281,6 +272,31 @@ func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error)
 		return
 	}
 	msg.Body = string(slurp)
+
+	// Check if some attachments are encrypted
+
+	for _, att := range msg.Attachments {
+		if att.MIMEType == "application/pgp" {
+			// TODO: improve this
+			cmd, _, err = wait(c.UIDFetch(seqset, "BODY.PEEK["+att.ID+"]<0.2048>"))
+			if err != nil {
+				return
+			}
+
+			rsp = cmd.Data[0]
+			msgInfo = rsp.MessageInfo()
+			encryptedKeyPacket := imap.AsBytes(msgInfo.Attrs["BODY["+att.ID+"]<0>"])
+			att.KeyPackets = string(encryptedKeyPacket)
+		}
+
+		att.ID = formatAttachmentId(mailbox, uid, att.ID)
+	}
+
+	tmpAtts, err := b.tmpAtts.ListAttachments(user, id)
+	if err == nil {
+		msg.Attachments = append(msg.Attachments, tmpAtts...)
+	}
+
 	return
 }
 
