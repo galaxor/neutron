@@ -108,7 +108,7 @@ func (b *Labels) InsertLabel(user string, label *backend.Label) (inserted *backe
 	}
 
 	// Refresh mailbox list
-	b.mailboxes[user] = nil
+	b.clients[user].mailboxes = nil
 
 	inserted = label
 	inserted.ID = label.Name
@@ -136,7 +136,7 @@ func (b *Labels) UpdateLabel(user string, update *backend.LabelUpdate) (label *b
 	}
 
 	// Refresh mailbox list
-	b.mailboxes[user] = nil
+	b.clients[user].mailboxes = nil
 
 	label.ID = label.Name
 	return
@@ -164,7 +164,7 @@ func (b *Labels) DeleteLabel(user, id string) (err error) {
 	}
 
 	// Refresh mailbox list
-	b.mailboxes[user] = nil
+	b.clients[user].mailboxes = nil
 
 	return
 }

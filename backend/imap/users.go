@@ -24,8 +24,8 @@ func (b *Users) Auth(username, password string) (user *backend.User, err error) 
 	id := username
 
 	// User already logged in, just checking password
-	if p, ok := b.passwords[id]; ok {
-		if p != password {
+	if client, ok := b.clients[id]; ok {
+		if client.password != password {
 			err = errors.New("Invalid username or password")
 		} else {
 			user = b.users[id]

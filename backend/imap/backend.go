@@ -16,9 +16,10 @@ func Use(bkd *backend.Backend, config *Config) *conns {
 	messages := newMessages(conns)
 	conversations := util.NewDummyConversations(messages)
 	users := newUsers(conns)
-	labels := util.NewEventedLabels(newLabels(conns), bkd)
+	events := newEvents(conns, bkd.EventsBackend, messages)
+	labels := util.NewEventedLabels(newLabels(conns), events)
 
-	bkd.Set(messages, conversations, users, labels)
+	bkd.Set(messages, conversations, users, labels, events)
 
 	// TODO: do not return conns backend
 	return conns

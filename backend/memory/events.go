@@ -12,12 +12,12 @@ const EventListenTimeout = 5 * time.Minute
 
 type Events struct {
 	events map[string][]*event
+	timeouts map[string]*time.Timer
 }
 
 type event struct {
 	*backend.Event
 
-	// Clients listen on the last event they have seen
 	listeners []chan *event
 }
 
@@ -84,6 +84,14 @@ func (b *Events) listen(user string, e *event) {
 	// reads newer events
 	c := make(chan *event)
 
+	// Listen timeout
+	timeout, ok := b.timeouts[user]
+	if ok {
+		timeout.Reset(EventListenTimeout)
+	} else {
+		timeout = time.NewTimer(EventListenTimeout)
+	}
+
 	next := e
 	for {
 		// Insert new listener to the list
@@ -93,7 +101,7 @@ func (b *Events) listen(user string, e *event) {
 		next = nil
 		select {
 		case next = <-c:
-		case <-time.After(EventListenTimeout):
+		case <-timeout.C:
 		}
 
 		log.Println("next", next)
@@ -117,6 +125,12 @@ func (b *Events) listen(user string, e *event) {
 			// Terminate goroutine
 			return
 		}
+	}
+}
+
+func (b *Events) resetTimeout(user string) {
+	if timeout, ok := b.timeouts[user]; ok {
+		timeout.Reset(EventListenTimeout)
 	}
 }
 
@@ -198,11 +212,15 @@ func (b *Events) GetEventsAfter(user, id string) (*backend.Event, error) {
 		listener <- b.events[user][len(b.events[user])-1]
 	}
 
+	// Reset listen timeout
+	b.resetTimeout(user)
+
 	return merged, nil
 }
 
 func NewEvents() backend.EventsBackend {
 	return &Events{
 		events: map[string][]*event{},
+		timeouts: map[string]*time.Timer{},
 	}
 }
