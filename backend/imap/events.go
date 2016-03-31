@@ -10,7 +10,7 @@ import (
 type Events struct {
 	backend.EventsBackend
 	conns *conns
-	msgs *Messages
+	msgs backend.MessagesBackend
 }
 
 func (b *Events) DeleteAllEvents(user string) error {
@@ -70,7 +70,7 @@ func (b *Events) listenUpdates() {
 	}
 }
 
-func newEvents(conns *conns, events backend.EventsBackend, msgs *Messages) *Events {
+func newEvents(conns *conns, events backend.EventsBackend, msgs backend.MessagesBackend) *Events {
 	evts := &Events{
 		EventsBackend: events,
 		conns: conns,
