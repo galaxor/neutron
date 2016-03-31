@@ -108,11 +108,21 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		addr.Keys = []*backend.Keypair{kp}
 	}
 
-	session := &Session{
-		ID: "session_id", // TODO: generate this
-		Token: "access_token", // TODO: generate this
-		UserID: user.ID,
-	}
+	var session *Session
+	session = NewSession(user.ID, func() {
+		delete(api.sessions, session.ID)
+
+		// Check if there are remaining sessions for this user
+		for _, s := range api.sessions {
+			if s.UserID == session.UserID {
+				return
+			}
+		}
+
+		// Stop producing events for this user
+		api.backend.DeleteAllEvents(session.UserID)
+	})
+	api.sessions[session.ID] = session
 
 	kp := user.GetMainAddress().Keys[0] // TODO: find a better way to get the keypair
 	encryptedToken, err := kp.Encrypt(session.Token)
@@ -130,8 +140,6 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		ctx.JSON(500, newErrorResp(err))
 		return
 	}
-
-	api.sessions[session.ID] = session
 
 	ctx.JSON(200, &AuthResp{
 		Resp: Resp{Ok},

@@ -137,7 +137,7 @@ func (b *conns) idle(clt *client) error {
 	c := clt.conn
 
 	mailbox := "INBOX"
-	if c.Mailbox.Name != mailbox {
+	if c.Mailbox != nil && c.Mailbox.Name != mailbox {
 		_, err := c.Select(mailbox, false)
 		if err != nil {
 			return err

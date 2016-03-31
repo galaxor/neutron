@@ -8,6 +8,8 @@ type EventsBackend interface {
 	GetLastEvent(user string) (*Event, error)
 	// Get the sum of all events after a specific one.
 	GetEventsAfter(user, id string) (*Event, error)
+	// Delete all user's events. This happens when the user is no longer connected.
+	DeleteAllEvents(user string) error
 }
 
 type Event struct {

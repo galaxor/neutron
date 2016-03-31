@@ -13,7 +13,21 @@ type Events struct {
 	msgs *Messages
 }
 
+func (b *Events) DeleteAllEvents(user string) error {
+	err := b.EventsBackend.DeleteAllEvents(user)
+	if err != nil {
+		return err
+	}
+
+	return b.conns.disconnect(user)
+}
+
 func (b *Events) processUpdate(u *update) error {
+	// TODO: support other updates too (EXPUNGE)
+	if u.name != "EXISTS" {
+		return nil
+	}
+
 	user := u.user
 
 	c, unlock, err := b.conns.getConn(user)

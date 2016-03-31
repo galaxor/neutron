@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"time"
 
 	"gopkg.in/macaron.v1"
 	"github.com/go-macaron/binding"
@@ -65,13 +64,6 @@ type BatchRespItem struct {
 	Response interface{}
 }
 
-type Session struct {
-	ID string
-	UserID string
-	Token string
-	Time time.Time
-}
-
 type Api struct {
 	backend *backend.Backend
 	sessions map[string]*Session
@@ -95,19 +87,24 @@ func (api *Api) getSessionToken(ctx *macaron.Context) string {
 	return sessionToken.(string)
 }
 
-func (api *Api) getUserId(ctx *macaron.Context) string {
+func (api *Api) getSession(ctx *macaron.Context) (session *Session) {
 	sessionToken := api.getSessionToken(ctx)
 	if sessionToken == "" {
-		return ""
+		return
 	}
 
-	var session *Session
 	for _, s := range api.sessions {
 		if s.Token == sessionToken {
 			session = s
-			break
+			return
 		}
 	}
+
+	return
+}
+
+func (api *Api) getUserId(ctx *macaron.Context) string {
+	session := api.getSession(ctx)
 	if session == nil {
 		return ""
 	}
@@ -115,15 +112,13 @@ func (api *Api) getUserId(ctx *macaron.Context) string {
 	return session.UserID
 }
 
-func (api *Api) keepSessionAlive(id string) {
-	// TODO: check session token
-
-	session, ok := api.sessions[id]
-	if !ok {
+func (api *Api) keepSessionAlive(ctx *macaron.Context) {
+	session := api.getSession(ctx)
+	if session == nil {
 		return
 	}
 
-	session.Time = time.Now()
+	session.Timeout.Reset(SessionTimeout)
 }
 
 func New(m *macaron.Macaron, backend *backend.Backend) {
@@ -144,8 +139,9 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 		}
 		if uid, ok := ctx.Req.Header["X-Pm-Uid"]; ok {
 			ctx.Data["uid"] = uid[0]
-			api.keepSessionAlive(uid[0])
 		}
+
+		api.keepSessionAlive(ctx)
 	})
 
 	m.Group("/attachments", func() {

@@ -16,7 +16,7 @@ func Use(bkd *backend.Backend, config *Config) *conns {
 	messages := newMessages(conns)
 	conversations := util.NewDummyConversations(messages)
 	users := newUsers(conns)
-	events := newEvents(conns, bkd.EventsBackend, messages)
+	events := newEvents(conns, bkd.EventsBackend, conversations)
 	labels := util.NewEventedLabels(newLabels(conns), events)
 
 	bkd.Set(messages, conversations, users, labels, events)

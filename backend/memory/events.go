@@ -3,16 +3,12 @@ package memory
 import (
 	"errors"
 	"log"
-	"time"
 
 	"github.com/emersion/neutron/backend"
 )
 
-const EventListenTimeout = 5 * time.Minute
-
 type Events struct {
 	events map[string][]*event
-	timeouts map[string]*time.Timer
 }
 
 type event struct {
@@ -84,25 +80,13 @@ func (b *Events) listen(user string, e *event) {
 	// reads newer events
 	c := make(chan *event)
 
-	// Listen timeout
-	timeout, ok := b.timeouts[user]
-	if ok {
-		timeout.Reset(EventListenTimeout)
-	} else {
-		timeout = time.NewTimer(EventListenTimeout)
-	}
-
 	next := e
 	for {
 		// Insert new listener to the list
 		next.listeners = append(next.listeners, c)
 
 		// Wait for a new event to listen to
-		next = nil
-		select {
-		case next = <-c:
-		case <-timeout.C:
-		}
+		next = <-c
 
 		log.Println("next", next)
 
@@ -125,12 +109,6 @@ func (b *Events) listen(user string, e *event) {
 			// Terminate goroutine
 			return
 		}
-	}
-}
-
-func (b *Events) resetTimeout(user string) {
-	if timeout, ok := b.timeouts[user]; ok {
-		timeout.Reset(EventListenTimeout)
 	}
 }
 
@@ -212,15 +190,23 @@ func (b *Events) GetEventsAfter(user, id string) (*backend.Event, error) {
 		listener <- b.events[user][len(b.events[user])-1]
 	}
 
-	// Reset listen timeout
-	b.resetTimeout(user)
-
 	return merged, nil
+}
+
+func (b *Events) DeleteAllEvents(user string) error {
+	// Stop all listeners
+	for _, e := range b.events[user] {
+		for _, l := range e.listeners {
+			l <- nil
+		}
+	}
+
+	delete(b.events, user)
+	return nil
 }
 
 func NewEvents() backend.EventsBackend {
 	return &Events{
 		events: map[string][]*event{},
-		timeouts: map[string]*time.Timer{},
 	}
 }
