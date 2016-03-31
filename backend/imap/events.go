@@ -23,6 +23,7 @@ func (b *Events) DeleteAllEvents(user string) error {
 }
 
 func (b *Events) processUpdate(u *update) error {
+	// TODO: support conversations
 	// TODO: support other updates too (EXPUNGE)
 	if u.name != "EXISTS" {
 		return nil
