@@ -28,7 +28,7 @@ func (b *Contacts) loadContacts(user string) (contacts []*backend.Contact, err e
 		return
 	}
 
-	err = json.Unmarshal(data, contacts)
+	err = json.Unmarshal(data, &contacts)
 	return
 }
 
