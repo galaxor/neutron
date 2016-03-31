@@ -37,7 +37,7 @@ func decodeContentEncoding(r io.Reader, contentEncoding string) io.Reader {
 		r = quotedprintable.NewReader(r)
 	case "base64":
 		r = base64.NewDecoder(base64.StdEncoding, r)
-	case "7bit":
+	case "7bit", "8bit", "binary":
 		// Nothing to do
 	default:
 		if contentEncoding != "" {
