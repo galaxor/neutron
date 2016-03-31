@@ -15,8 +15,8 @@ type Session struct {
 
 func NewSession(user string, expire func()) *Session {
 	return &Session{
-		ID: "session_id", // TODO: generate this
-		Token: "access_token", // TODO: generate this
+		ID: generateId(),
+		Token: generateId(),
 		UserID: user,
 		Timeout: time.AfterFunc(SessionTimeout, expire),
 	}
