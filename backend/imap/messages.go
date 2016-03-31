@@ -277,7 +277,9 @@ func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error)
 
 	for _, att := range msg.Attachments {
 		if att.MIMEType == "application/pgp" {
-			// TODO: improve this
+			// TODO: get correct key packet length
+			// TODO: attachment is assumed to be base64-encoded
+			// TODO: make sure this is a normalized msgInfo.Attrs key
 			cmd, _, err = wait(c.UIDFetch(seqset, "BODY.PEEK["+att.ID+"]<0.2048>"))
 			if err != nil {
 				return
