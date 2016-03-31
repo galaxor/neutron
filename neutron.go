@@ -22,7 +22,7 @@ const (
 
 func main() {
 	// CLI arguments
-	cfgPath := flag.String("c", "config.json", "Config file path")
+	cfgPath := flag.String("config", "config.json", "Config file path")
 	flag.Parse()
 
 	// Load config
