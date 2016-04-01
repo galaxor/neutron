@@ -9,10 +9,17 @@ use full-disk encryption and aren't under 1,000 meters of granite rock in
 Switzerland.
 If you use Neutron, make sure to [donate to ProtonMail](https://protonmail.com/donate)!
 
+The initial goal is to support IMAP & SMTP servers (authentication, messages and folders), storing everything else (contacts & settings) on disk. Neutron is modular so it's easy to create new backends and handle more scenarios.
+
 ## Install
 
-* Debian & Ubuntu: install from https://packager.io/gh/emersion/neutron
+* Debian & Ubuntu: install from https://packager.io/gh/emersion/neutron and run with `neutronmail run web`
 * Other platforms: no packages yet, you'll have to build from source
+
+### Options
+
+* `-config`: specify a custom config file
+* `-help`: show help
 
 ### Configuration
 
@@ -22,6 +29,7 @@ One field per backend, each one containing a boolean `Enabled` to turn it on or 
 * `Memory`: stores all data in memory. Set `Populate` to true to automatically populate memory with some data (username: `neutron`, passwords: `neutron`).
 * `Imap`: stores messages on an IMAP server
 * `Smtp`: sends messages via a SMTP server
+* `Disk`: store all data on disk
 
 ## Build
 
@@ -42,12 +50,6 @@ make build-client
 # Start the server
 make start
 ```
-
-## Roadmap
-
-- [x] Implement dummy server (see [#1](https://github.com/emersion/neutron/issues/1))
-- [x] Define backend interface (see https://github.com/emersion/neutron/blob/master/backend/backend.go)
-- [ ] Implement IMAP + SMTP interface (see [#4](https://github.com/emersion/neutron/issues/4) and [#5](https://github.com/emersion/neutron/issues/5))
 
 ## Backends
 
