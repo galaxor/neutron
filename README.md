@@ -1,5 +1,7 @@
 # neutron
 
+[![Build Status](https://travis-ci.org/emersion/neutron.svg?branch=master)](https://travis-ci.org/emersion/neutron)
+
 Self-hosted server for [Protonmail client](https://github.com/ProtonMail/WebClient).
 
 Demo: http://neutron.emersion.fr (username: `neutron`, passwords: `neutron`)
