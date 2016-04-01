@@ -9,3 +9,5 @@ build-client:
 	npm install && \
 	sed -i 's/https:\/\/dev\.protonmail\.com//g' src/app/config.js && \
 	node_modules/.bin/grunt build
+clean-client-dist:
+	rm -rf public/node_modules public/test

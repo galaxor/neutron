@@ -10,3 +10,4 @@ before:
   - git submodule init
   - git submodule update
   - make build-client
+  - make clean-client-dist
