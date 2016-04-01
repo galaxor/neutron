@@ -27,6 +27,35 @@ The initial goal is to support IMAP & SMTP servers (authentication, messages and
 
 See `config.json`.
 
+```js
+{
+	"Memory": {
+		"Enabled": true,
+		"Populate": false,
+		"Domains": ["emersion.fr"] // Available e-mail domains
+	},
+	"Imap": { // IMAP server config
+		"Enabled": true,
+		"Hostname": "mail.gandi.net",
+		"Suffix": "@emersion.fr"
+	},
+	"Smtp": { // SMTP server config
+		"Enabled": true,
+		"Hostname": "mail.gandi.net",
+		"Port": 587,
+		"Suffix": "@emersion.fr"
+	},
+	"Disk": { // Store keys, contacts and settings on disk
+		"Enabled": true,
+		"Keys": { "Directory": "keys" },
+		"Contacts": { "Directory": "contacts" },
+		"UsersSettings": { "Directory": "users" }
+	}
+}
+```
+
+To add a new user, just click _Sign up_ on the login page and enter your IMAP credentials.
+
 One field per backend, each one containing a boolean `Enabled` to turn it on or off.
 * `Memory`: stores all data in memory. Set `Populate` to true to automatically populate memory with some data (username: `neutron`, passwords: `neutron`).
 * `Imap`: stores messages on an IMAP server
