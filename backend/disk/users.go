@@ -76,10 +76,6 @@ func (b *UsersSettings) saveUserSettings(id string, user *backend.User) (err err
 	return ioutil.WriteFile(b.getUserSettingsPath(id), data, 0644)
 }
 
-func (b *UsersSettings) IsUsernameAvailable(username string) (bool, error) {
-	return true, nil // TODO
-}
-
 func (b *UsersSettings) GetUser(id string) (user *backend.User, err error) {
 	user, err = b.UsersBackend.GetUser(id)
 	if err != nil {
