@@ -30,7 +30,7 @@ func (api *Api) UpdateUserPrivateKey(ctx *macaron.Context, req UpdateUserPrivate
 	for _, kp := range req.Keys {
 		email := kp.ID
 
-		err := api.backend.UpdateKeypair(email, req.Password, kp)
+		_, err := api.backend.UpdateKeypair(email, req.Password, kp)
 		if err != nil {
 			ctx.JSON(500, newErrorResp(err))
 			return

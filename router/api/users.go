@@ -81,22 +81,21 @@ func (api *Api) CreateUser(ctx *macaron.Context, req CreateUserReq) (err error) 
 		return
 	}
 
+	email := req.Username + "@" + domain.Name
+
+	// Insert user
+
 	user, err := api.backend.InsertUser(&backend.User{
 		Name: req.Username,
 		NotificationEmail: req.Email,
 		Addresses: []*backend.Address{
 			&backend.Address{
 				DomainID: domain.ID,
-				Email: req.Username + "@" + domain.Name,
+				Email: email,
 				Send: 1,
 				Receive: 1,
 				Status: 1,
 				Type: 1,
-				Keys: []*backend.Keypair{
-					&backend.Keypair{
-						PrivateKey: req.PrivateKey,
-					},
-				},
 			},
 		},
 	}, req.Password)
@@ -104,6 +103,15 @@ func (api *Api) CreateUser(ctx *macaron.Context, req CreateUserReq) (err error) 
 		return
 	}
 
+	// Insert keypair
+
+	keypair := backend.NewKeypair("", req.PrivateKey)
+	keypair, err = api.backend.UpdateKeypair(email, req.Password, keypair)
+	if err != nil {
+		return
+	}
+
+	user.GetMainAddress().Keys = []*backend.Keypair{keypair}
 	populateUser(user)
 
 	ctx.JSON(200, &UserResp{

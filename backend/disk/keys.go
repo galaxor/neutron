@@ -76,7 +76,11 @@ func (b *Keys) GetKeypair(email, password string) (keypair *backend.Keypair, err
 	return
 }
 
-func (b *Keys) UpdateKeypair(email, password string, keypair *backend.Keypair) (err error) {
+func (b *Keys) UpdateKeypair(email, password string, keypair *backend.Keypair) (updated *backend.Keypair, err error) {
+	if keypair.ID == "" {
+		keypair.ID = email
+	}
+
 	_, domain := parseEmail(email)
 	parentPath := b.config.Directory + "/" + domain
 	err = os.MkdirAll(parentPath, 0744)
@@ -98,6 +102,7 @@ func (b *Keys) UpdateKeypair(email, password string, keypair *backend.Keypair) (
 		return
 	}
 
+	updated = keypair
 	return
 }
 

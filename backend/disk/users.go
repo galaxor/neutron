@@ -53,14 +53,14 @@ func (b *UsersSettings) loadUserSettings(id string, user *backend.User) (err err
 		return
 	}
 
-	var settings *backend.User
+	settings := &backend.User{}
 	err = json.Unmarshal(data, settings)
 	b.copyUserSettings(settings, user)
 	return
 }
 
 func (b *UsersSettings) saveUserSettings(id string, user *backend.User) (err error) {
-	var settings *backend.User
+	settings := &backend.User{}
 	b.copyUserSettings(user, settings)
 
 	data, err := json.Marshal(settings)
@@ -111,8 +111,18 @@ func (b *UsersSettings) InsertUser(user *backend.User, password string) (inserte
 	return
 }
 
-func (b *UsersSettings) UpdateUser(update *backend.UserUpdate) error {
-	return errors.New("Not yet implemented") // TODO
+func (b *UsersSettings) UpdateUser(update *backend.UserUpdate) (err error) {
+	settings := &backend.User{}
+	err = b.loadUserSettings(update.User.ID, settings)
+	if err != nil {
+		return
+	}
+
+	settings.ID = update.User.ID
+	update.Apply(settings)
+
+	err = b.saveUserSettings(update.User.ID, settings)
+	return
 }
 
 func (b *UsersSettings) DeleteUser(id string) error {
@@ -126,6 +136,6 @@ func NewUsersSettings(config *Config, users backend.UsersBackend) backend.UsersB
 	}
 }
 
-func UseUsersSettings(config *Config, bkd *backend.Backend) {
+func UseUsersSettings(bkd *backend.Backend, config *Config) {
 	bkd.Set(NewUsersSettings(config, bkd.UsersBackend))
 }

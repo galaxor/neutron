@@ -38,6 +38,10 @@ func main() {
 		if c.Memory.Populate {
 			memory.Populate(bkd)
 		}
+		
+		for _, name := range c.Memory.Domains {
+			bkd.InsertDomain(&backend.Domain{ Name: name })
+		}
 	}
 	if c.Imap != nil && c.Imap.Enabled {
 		passwords := imap.Use(bkd, c.Imap.Config)
@@ -55,6 +59,9 @@ func main() {
 		}
 		if c.Disk.Contacts != nil {
 			disk.UseContacts(bkd, c.Disk.Contacts.Config)
+		}
+		if c.Disk.UsersSettings != nil {
+			disk.UseUsersSettings(bkd, c.Disk.UsersSettings.Config)
 		}
 	}
 

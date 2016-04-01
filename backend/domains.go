@@ -6,6 +6,8 @@ type DomainsBackend interface {
 	ListDomains() ([]*Domain, error)
 	// Get the domain which has the specified name.
 	GetDomainByName(name string) (*Domain, error)
+	// Insert a new domain.
+	InsertDomain(domain *Domain) (*Domain, error)
 }
 
 // A domain name.

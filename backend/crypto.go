@@ -24,21 +24,30 @@ type Keypair struct {
 	PrivateKey string
 }
 
-// Encrypt a message to the keypair's owner.
-func (kp *Keypair) Encrypt(data string) (encrypted string, err error) {
+func (kp *Keypair) getPrivateKey() (entity *openpgp.Entity, err error) {
 	entitiesList, err := openpgp.ReadArmoredKeyRing(strings.NewReader(kp.PrivateKey))
 	if err != nil {
 		return
 	}
+
 	if len(entitiesList) == 0 {
 		err = errors.New("Key ring does not contain any key")
 		return
 	}
 
-	entity := entitiesList[0]
+	entity = entitiesList[0]
+	return
+}
 
-	var tokenBuffer bytes.Buffer
-	armorWriter, err := ArmorMessage(&tokenBuffer)
+// Encrypt a message to the keypair's owner.
+func (kp *Keypair) Encrypt(data string) (encrypted string, err error) {
+	entity, err := kp.getPrivateKey()
+	if err != nil {
+		return
+	}
+
+	var b bytes.Buffer
+	armorWriter, err := ArmorMessage(&b)
 	if err != nil {
 		return
 	}
@@ -53,8 +62,42 @@ func (kp *Keypair) Encrypt(data string) (encrypted string, err error) {
 
 	armorWriter.Close()
 
-	encrypted = tokenBuffer.String()
+	encrypted = b.String()
 	return
+}
+
+// Read public key from private key
+func (kp *Keypair) readPublicKey() (err error) {
+	entity, err := kp.getPrivateKey()
+	if err != nil {
+		return
+	}
+
+	var b bytes.Buffer
+	err = entity.Serialize(&b)
+	if err != nil {
+		return
+	}
+
+	kp.PublicKey = b.String()
+	return
+}
+
+// Create a new keypair.
+func NewKeypair(pub, priv string) *Keypair {
+	kp := &Keypair{
+		PublicKey: pub,
+		PrivateKey: priv,
+	}
+
+	if kp.PublicKey == "" {
+		err := kp.readPublicKey()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return kp
 }
 
 // Check if a string contains an encrypted message.

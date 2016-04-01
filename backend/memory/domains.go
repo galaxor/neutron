@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/util"
 )
 
 type Domains struct {
@@ -22,6 +23,12 @@ func (b *Domains) GetDomainByName(name string) (*backend.Domain, error) {
 		}
 	}
 	return nil, errors.New("No such domain")
+}
+
+func (b *Domains) InsertDomain(domain *backend.Domain) (*backend.Domain, error) {
+	domain.ID = util.GenerateId()
+	b.domains = append(b.domains, domain)
+	return domain, nil
 }
 
 func NewDomains() backend.DomainsBackend {

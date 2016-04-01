@@ -6,6 +6,8 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
+// IMAP backend cannot upate users, so when requesting to update it will just return silently.
+// When inserting a new user, it will just check that the user already exist on the IMAP server.
 type Users struct {
 	*conns
 
@@ -59,16 +61,17 @@ func (b *Users) Auth(username, password string) (user *backend.User, err error) 
 	return
 }
 
+// Cannot check if a username is available, always return true
 func (b *Users) IsUsernameAvailable(username string) (bool, error) {
-	return false, errors.New("Cannot check if a username is available with IMAP backend")
+	return true, nil
 }
 
 func (b *Users) InsertUser(u *backend.User, password string) (*backend.User, error) {
-	return nil, errors.New("Cannot register new user with IMAP backend")
+	return b.Auth(u.Name, password)
 }
 
 func (b *Users) UpdateUser(update *backend.UserUpdate) error {
-	return errors.New("Cannot update user with IMAP backend")
+	return nil
 }
 
 func (b *Users) UpdateUserPassword(id, current, new string) error {

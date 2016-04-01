@@ -29,6 +29,7 @@ type BackendConfig struct {
 type MemoryConfig struct {
 	*BackendConfig
 	Populate bool
+	Domains []string
 }
 
 type ImapConfig struct {
@@ -47,4 +48,5 @@ type DiskConfig struct {
 
 	Contacts *DiskConfig
 	Keys *DiskConfig
+	UsersSettings *DiskConfig
 }
