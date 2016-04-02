@@ -4,26 +4,31 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-/*func (b *Domains) Populate() {
-	b.domains = []*backend.Domain{
-		&backend.Domain{
-			ID: "domain_id",
-			Name: "example.org",
-		},
-	}
-}*/
-
 func Populate(b *backend.Backend) (err error) {
-	// TODO
-	//b.DomainsBackend.(*Domains).Populate()
+	domains, err := b.ListDomains()
+	if err != nil {
+		return
+	}
+
+	var domain *backend.Domain
+	if len(domains) > 0 {
+		domain = domains[0]
+	} else {
+		domain, err = b.InsertDomain(&backend.Domain{Name: "example.org"})
+		if err != nil {
+			return
+		}
+	}
+
+	email := "neutron@" + domain.Name
 
 	user, err := b.InsertUser(&backend.User{
 		Name: "neutron",
 		DisplayName: "Neutron",
 		Addresses: []*backend.Address{
 			&backend.Address{
-				DomainID: "domain_id",
-				Email: "neutron@example.org",
+				DomainID: domain.ID,
+				Email: email,
 				Send: 1,
 				Receive: 1,
 				Status: 1,
@@ -37,7 +42,7 @@ func Populate(b *backend.Backend) (err error) {
 
 	b.InsertContact(user.ID, &backend.Contact{
 		Name: "Myself :)",
-		Email: "neutron@example.org",
+		Email: email,
 	})
 
 	b.InsertLabel(user.ID, &backend.Label{
@@ -50,13 +55,13 @@ func Populate(b *backend.Backend) (err error) {
 	b.InsertMessage(user.ID, &backend.Message{
 		ID: "message_id",
 		ConversationID: "conversation_id",
-		AddressID: "address_id",
+		AddressID: user.GetMainAddress().ID,
 		Subject: "Hello World",
-		Sender: &backend.Email{"neutron@example.org", "Neutron"},
-		ToList: []*backend.Email{ &backend.Email{"neutron@example.org", "Neutron"} },
+		Sender: &backend.Email{email, "Neutron"},
+		ToList: []*backend.Email{ &backend.Email{email, "Neutron"} },
 		Time: 1458073557,
 		Body: "Hey! How are you today?",
-		LabelIDs: []string{"0"},
+		LabelIDs: []string{backend.InboxLabel},
 	})
 
 	return
