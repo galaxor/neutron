@@ -1,11 +1,16 @@
 targets:
   debian-8: &debian
     build_dependencies:
+      - git
       - nodejs-legacy
       - npm
-      - git
   ubuntu-14.04:
     <<: *debian
+  fedora-20: &fedora
+    build_dependencies:
+      - git
+      - nodejs
+      - npm
 before:
   - git submodule init
   - git submodule update
