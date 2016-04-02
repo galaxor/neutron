@@ -11,6 +11,8 @@ import (
 
 func getLabelID(name string) (label string) {
 	switch name {
+	case "draft":
+		label = backend.DraftLabel
 	case "trash":
 		label = backend.TrashLabel
 	case "inbox":
