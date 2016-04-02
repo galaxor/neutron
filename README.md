@@ -15,7 +15,7 @@ The initial goal is to support IMAP & SMTP servers (authentication, messages and
 
 ## Install
 
-* Debian & Ubuntu: install from https://packager.io/gh/emersion/neutron and run with `neutronmail run web`
+* Debian, Ubuntu & Fedora: install from https://packager.io/gh/emersion/neutron and run with `neutronmail run web`
 * Other platforms: no packages yet, you'll have to build from source
 
 ### Options
