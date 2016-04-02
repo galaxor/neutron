@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"gopkg.in/macaron.v1"
-	"github.com/emersion/neutron/backend"
 )
 
 type GrantType string
@@ -93,19 +92,10 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		return
 	}
 
-	for _, addr := range user.Addresses {
-		var kp *backend.Keypair
-		kp, err = api.backend.GetKeypair(addr.Email, req.Password)
-		if err != nil {
-			ctx.JSON(200, &ErrorResp{
-				Resp: Resp{BadRequest},
-				Error: "invalid_grant",
-				ErrorDescription: err.Error(),
-			})
-			return
-		}
-
-		addr.Keys = []*backend.Keypair{kp}
+	err = api.populateCurrentUser(user)
+	if err != nil {
+		ctx.JSON(200, newErrorResp(err))
+		return
 	}
 
 	var session *Session

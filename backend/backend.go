@@ -10,6 +10,7 @@ type Backend struct {
 	DomainsBackend
 	EventsBackend
 	UsersBackend
+	AddressesBackend
 	KeysBackend
 	AttachmentsBackend
 }
@@ -37,6 +38,9 @@ func (b *Backend) Set(backends ...interface{}) {
 		}
 		if users, ok := bkd.(UsersBackend); ok {
 			b.UsersBackend = users
+		}
+		if addresses, ok := bkd.(AddressesBackend); ok {
+			b.AddressesBackend = addresses
 		}
 		if keys, ok := bkd.(KeysBackend); ok {
 			b.KeysBackend = keys

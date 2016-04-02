@@ -17,17 +17,19 @@ type OrganizationResp struct {
 	Organization *Organization
 }
 
-func (api *Api) GetUserOrganization(ctx *macaron.Context) (err error) {
+func (api *Api) GetUserOrganization(ctx *macaron.Context) {
 	userId := api.getUserId(ctx)
 
 	user, err := api.backend.GetUser(userId)
 	if err != nil {
-		return err
+		ctx.JSON(200, newErrorResp(err))
+		return
 	}
 
 	domains, err := api.backend.ListDomains()
 	if err != nil {
-		return err
+		ctx.JSON(200, newErrorResp(err))
+		return
 	}
 
 	org := &Organization{
@@ -40,5 +42,4 @@ func (api *Api) GetUserOrganization(ctx *macaron.Context) (err error) {
 		Resp: Resp{Ok},
 		Organization: org,
 	})
-	return
 }

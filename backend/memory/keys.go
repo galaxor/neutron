@@ -6,28 +6,11 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
-// A password-protected keypair
-type lockedKeypair struct {
-	unlocked *backend.Keypair
-	password string
-}
-
-func (kp *lockedKeypair) GetPublicKey() string {
-	return kp.unlocked.PublicKey
-}
-
-func (kp *lockedKeypair) Unlock(password string) (*backend.Keypair, error) {
-	if kp.password != password {
-		return nil, errors.New("Invalid keypair password")
-	}
-	return kp.unlocked, nil
-}
-
 type Keys struct {
-	keys map[string]*lockedKeypair
+	keys map[string]*backend.Keypair
 }
 
-func (b *Keys) getLockedKeypair(email string) (*lockedKeypair, error) {
+func (b *Keys) getKeypair(email string) (*backend.Keypair, error) {
 	kp, ok := b.keys[email]
 	if !ok {
 		return nil, errors.New("No such keypair")
@@ -36,36 +19,41 @@ func (b *Keys) getLockedKeypair(email string) (*lockedKeypair, error) {
 }
 
 func (b *Keys) GetPublicKey(email string) (string, error) {
-	kp, err := b.getLockedKeypair(email)
+	kp, err := b.getKeypair(email)
 	if err != nil {
 		return "", nil
 	}
-	return kp.GetPublicKey(), nil
+	return kp.PublicKey, nil
 }
 
-func (b *Keys) GetKeypair(email, password string) (*backend.Keypair, error) {
-	kp, err := b.getLockedKeypair(email)
+func (b *Keys) GetKeypair(email string) (*backend.Keypair, error) {
+	kp, err := b.getKeypair(email)
 	if err != nil {
 		return nil, err
 	}
-
-	return kp.Unlock(password)
+	return kp, nil
 }
 
-func (b *Keys) UpdateKeypair(email, password string, keypair *backend.Keypair) (updated *backend.Keypair, err error) {
+func (b *Keys) InsertKeypair(email string, keypair *backend.Keypair) (inserted *backend.Keypair, err error) {
 	keypair.ID = email
+	b.keys[email] = keypair
+	inserted = keypair
+	return
+}
 
-	b.keys[email] = &lockedKeypair{
-		unlocked: keypair,
-		password: password,
+func (b *Keys) UpdateKeypair(email string, keypair *backend.Keypair) (updated *backend.Keypair, err error) {
+	updated = b.keys[email]
+
+	if keypair.PublicKey != "" {
+		updated.PublicKey = keypair.PublicKey
 	}
+	updated.PrivateKey = keypair.PrivateKey
 
-	updated = keypair
 	return
 }
 
 func NewKeys() backend.KeysBackend {
 	return &Keys{
-		keys: map[string]*lockedKeypair{},
+		keys: map[string]*backend.Keypair{},
 	}
 }

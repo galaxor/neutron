@@ -32,6 +32,9 @@ func mergeEvents(dst, src *backend.Event) *backend.Event {
 	if src.Reload != 0 {
 		dst.Reload = src.Reload
 	}
+	if src.User != nil {
+		dst.User = src.User
+	}
 
 	dst.Notices = append(dst.Notices, src.Notices...)
 

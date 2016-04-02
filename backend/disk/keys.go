@@ -55,7 +55,7 @@ func (b *Keys) GetPublicKey(email string) (string, error) {
 	return key, err
 }
 
-func (b *Keys) GetKeypair(email, password string) (keypair *backend.Keypair, err error) {
+func (b *Keys) GetKeypair(email string) (keypair *backend.Keypair, err error) {
 	pub, err := b.getKey(email, false)
 	if err != nil {
 		return
@@ -76,7 +76,11 @@ func (b *Keys) GetKeypair(email, password string) (keypair *backend.Keypair, err
 	return
 }
 
-func (b *Keys) UpdateKeypair(email, password string, keypair *backend.Keypair) (updated *backend.Keypair, err error) {
+func (b *Keys) InsertKeypair(email string, keypair *backend.Keypair) (*backend.Keypair, error) {
+	return b.UpdateKeypair(email, keypair)
+}
+
+func (b *Keys) UpdateKeypair(email string, keypair *backend.Keypair) (updated *backend.Keypair, err error) {
 	if keypair.ID == "" {
 		keypair.ID = email
 	}

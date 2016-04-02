@@ -26,7 +26,7 @@ type Event struct {
 	ConversationCounts []*MessagesCount
 	Labels []*EventLabelDelta
 	Contacts []*EventContactDelta
-	//User
+	User *User
 	//Domains
 	//Members
 	//Organization
@@ -108,5 +108,11 @@ func NewContactDeltaEvent(id string, action EventAction, contact *Contact) *Even
 				Contact: contact,
 			},
 		},
+	}
+}
+
+func NewUserEvent(user *User) *Event {
+	return &Event{
+		User: user,
 	}
 }

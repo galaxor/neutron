@@ -16,9 +16,18 @@ func (b *Domains) ListDomains() (domains []*backend.Domain, err error) {
 	return
 }
 
+func (b *Domains) GetDomain(id string) (*backend.Domain, error) {
+	for _, d := range b.domains {
+		if d.ID == id {
+			return d, nil
+		}
+	}
+	return nil, errors.New("No such domain")
+}
+
 func (b *Domains) GetDomainByName(name string) (*backend.Domain, error) {
 	for _, d := range b.domains {
-		if d.Name == name {
+		if d.DomainName == name {
 			return d, nil
 		}
 	}

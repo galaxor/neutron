@@ -74,10 +74,16 @@ func (kp *Keypair) readPublicKey() (err error) {
 	}
 
 	var b bytes.Buffer
-	err = entity.Serialize(&b)
+	w, err := armor.Encode(&b, openpgp.PublicKeyType, nil)
 	if err != nil {
 		return
 	}
+
+	err = entity.Serialize(w)
+	if err != nil {
+		return
+	}
+	w.Close()
 
 	kp.PublicKey = b.String()
 	return

@@ -15,7 +15,8 @@ func Use(bkd *backend.Backend) {
 	send := util.NewEchoSend(conversations)
 	domains := NewDomains()
 	users := NewUsers()
+	addresses := util.NewEventedAddresses(NewAddresses(), events)
 	keys := NewKeys()
 
-	bkd.Set(contacts, labels, conversations, send, domains, events, users, attachments, keys)
+	bkd.Set(contacts, labels, conversations, send, domains, events, users, addresses, attachments, keys)
 }

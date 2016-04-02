@@ -64,12 +64,8 @@ func (b *Users) InsertUser(u *backend.User, password string) (*backend.User, err
 		return nil, errors.New("Username already taken")
 	}
 
-	// Generate new IDs
+	// Generate ID
 	u.ID = util.GenerateId()
-
-	for _, addr := range u.Addresses {
-		addr.ID = util.GenerateId()
-	}
 
 	// Insert new user
 	b.users[u.ID] = &user{

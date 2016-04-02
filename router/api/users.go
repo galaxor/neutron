@@ -43,12 +43,7 @@ func populateUser(user *backend.User) {
 	}
 
 	for _, addr := range user.Addresses {
-		if addr.DisplayName == "" {
-			addr.DisplayName = user.DisplayName
-		}
-		if len(addr.Keys) > 0 {
-			addr.HasKeys = 1
-		}
+		populateAddress(addr)
 	}
 
 	user.Role = backend.RolePaidAdmin
@@ -56,10 +51,37 @@ func populateUser(user *backend.User) {
 	user.Private = 1
 }
 
-func (api *Api) GetCurrentUser(ctx *macaron.Context) {
+func (api *Api) getCurrentUser(ctx *macaron.Context) (user *backend.User, err error) {
 	userId := api.getUserId(ctx)
 
-	user, err := api.backend.GetUser(userId)
+	user, err = api.backend.GetUser(userId)
+	if err != nil {
+		return
+	}
+
+	err = api.populateCurrentUser(user)
+	return
+}
+
+func (api *Api) populateCurrentUser(user *backend.User) (err error) {
+	user.Addresses, err = api.backend.ListUserAddresses(user.ID)
+	if err != nil {
+		return
+	}
+
+	for _, addr := range user.Addresses {
+		kp, _ := api.backend.GetKeypair(addr.Email)
+		if kp != nil {
+			addr.Keys = []*backend.Keypair{kp}
+		}
+	}
+
+	populateUser(user)
+	return
+}
+
+func (api *Api) GetCurrentUser(ctx *macaron.Context) {
+	user, err := api.getCurrentUser(ctx)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
 			Resp: Resp{NotFound},
@@ -68,8 +90,6 @@ func (api *Api) GetCurrentUser(ctx *macaron.Context) {
 		})
 		return
 	}
-
-	populateUser(user)
 
 	ctx.JSON(200, &UserResp{
 		Resp: Resp{Ok},
@@ -85,32 +105,39 @@ func (api *Api) CreateUser(ctx *macaron.Context, req CreateUserReq) (err error) 
 		return
 	}
 
-	email := req.Username + "@" + domain.Name
+	email := req.Username + "@" + domain.DomainName
 
 	// Insert user
 
 	user, err := api.backend.InsertUser(&backend.User{
 		Name: req.Username,
 		NotificationEmail: req.Email,
-		Addresses: []*backend.Address{
-			&backend.Address{
-				DomainID: domain.ID,
-				Email: email,
-				Send: 1,
-				Receive: 1,
-				Status: 1,
-				Type: 1,
-			},
-		},
 	}, req.Password)
 	if err != nil {
 		return
 	}
 
+	// Insert address
+
+	addr := &backend.Address{
+		DomainID: domain.ID,
+		Email: email,
+		Send: 1,
+		Receive: 1,
+		Status: 1,
+		Type: 1,
+	}
+
+	addr, err = api.backend.InsertAddress(user.ID, addr)
+	if err != nil {
+		return
+	}
+	user.Addresses = []*backend.Address{addr}
+
 	// Insert keypair
 
 	keypair := backend.NewKeypair("", req.PrivateKey)
-	keypair, err = api.backend.UpdateKeypair(email, req.Password, keypair)
+	keypair, err = api.backend.InsertKeypair(email, keypair)
 	if err != nil {
 		return
 	}

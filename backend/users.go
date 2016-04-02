@@ -66,29 +66,6 @@ const (
 	RolePaidAdmin
 )
 
-// A user's address.
-type Address struct {
-	ID string
-	DomainID string
-	Email string
-	Send int
-	Receive int
-	Status int
-	Type int
-	DisplayName string
-	Signature string
-	HasKeys int
-	Keys []*Keypair
-}
-
-// Get this address' email.
-func (a *Address) GetEmail() *Email {
-	return &Email{
-		Address: a.Email,
-		Name: a.DisplayName,
-	}
-}
-
 // A request to update a user.
 // Fields set to true will be updated with values in User.
 type UserUpdate struct {

@@ -37,7 +37,7 @@ func main() {
 		memory.Use(bkd)
 
 		for _, name := range c.Memory.Domains {
-			bkd.InsertDomain(&backend.Domain{ Name: name })
+			bkd.InsertDomain(&backend.Domain{DomainName: name})
 		}
 
 		if c.Memory.Populate {
