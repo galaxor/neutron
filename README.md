@@ -31,25 +31,26 @@ See `config.json`.
 {
 	"Memory": {
 		"Enabled": true,
-		"Populate": false,
+		"Populate": false, // Populate server with default neutron user
 		"Domains": ["emersion.fr"] // Available e-mail domains
 	},
 	"Imap": { // IMAP server config
 		"Enabled": true,
 		"Hostname": "mail.gandi.net",
-		"Suffix": "@emersion.fr"
+		"Suffix": "@emersion.fr" // Will be appended to username when authenticating
 	},
 	"Smtp": { // SMTP server config
 		"Enabled": true,
 		"Hostname": "mail.gandi.net",
 		"Port": 587,
-		"Suffix": "@emersion.fr"
+		"Suffix": "@emersion.fr" // Will be appended to username when authenticating
 	},
 	"Disk": { // Store keys, contacts and settings on disk
 		"Enabled": true,
-		"Keys": { "Directory": "keys" },
-		"Contacts": { "Directory": "contacts" },
-		"UsersSettings": { "Directory": "users" }
+		"Keys": { "Directory": "db/keys" }, // PGP keys location
+		"Contacts": { "Directory": "db/contacts" },
+		"UsersSettings": { "Directory": "db/settings" },
+		"Addresses": { "Directory": "db/addresses" }
 	}
 }
 ```
