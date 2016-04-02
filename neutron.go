@@ -35,12 +35,13 @@ func main() {
 	bkd := backend.New()
 	if c.Memory != nil && c.Memory.Enabled {
 		memory.Use(bkd)
-		if c.Memory.Populate {
-			memory.Populate(bkd)
-		}
-		
+
 		for _, name := range c.Memory.Domains {
 			bkd.InsertDomain(&backend.Domain{ Name: name })
+		}
+
+		if c.Memory.Populate {
+			memory.Populate(bkd)
 		}
 	}
 	if c.Imap != nil && c.Imap.Enabled {

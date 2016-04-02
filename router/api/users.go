@@ -50,6 +50,10 @@ func populateUser(user *backend.User) {
 			addr.HasKeys = 1
 		}
 	}
+
+	user.Role = backend.RolePaidAdmin
+	user.Subscribed = 1
+	user.Private = 1
 }
 
 func (api *Api) GetCurrentUser(ctx *macaron.Context) {

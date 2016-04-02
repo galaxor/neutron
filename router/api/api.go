@@ -227,9 +227,13 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 		m.Put("/private", binding.Json(UpdateUserPrivateKeyReq{}), api.UpdateUserPrivateKey)
 	})
 
-	m.Get("/domains/available", api.GetAvailableDomains)
+	m.Group("/domains", func() {
+		m.Get("/", api.GetUserDomains)
+		m.Get("/available", api.GetAvailableDomains)
+	})
 
 	m.Get("/organizations", api.GetUserOrganization)
+	m.Get("/members", api.GetMembers)
 
 	m.Post("/bugs/crash", binding.Json(CrashReq{}), api.Crash)
 

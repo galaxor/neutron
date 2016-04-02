@@ -60,6 +60,12 @@ func (u *User) GetMainAddress() *Address {
 	return nil
 }
 
+const (
+	RoleFreeUser int = iota
+	RolePaidMember
+	RolePaidAdmin
+)
+
 // A user's address.
 type Address struct {
 	ID string
