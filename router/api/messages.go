@@ -9,6 +9,20 @@ import (
 	"github.com/emersion/neutron/backend"
 )
 
+func getLabelID(name string) (label string) {
+	switch name {
+	case "trash":
+		label = backend.TrashLabel
+	case "inbox":
+		label = backend.InboxLabel
+	case "spam":
+		label = backend.SpamLabel
+	case "archive":
+		label = backend.ArchiveLabel
+	}
+	return
+}
+
 type MessageReq struct {
 	Req
 	Message *backend.Message
@@ -242,17 +256,7 @@ func (api *Api) UpdateMessagesStar(ctx *macaron.Context, req BatchReq) {
 }
 
 func batchMessageSystemLabelUpdater(ctx *macaron.Context) batchMessageUpdater {
-	var label string
-	switch ctx.Params("label") {
-	case "trash":
-		label = backend.TrashLabel
-	case "inbox":
-		label = backend.InboxLabel
-	case "spam":
-		label = backend.SpamLabel
-	case "archive":
-		label = backend.ArchiveLabel
-	}
+	label := getLabelID(ctx.Params("label"))
 
 	return func(update *backend.MessageUpdate) {
 		update.LabelIDs = backend.ReplaceLabels
@@ -294,6 +298,32 @@ func batchMessageLabelUpdater(ctx *macaron.Context, req UpdateLabelReq) batchMes
 
 func (api *Api) UpdateMessagesLabel(ctx *macaron.Context, req UpdateMessagesLabelReq) {
 	api.batchUpdateMessages(ctx, req.MessageIDs, batchMessageLabelUpdater(ctx, req.UpdateLabelReq))
+}
+
+func (api *Api) DeleteAllMessages(ctx *macaron.Context) (err error) {
+	userId := api.getUserId(ctx)
+	label := getLabelID(ctx.Params("label"))
+
+	// TODO: add a DeleteAllMessages() method to backend
+
+	filter := &backend.MessagesFilter{
+		Label: label,
+	}
+
+	msgs, _, err := api.backend.ListMessages(userId, filter)
+	if err != nil {
+		return
+	}
+
+	for _, msg := range msgs {
+		err = api.backend.DeleteMessage(userId, msg.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	ctx.JSON(200, &Resp{Ok})
+	return
 }
 
 func (api *Api) CreateDraft(ctx *macaron.Context, req MessageReq) (err error) {

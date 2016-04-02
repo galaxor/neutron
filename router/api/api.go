@@ -187,6 +187,7 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 		m.Put("/:action(read|unread)", binding.Json(BatchReq{}), api.UpdateMessagesRead)
 		m.Put("/:action(star|unstar)", binding.Json(BatchReq{}), api.UpdateMessagesStar)
 		m.Put("/:label(trash|inbox|spam|archive)", binding.Json(BatchReq{}), api.UpdateMessagesSystemLabel)
+		m.Delete("/:label(draft|spam|trash)", api.DeleteAllMessages)
 		m.Post("/draft", binding.Json(MessageReq{}), api.CreateDraft)
 		m.Put("/draft/:id", binding.Json(MessageReq{}), api.UpdateDraft)
 		m.Post("/send/:id", binding.Json(SendMessageReq{}), api.SendMessage)
