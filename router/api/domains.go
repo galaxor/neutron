@@ -73,7 +73,7 @@ func (api *Api) GetUserDomains(ctx *macaron.Context) (err error) {
 		dom.Addresses = nil
 	}
 
-	addresses, err := api.backend.ListUserAddresses(userId)
+	addresses, err := api.backend.ListAddresses(userId)
 	if err != nil {
 		return
 	}

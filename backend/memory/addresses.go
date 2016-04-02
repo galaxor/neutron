@@ -33,19 +33,8 @@ func (b *Addresses) GetAddress(user, id string) (address *backend.Address, err e
 	return
 }
 
-func (b *Addresses) ListUserAddresses(user string) (addrs []*backend.Address, err error) {
+func (b *Addresses) ListAddresses(user string) (addrs []*backend.Address, err error) {
 	addrs = b.addresses[user]
-	return
-}
-
-func (b *Addresses) ListDomainAddresses(domain string) (addrs []*backend.Address, err error) {
-	for _, userAddrs := range b.addresses {
-		for _, addr := range userAddrs {
-			if addr.DomainID == domain {
-				addrs = append(addrs, addr)
-			}
-		}
-	}
 	return
 }
 

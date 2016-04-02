@@ -64,6 +64,9 @@ func main() {
 		if c.Disk.UsersSettings != nil {
 			disk.UseUsersSettings(bkd, c.Disk.UsersSettings.Config)
 		}
+		if c.Disk.Addresses != nil {
+			disk.UseAddresses(bkd, c.Disk.Addresses.Config)
+		}
 	}
 
 	m := macaron.Classic()

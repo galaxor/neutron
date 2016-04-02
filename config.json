@@ -17,8 +17,9 @@
 	},
 	"Disk": {
 		"Enabled": true,
-		"Keys": { "Directory": "keys" },
-		"Contacts": { "Directory": "contacts" },
-		"UsersSettings": { "Directory": "users" }
+		"Keys": { "Directory": "db/keys" },
+		"Contacts": { "Directory": "db/contacts" },
+		"UsersSettings": { "Directory": "db/settings" },
+		"Addresses": { "Directory": "db/addresses" }
 	}
 }

@@ -49,4 +49,5 @@ type DiskConfig struct {
 	Contacts *DiskConfig
 	Keys *DiskConfig
 	UsersSettings *DiskConfig
+	Addresses *DiskConfig
 }

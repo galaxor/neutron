@@ -42,7 +42,7 @@ func (api *Api) CreateAddress(ctx *macaron.Context, req CreateAddressReq) (err e
 		Send: 1,
 		Receive: 1,
 		Status: 1,
-		Type: 1,
+		Type: 2,
 	}
 
 	addr, err = api.backend.InsertAddress(userId, addr)

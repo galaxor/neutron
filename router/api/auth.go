@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"encoding/json"
 	"strings"
 
@@ -114,7 +115,13 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	})
 	api.sessions[session.ID] = session
 
-	kp := user.GetMainAddress().Keys[0] // TODO: find a better way to get the keypair
+	addr := user.GetMainAddress()
+	if len(addr.Keys) == 0 {
+		ctx.JSON(200, newErrorResp(errors.New("User has no private key")))
+		return
+	}
+
+	kp := addr.Keys[0]
 	encryptedToken, err := kp.Encrypt(session.Token)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{

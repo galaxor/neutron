@@ -4,9 +4,7 @@ type AddressesBackend interface {
 	// Get a user's address.
 	GetAddress(user, id string) (*Address, error)
 	// List all addresses owned by a user.
-	ListUserAddresses(user string) ([]*Address, error)
-	// List all addresses belonging to a domain.
-	ListDomainAddresses(domain string) ([]*Address, error)
+	ListAddresses(user string) ([]*Address, error)
 	// Create a new address.
 	InsertAddress(user string, address *Address) (*Address, error)
 	// Update an existing address.
@@ -26,6 +24,7 @@ type Address struct {
 	Type int
 	DisplayName string
 	Signature string
+
 	HasKeys int
 	Keys []*Keypair
 }
