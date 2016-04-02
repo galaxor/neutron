@@ -71,7 +71,21 @@ func (api *Api) populateCurrentUser(user *backend.User) (err error) {
 	if err != nil {
 		return
 	}
-	user.Addresses = append(user.Addresses, addrs...)
+
+	for _, addr := range addrs {
+		found := false
+		for i, a := range user.Addresses {
+			if addr.Email == a.Email {
+				user.Addresses[i] = addr
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			user.Addresses = append(user.Addresses, addr)
+		}
+	}
 
 	for _, addr := range user.Addresses {
 		kp, _ := api.backend.GetKeypair(addr.Email)
