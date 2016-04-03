@@ -118,14 +118,18 @@ func (api *Api) populateMessage(userId string, msg *backend.Message) {
 
 	// TODO: optimize this
 	if msg.AddressID == "" && msg.Sender != nil {
-		user, err := api.backend.GetUser(userId)
-		if err == nil {
-			for _, addr := range user.Addresses {
-				if addr.Email == msg.Sender.Address {
-					msg.AddressID = addr.ID
-					break
-				}
+		addrs, _ := api.backend.ListAddresses(userId)
+		for _, addr := range addrs {
+			if addr.Email == msg.Sender.Address {
+				msg.AddressID = addr.ID
+				break
 			}
+		}
+
+		if msg.AddressID == "" && len(addrs) > 0 {
+			// No address found, pick the first one
+			// TODO: pick the main one
+			msg.AddressID = addrs[0].ID
 		}
 	}
 }
