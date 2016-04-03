@@ -12,6 +12,8 @@ type Config struct {
 	Hostname string
 	Port int
 	Suffix string
+	Tls bool
+	SmtpHost string
 }
 
 func Use(bkd *backend.Backend, config *Config, passwords PasswordsBackend) {
