@@ -3,19 +3,10 @@ package imap
 import (
 	"sync"
 	"errors"
-	"strconv"
 	"time"
 
 	"github.com/mxk/go-imap/imap"
 )
-
-func (c *Config) Host() string {
-	host := c.Hostname
-	if c.Port > 0 {
-		host += ":" + strconv.Itoa(c.Port)
-	}
-	return host
-}
 
 type client struct {
 	id string
@@ -40,9 +31,21 @@ type conns struct {
 }
 
 func (b *conns) connect(username, password string) (email string, err error) {
-	c, err := imap.DialTLS(b.config.Host(), nil)
+	var c *imap.Client
+	if b.config.Tls {
+		c, err = imap.DialTLS(b.config.Host(), nil)
+	} else {
+		c, err = imap.Dial(b.config.Host())
+	}
 	if err != nil {
 		return
+	}
+
+	if !b.config.Tls {
+		_, err = c.StartTLS(nil)
+		if err != nil {
+			return
+		}
 	}
 
 	email = username + b.config.Suffix

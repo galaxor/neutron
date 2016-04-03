@@ -1,6 +1,8 @@
 package imap
 
 import (
+	"strconv"
+
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/util"
 )
@@ -8,7 +10,21 @@ import (
 type Config struct {
 	Hostname string
 	Port int
+	Tls bool
 	Suffix string
+}
+
+func (c *Config) Host() string {
+	port := c.Port
+	if port <= 0 {
+		if c.Tls {
+			port = 993
+		} else {
+			port = 143
+		}
+	}
+
+	return c.Hostname + ":" + strconv.Itoa(port)
 }
 
 func Use(bkd *backend.Backend, config *Config) *conns {
