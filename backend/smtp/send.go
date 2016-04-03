@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"net"
 	"net/smtp"
-	"strconv"
 
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/util/textproto"
@@ -24,7 +23,7 @@ func (b *SendBackend) SendMessage(user string, msg *backend.OutgoingMessage) err
 	}
 
 	cfg := b.config
-	host := cfg.Hostname + ":" + strconv.Itoa(cfg.Port)
+	host := cfg.Host()
 
 	var conn net.Conn
 	if cfg.Tls {

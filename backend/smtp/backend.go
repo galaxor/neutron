@@ -1,6 +1,8 @@
 package smtp
 
 import (
+	"strconv"
+
 	"github.com/emersion/neutron/backend"
 )
 
@@ -14,6 +16,19 @@ type Config struct {
 	Suffix string
 	Tls bool
 	SmtpHost string
+}
+
+func (c *Config) Host() string {
+	port := c.Port
+	if port <= 0 {
+		if c.Tls {
+			port = 465
+		} else {
+			port = 25
+		}
+	}
+
+	return c.Hostname + ":" + strconv.Itoa(port)
 }
 
 func Use(bkd *backend.Backend, config *Config, passwords PasswordsBackend) {
