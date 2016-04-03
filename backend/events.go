@@ -20,16 +20,16 @@ type Event struct {
 	Notices []string
 
 	// See https://github.com/ProtonMail/WebClient/blob/master/src/app/services/event.js#L274
-	Messages []*EventMessageDelta
-	Conversations []*EventConversationDelta
-	MessageCounts []*MessagesCount
-	ConversationCounts []*MessagesCount
-	Labels []*EventLabelDelta
-	Contacts []*EventContactDelta
-	User *User
-	//Domains
-	//Members
-	//Organization
+	Messages []*EventMessageDelta `json:",omitempty"`
+	Conversations []*EventConversationDelta `json:",omitempty"`
+	MessageCounts []*MessagesCount `json:",omitempty"`
+	ConversationCounts []*MessagesCount `json:",omitempty"`
+	Labels []*EventLabelDelta `json:",omitempty"`
+	Contacts []*EventContactDelta `json:",omitempty"`
+	User *User `json:",omitempty"`
+	//Domains `json:",omitempty"`
+	//Members `json:",omitempty"`
+	//Organization `json:",omitempty"`
 
 	UsedSpace int `json:",omitempty"`
 }
