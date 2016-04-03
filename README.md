@@ -37,6 +37,7 @@ See `config.json`.
 	"Imap": { // IMAP server config
 		"Enabled": true,
 		"Hostname": "mail.gandi.net",
+		"Tls": true,
 		"Suffix": "@emersion.fr" // Will be appended to username when authenticating
 	},
 	"Smtp": { // SMTP server config
