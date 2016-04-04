@@ -1,6 +1,7 @@
 # neutron
 
 [![Build Status](https://travis-ci.org/emersion/neutron.svg?branch=master)](https://travis-ci.org/emersion/neutron)
+[![GoDoc](https://godoc.org/github.com/emersion/neutron?status.svg)](https://godoc.org/github.com/emersion/neutron)
 
 Self-hosted server for [Protonmail client](https://github.com/ProtonMail/WebClient).
 
