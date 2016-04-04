@@ -1,3 +1,4 @@
+// Provides a chunk splitter.
 package chunksplit
 
 import (
@@ -44,6 +45,8 @@ func (w *writer) Write(b []byte) (N int, err error) {
 	return
 }
 
+// Returns a writer that splits its input into multiple parts that have the same
+// length and adds a separator between these parts.
 func New(sep string, l int, w io.Writer) io.Writer {
 	return &writer{
 		Sep: sep,

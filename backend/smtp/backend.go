@@ -1,3 +1,4 @@
+// Sends messages with a SMTP server.
 package smtp
 
 import (

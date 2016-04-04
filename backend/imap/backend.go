@@ -1,3 +1,4 @@
+// Stores messages on an IMAP server.
 package imap
 
 import (

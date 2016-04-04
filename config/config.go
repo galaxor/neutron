@@ -1,3 +1,4 @@
+// Parses the configuration file.
 package config
 
 import (

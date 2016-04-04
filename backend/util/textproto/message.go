@@ -1,3 +1,4 @@
+// Provides utilities to parse and format messages.
 package textproto
 
 import (

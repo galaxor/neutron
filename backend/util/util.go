@@ -8,6 +8,7 @@ import (
 
 const idLength = 64
 
+// Generate a random identifier.
 func GenerateId() string {
 	b := make([]byte, idLength)
 	_, err := rand.Read(b)

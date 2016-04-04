@@ -1,3 +1,4 @@
+// Stores data in memory.
 package memory
 
 import (

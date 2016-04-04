@@ -69,10 +69,11 @@ func main() {
 		}
 	}
 
+	// Create server
 	m := macaron.Classic()
 	m.Use(macaron.Renderer())
 
-	// API
+	// Initialize API
 	m.Group("/api", func() {
 		api.New(m, bkd)
 	})
