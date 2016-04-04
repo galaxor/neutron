@@ -1,15 +1,15 @@
-package util
+package events
 
 import (
 	"github.com/emersion/neutron/backend"
 )
 
-type EventedAddresses struct {
+type Addresses struct {
 	backend.AddressesBackend
 	events backend.EventsBackend
 }
 
-func (b *EventedAddresses) InsertAddress(user string, addr *backend.Address) (inserted *backend.Address, err error) {
+func (b *Addresses) InsertAddress(user string, addr *backend.Address) (inserted *backend.Address, err error) {
 	inserted, err = b.AddressesBackend.InsertAddress(user, addr)
 	if err != nil {
 		return
@@ -20,7 +20,7 @@ func (b *EventedAddresses) InsertAddress(user string, addr *backend.Address) (in
 	return
 }
 
-func (b *EventedAddresses) DeleteAddress(user, id string) (err error) {
+func (b *Addresses) DeleteAddress(user, id string) (err error) {
 	err = b.AddressesBackend.DeleteAddress(user, id)
 	if err != nil {
 		return
@@ -31,8 +31,8 @@ func (b *EventedAddresses) DeleteAddress(user, id string) (err error) {
 	return
 }
 
-func NewEventedAddresses(addrs backend.AddressesBackend, events backend.EventsBackend) backend.AddressesBackend {
-	return &EventedAddresses{
+func NewAddresses(addrs backend.AddressesBackend, events backend.EventsBackend) backend.AddressesBackend {
+	return &Addresses{
 		AddressesBackend: addrs,
 		events: events,
 	}

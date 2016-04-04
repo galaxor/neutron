@@ -5,6 +5,7 @@ import (
 
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/util"
+	"github.com/emersion/neutron/backend/events"
 )
 
 type Config struct {
@@ -32,10 +33,10 @@ func Use(bkd *backend.Backend, config *Config) *conns {
 	messages := newMessages(conns)
 	conversations := util.NewDummyConversations(messages)
 	users := newUsers(conns)
-	events := newEvents(conns, bkd.EventsBackend, conversations)
-	labels := util.NewEventedLabels(newLabels(conns), events)
+	evts := newEvents(conns, bkd.EventsBackend, conversations)
+	labels := events.NewLabels(newLabels(conns), evts)
 
-	bkd.Set(messages, conversations, users, labels, events)
+	bkd.Set(messages, conversations, users, labels, evts)
 
 	// TODO: do not return conns backend
 	return conns

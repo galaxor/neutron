@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/emersion/neutron/backend"
+	"github.com/emersion/neutron/backend/events"
 	"github.com/emersion/neutron/backend/util"
 )
 
@@ -119,5 +120,5 @@ func NewAddresses(config *Config) backend.AddressesBackend {
 }
 
 func UseAddresses(bkd *backend.Backend, config *Config) {
-	bkd.Set(util.NewEventedAddresses(NewAddresses(config), bkd))
+	bkd.Set(events.NewAddresses(NewAddresses(config), bkd))
 }

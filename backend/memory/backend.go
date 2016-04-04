@@ -3,20 +3,21 @@ package memory
 import (
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/util"
+	"github.com/emersion/neutron/backend/events"
 )
 
 func Use(bkd *backend.Backend) {
-	events := NewEvents()
-	contacts := util.NewEventedContacts(NewContacts(), events)
-	labels := util.NewEventedLabels(NewLabels(), events)
+	evts := NewEvents()
+	contacts := events.NewContacts(NewContacts(), evts)
+	labels := events.NewLabels(NewLabels(), evts)
 	attachments := NewAttachments()
 	messages := NewMessages(attachments.(*Attachments))
-	conversations := util.NewEventedConversations(NewConversations(messages.(*Messages)), events)
+	conversations := events.NewConversations(NewConversations(messages.(*Messages)), evts)
 	send := util.NewEchoSend(conversations)
 	domains := NewDomains()
 	users := NewUsers()
-	addresses := util.NewEventedAddresses(NewAddresses(), events)
+	addresses := events.NewAddresses(NewAddresses(), evts)
 	keys := NewKeys()
 
-	bkd.Set(contacts, labels, conversations, send, domains, events, users, addresses, attachments, keys)
+	bkd.Set(contacts, labels, conversations, send, domains, evts, users, addresses, attachments, keys)
 }

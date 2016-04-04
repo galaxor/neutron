@@ -1,15 +1,15 @@
-package util
+package events
 
 import (
 	"github.com/emersion/neutron/backend"
 )
 
-type EventedMessages struct {
+type Messages struct {
 	backend.MessagesBackend
 	events backend.EventsBackend
 }
 
-func (b *EventedMessages) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
+func (b *Messages) InsertMessage(user string, msg *backend.Message) (*backend.Message, error) {
 	msg, err := b.MessagesBackend.InsertMessage(user, msg)
 
 	if err == nil {
@@ -22,7 +22,7 @@ func (b *EventedMessages) InsertMessage(user string, msg *backend.Message) (*bac
 	return msg, err
 }
 
-func (b *EventedMessages) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
+func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (*backend.Message, error) {
 	msg, err := b.MessagesBackend.UpdateMessage(user, update)
 
 	if err == nil {
@@ -33,7 +33,7 @@ func (b *EventedMessages) UpdateMessage(user string, update *backend.MessageUpda
 	return msg, err
 }
 
-func (b *EventedMessages) DeleteMessage(user, id string) error {
+func (b *Messages) DeleteMessage(user, id string) error {
 	err := b.MessagesBackend.DeleteMessage(user, id)
 
 	if err == nil {
@@ -46,8 +46,8 @@ func (b *EventedMessages) DeleteMessage(user, id string) error {
 	return err
 }
 
-func NewEventedMessages(bkd backend.MessagesBackend, events backend.EventsBackend) backend.MessagesBackend {
-	return &EventedMessages{
+func NewMessages(bkd backend.MessagesBackend, events backend.EventsBackend) backend.MessagesBackend {
+	return &Messages{
 		MessagesBackend: bkd,
 		events: events,
 	}

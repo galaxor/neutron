@@ -8,6 +8,7 @@ import (
 
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/util"
+	"github.com/emersion/neutron/backend/events"
 )
 
 type Contacts struct {
@@ -132,5 +133,5 @@ func NewContacts(config *Config) backend.ContactsBackend {
 }
 
 func UseContacts(bkd *backend.Backend, config *Config) {
-	bkd.Set(util.NewEventedContacts(NewContacts(config), bkd))
+	bkd.Set(events.NewContacts(NewContacts(config), bkd))
 }
