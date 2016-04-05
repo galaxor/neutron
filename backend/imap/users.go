@@ -14,6 +14,43 @@ type Users struct {
 	users map[string]*backend.User
 }
 
+func (b *Users) getQuota(user *backend.User) (err error) {
+	c, unlock, err := b.getConn(user.ID)
+	if err != nil {
+		return
+	}
+	defer unlock()
+
+	if !c.Caps["QUOTA"] {
+		// Quotas not supported on this server
+		return nil
+	}
+
+	cmd, _, err := wait(c.GetQuotaRoot("INBOX"))
+	if err != nil {
+		return
+	}
+
+	// TODO: support multiple quotas?
+	for _, res := range cmd.Data {
+		if res.Label != "QUOTA" {
+			continue
+		}
+
+		_, quotas := res.Quota()
+		if len(quotas) == 0 {
+			continue
+		}
+		quota := quotas[0]
+
+		user.UsedSpace = int(quota.Usage) * 1024
+		user.MaxSpace = int(quota.Limit) * 1024
+		break
+	}
+
+	return
+}
+
 func (b *Users) GetUser(id string) (user *backend.User, err error) {
 	user, ok := b.users[id]
 	if !ok {
@@ -55,6 +92,8 @@ func (b *Users) Auth(username, password string) (user *backend.User, err error) 
 			},
 		},
 	}
+
+	b.getQuota(user)
 
 	b.users[user.ID] = user
 
