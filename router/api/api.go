@@ -236,6 +236,7 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 
 	m.Group("/addresses", func() {
 		m.Post("/", binding.Json(CreateAddressReq{}), api.CreateAddress)
+		m.Put("/:id/:action(enable|disable)", api.ToggleAddress)
 		m.Delete("/:id", api.DeleteAddress)
 	})
 

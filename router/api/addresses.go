@@ -1,6 +1,8 @@
 package api
 
 import (
+	"errors"
+
 	"gopkg.in/macaron.v1"
 	"github.com/emersion/neutron/backend"
 )
@@ -56,6 +58,34 @@ func (api *Api) CreateAddress(ctx *macaron.Context, req CreateAddressReq) (err e
 		Resp: Resp{Ok},
 		Address: addr,
 	})
+	return
+}
+
+func (api *Api) ToggleAddress(ctx *macaron.Context) (err error) {
+	userId := api.getUserId(ctx)
+	addrId := ctx.Params("id")
+	action := ctx.Params("action")
+
+	update := &backend.AddressUpdate{
+		Address: &backend.Address{ID: addrId},
+		Status: true,
+	}
+
+	switch action {
+	case "enable":
+		update.Address.Status = 1
+	case "disable":
+		update.Address.Status = 0
+	default:
+		return errors.New("Invalid action")
+	}
+
+	_, err = api.backend.UpdateAddress(userId, update)
+	if err != nil {
+		return
+	}
+
+	ctx.JSON(200, &Resp{Ok})
 	return
 }
 

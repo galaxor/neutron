@@ -20,6 +20,17 @@ func (b *Addresses) InsertAddress(user string, addr *backend.Address) (inserted 
 	return
 }
 
+func (b *Addresses) UpdateAddress(user string, update *backend.AddressUpdate) (updated *backend.Address, err error) {
+	updated, err = b.AddressesBackend.UpdateAddress(user, update)
+	if err != nil {
+		return
+	}
+
+	event := backend.NewUserEvent(&backend.User{ID: user})
+	b.events.InsertEvent(user, event)
+	return
+}
+
 func (b *Addresses) DeleteAddress(user, id string) (err error) {
 	err = b.AddressesBackend.DeleteAddress(user, id)
 	if err != nil {

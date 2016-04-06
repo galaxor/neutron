@@ -92,6 +92,28 @@ func (b *Addresses) InsertAddress(user string, address *backend.Address) (*backe
 	return address, nil
 }
 
+func (b *Addresses) UpdateAddress(user string, update *backend.AddressUpdate) (*backend.Address, error) {
+	addresses, err := b.loadAddresses(user)
+	if err != nil {
+		return nil, err
+	}
+
+	i, err := getAddressIndex(addresses, update.Address.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	address := addresses[i]
+	update.Apply(address)
+
+	err = b.saveAddresses(user, addresses)
+	if err != nil {
+		return nil, err
+	}
+
+	return address, nil
+}
+
 func (b *Addresses) DeleteAddress(user, id string) error {
 	addresses, err := b.loadAddresses(user)
 	if err != nil {

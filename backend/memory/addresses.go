@@ -44,6 +44,17 @@ func (b *Addresses) InsertAddress(user string, addr *backend.Address) (*backend.
 	return addr, nil
 }
 
+func (b *Addresses) UpdateAddress(user string, update *backend.AddressUpdate) (addr *backend.Address, err error) {
+	i, err := b.getAddressIndex(user, update.Address.ID)
+	if err != nil {
+		return
+	}
+
+	addr = b.addresses[user][i]
+	update.Apply(addr)
+	return
+}
+
 func (b *Addresses) DeleteAddress(user, id string) (err error) {
 	i, err := b.getAddressIndex(user, id)
 	if err != nil {
