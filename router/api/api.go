@@ -240,6 +240,12 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 		m.Delete("/:id", api.DeleteAddress)
 	})
 
+	m.Group("/payments", func() {
+		m.Get("/plans", api.GetPlans)
+		m.Get("/subscription", api.GetSubscription)
+		m.Get("/methods", api.GetPaymentMethods)
+	})
+
 	m.Get("/organizations", api.GetUserOrganization)
 	m.Get("/members", api.GetMembers)
 
