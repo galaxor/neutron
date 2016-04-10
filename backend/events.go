@@ -24,6 +24,8 @@ type Event struct {
 	Conversations []*EventConversationDelta `json:",omitempty"`
 	MessageCounts []*MessagesCount `json:",omitempty"`
 	ConversationCounts []*MessagesCount `json:",omitempty"`
+	Total *MessagesTotal `json:",omitempty"`
+	Unread *MessagesTotal `json:",omitempty"`
 	Labels []*EventLabelDelta `json:",omitempty"`
 	Contacts []*EventContactDelta `json:",omitempty"`
 	User *User `json:",omitempty"`

@@ -33,6 +33,40 @@ func (api *Api) GetEvent(ctx *macaron.Context) (err error) {
 		event.Notices = []string{}
 	}
 
+	// Some messages have been updated
+	if len(event.Messages) != 0 {
+		for _, event := range event.Messages {
+			if event.Message != nil {
+				api.populateMessage(userId, event.Message)
+			}
+		}
+
+		event.MessageCounts, err = api.backend.CountMessages(userId)
+		if err != nil {
+			return
+		}
+
+		event.ConversationCounts, err = api.backend.CountConversations(userId)
+		if err != nil {
+			return
+		}
+
+		event.Total, event.Unread = backend.MessagesTotalFromCounts(event.MessageCounts)
+
+		if event.Total.Locations == nil {
+			event.Total.Locations = []*backend.LocationTotal{}
+		}
+		if event.Total.Labels == nil {
+			event.Total.Labels = []*backend.LabelTotal{}
+		}
+		if event.Unread.Locations == nil {
+			event.Unread.Locations = []*backend.LocationTotal{}
+		}
+		if event.Unread.Labels == nil {
+			event.Unread.Labels = []*backend.LabelTotal{}
+		}
+	}
+
 	ctx.JSON(200, &EventResp{
 		Resp: Resp{Ok},
 		Event: event,

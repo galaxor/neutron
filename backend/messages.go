@@ -74,6 +74,16 @@ const (
 	EncryptedPgpMime = 8
 )
 
+// Messages locations.
+const (
+	InboxLocation int = 0
+	DraftLocation = 1
+	SentLocation = 2
+	TrashLocation = 3
+	SpamLocation = 4
+	ArchiveLocation = 6
+)
+
 type MessagePackage struct {
 	Address string
 	Type int
@@ -86,6 +96,96 @@ type MessagesCount struct {
 	LabelID string
 	Total int
 	Unread int
+}
+
+// Contains a summary of messages counts per location and label.
+type MessagesTotal struct {
+	Locations []*LocationTotal
+	Labels []*LabelTotal
+	Starred int
+}
+
+type LocationTotal struct {
+	Location int
+	Count int
+}
+
+type LabelTotal struct {
+	LabelID string
+	Count int
+}
+
+func addCountToTotal(totals *MessagesTotal, label string, count int) {
+	if count == 0 {
+		return
+	}
+
+	if label == StarredLabel {
+		totals.Starred += count
+		return
+	}
+
+	location := -1
+	switch label {
+	case InboxLabel:
+		location = InboxLocation
+	case DraftLabel:
+		location = DraftLocation
+	case SentLabel:
+		location = SentLocation
+	case TrashLabel:
+		location = TrashLocation
+	case SpamLabel:
+		location = SpamLocation
+	case ArchiveLabel:
+		location = ArchiveLocation
+	}
+
+	if location != -1 { // A system label that has a corresponding location
+		found := false
+		for _, t := range totals.Locations {
+			if t.Location == location {
+				found = true
+				t.Count += count
+				break
+			}
+		}
+
+		if !found {
+			totals.Locations = append(totals.Locations, &LocationTotal{
+				Location: location,
+				Count: count,
+			})
+		}
+	} else { // Just a regular label
+		found := false
+		for _, t := range totals.Labels {
+			if t.LabelID == label {
+				found = true
+				t.Count += count
+				break
+			}
+		}
+
+		if !found {
+			totals.Labels = append(totals.Labels, &LabelTotal{
+				LabelID: label,
+				Count: count,
+			})
+		}
+	}
+}
+
+func MessagesTotalFromCounts(counts []*MessagesCount) (totals *MessagesTotal, unread *MessagesTotal) {
+	totals = &MessagesTotal{}
+	unread = &MessagesTotal{}
+
+	for _, count := range counts {
+		addCountToTotal(totals, count.LabelID, count.Total)
+		addCountToTotal(unread, count.LabelID, count.Unread)
+	}
+
+	return
 }
 
 // Contains fields to filter messages.

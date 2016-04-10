@@ -25,49 +25,6 @@ func getLabelID(name string) (label string) {
 	return
 }
 
-type MessageReq struct {
-	Req
-	Message *backend.Message
-	ID string `json:"id"`
-	ParentID string
-}
-
-func (req MessageReq) getMessage() *backend.Message {
-	return &backend.Message{
-		ID: req.ID,
-		ToList: req.Message.ToList,
-		CCList: req.Message.CCList,
-		BCCList: req.Message.BCCList,
-		Subject: req.Message.Subject,
-		IsRead: req.Message.IsRead,
-		AddressID: req.Message.AddressID,
-		Body: req.Message.Body,
-	}
-}
-
-type MessageResp struct {
-	Resp
-	Message *backend.Message
-}
-
-type SendMessageReq struct {
-	Req
-	ID string `json:"id"`
-	Packages []*backend.MessagePackage
-	AttachmentKeys []*backend.AttachmentKey
-	ClearBody string
-}
-
-type SendMessageResp struct {
-	Resp
-	Sent *backend.Message
-}
-
-type MessagesCountResp struct {
-	Resp
-	Counts []*backend.MessagesCount
-}
-
 func getMessagesFilter(ctx *macaron.Context) *backend.MessagesFilter {
 	return &backend.MessagesFilter{
 		Limit: ctx.QueryInt("Limit"),
@@ -134,6 +91,31 @@ func (api *Api) populateMessage(userId string, msg *backend.Message) {
 	}
 }
 
+type MessageReq struct {
+	Req
+	Message *backend.Message
+	ID string `json:"id"`
+	ParentID string
+}
+
+func (req MessageReq) getMessage() *backend.Message {
+	return &backend.Message{
+		ID: req.ID,
+		ToList: req.Message.ToList,
+		CCList: req.Message.CCList,
+		BCCList: req.Message.BCCList,
+		Subject: req.Message.Subject,
+		IsRead: req.Message.IsRead,
+		AddressID: req.Message.AddressID,
+		Body: req.Message.Body,
+	}
+}
+
+type MessageResp struct {
+	Resp
+	Message *backend.Message
+}
+
 func (api *Api) GetMessage(ctx *macaron.Context) (err error) {
 	userId := api.getUserId(ctx)
 	msgId := ctx.Params("id")
@@ -179,6 +161,11 @@ func (api *Api) ListMessages(ctx *macaron.Context) (err error) {
 	return
 }
 
+type MessagesCountResp struct {
+	Resp
+	Counts []*backend.MessagesCount
+}
+
 func (api *Api) GetMessagesCount(ctx *macaron.Context) (err error) {
 	userId := api.getUserId(ctx)
 
@@ -190,6 +177,35 @@ func (api *Api) GetMessagesCount(ctx *macaron.Context) (err error) {
 	ctx.JSON(200, &MessagesCountResp{
 		Resp: Resp{Ok},
 		Counts: counts,
+	})
+	return
+}
+
+type MessagesTotalResp struct {
+	Resp
+	backend.MessagesTotal
+}
+
+func (api *Api) GetMessagesTotal(ctx *macaron.Context) (err error) {
+	userId := api.getUserId(ctx)
+
+	counts, err := api.backend.CountMessages(userId)
+	if err != nil {
+		return
+	}
+
+	totals, _ := backend.MessagesTotalFromCounts(counts)
+
+	if totals.Locations == nil {
+		totals.Locations = []*backend.LocationTotal{}
+	}
+	if totals.Labels == nil {
+		totals.Labels = []*backend.LabelTotal{}
+	}
+
+	ctx.JSON(200, &MessagesTotalResp{
+		Resp: Resp{Ok},
+		MessagesTotal: *totals,
 	})
 	return
 }
@@ -411,6 +427,19 @@ func (api *Api) UpdateDraft(ctx *macaron.Context, req MessageReq) (err error) {
 		Message: msg,
 	})
 	return
+}
+
+type SendMessageReq struct {
+	Req
+	ID string `json:"id"`
+	Packages []*backend.MessagePackage
+	AttachmentKeys []*backend.AttachmentKey
+	ClearBody string
+}
+
+type SendMessageResp struct {
+	Resp
+	Sent *backend.Message
 }
 
 func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error) {

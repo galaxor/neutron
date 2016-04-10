@@ -182,8 +182,9 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 
 	m.Group("/messages", func() {
 		m.Get("/", api.ListMessages)
-		m.Get("/:id", api.GetMessage)
 		m.Get("/count", api.GetMessagesCount)
+		m.Get("/total", api.GetMessagesTotal)
+		m.Get("/:id", api.GetMessage)
 		m.Put("/:action(read|unread)", binding.Json(BatchReq{}), api.UpdateMessagesRead)
 		m.Put("/:action(star|unstar)", binding.Json(BatchReq{}), api.UpdateMessagesStar)
 		m.Put("/:label(trash|inbox|spam|archive)", binding.Json(BatchReq{}), api.UpdateMessagesSystemLabel)
