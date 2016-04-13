@@ -35,8 +35,8 @@ func getMessagesFilter(ctx *macaron.Context) *backend.MessagesFilter {
 		Attachments: (ctx.Query("Attachments") == "1"),
 		From: ctx.Query("From"),
 		To: ctx.Query("To"),
-		Begin: ctx.QueryInt("Begin"),
-		End: ctx.QueryInt("End"),
+		Begin: ctx.QueryInt64("Begin"),
+		End: ctx.QueryInt64("End"),
 		Sort: ctx.Query("Sort"),
 		Desc: (ctx.Query("Desc") == "1"),
 	}
@@ -72,6 +72,9 @@ func (api *Api) populateMessage(userId string, msg *backend.Message) {
 	}
 
 	msg.NumAttachments = len(msg.Attachments)
+	if len(msg.Attachments) > 0 {
+		msg.HasAttachment = 1
+	}
 
 	// TODO: optimize this
 	if msg.AddressID == "" && msg.Sender != nil {
@@ -147,6 +150,10 @@ func (api *Api) ListMessages(ctx *macaron.Context) (err error) {
 	msgs, total, err := api.backend.ListMessages(userId, filter)
 	if err != nil {
 		return
+	}
+
+	if msgs == nil {
+		msgs = []*backend.Message{}
 	}
 
 	for _, msg := range msgs {

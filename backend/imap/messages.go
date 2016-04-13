@@ -2,13 +2,11 @@ package imap
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"io/ioutil"
 	"net/mail"
-	"strconv"
-	"strings"
 	"time"
+	"log"
 
 	"github.com/emersion/neutron/backend"
 	"github.com/emersion/neutron/backend/memory"
@@ -24,184 +22,6 @@ type updatableAttachments interface {
 type Messages struct {
 	*conns
 	tmpAtts updatableAttachments
-}
-
-func formatAttachmentId(mailbox string, uid uint32, part string) string {
-	raw := mailbox + "/" + strconv.Itoa(int(uid))
-	if part != "" {
-		raw += "#" + part
-	}
-	return base64.URLEncoding.EncodeToString([]byte(raw))
-}
-
-func formatMessageId(mailbox string, uid uint32) string {
-	return formatAttachmentId(mailbox, uid, "")
-}
-
-func parseAttachmentId(id string) (mailbox string, uid uint32, part string, err error) {
-	decoded, err := base64.URLEncoding.DecodeString(id)
-	if err != nil {
-		return
-	}
-
-	fstParts := strings.SplitN(string(decoded), "/", 2)
-	if len(fstParts) != 2 {
-		err = errors.New("Invalid message ID: does not contain separator")
-		return
-	}
-	sndParts := strings.SplitN(fstParts[1], "#", 2)
-
-	uidInt, err := strconv.Atoi(sndParts[0])
-	if err != nil {
-		return
-	}
-
-	mailbox = fstParts[0]
-	uid = uint32(uidInt)
-
-	if len(sndParts) == 2 {
-		part = sndParts[1]
-	}
-	return
-}
-
-func parseMessageId(id string) (mailbox string, uid uint32, err error) {
-	mailbox, uid, _, err = parseAttachmentId(id)
-	return
-}
-
-func parseMessageInfo(msg *backend.Message, msgInfo *imap.MessageInfo) {
-	msg.Order = int(msgInfo.Seq)
-	msg.Size = int(msgInfo.Size)
-
-	if msgInfo.Flags["\\Seen"] {
-		msg.IsRead = 1
-	}
-	if msgInfo.Flags["\\Answered"] {
-		msg.IsReplied = 1
-	}
-	if msgInfo.Flags["\\Flagged"] {
-		msg.Starred = 1
-		msg.LabelIDs = append(msg.LabelIDs, backend.StarredLabel)
-	}
-	if msgInfo.Flags["\\Draft"] {
-		msg.Type = backend.DraftType
-	}
-}
-
-func parseEnvelopeAddress(addr []imap.Field) *backend.Email {
-	return &backend.Email{
-		Name:    textproto.DecodeWord(imap.AsString(addr[0])),
-		Address: imap.AsString(addr[2]) + "@" + imap.AsString(addr[3]),
-	}
-}
-
-func parseEnvelopeAddressList(list []imap.Field) []*backend.Email {
-	emails := make([]*backend.Email, len(list))
-	for i, field := range list {
-		addr := imap.AsList(field)
-		emails[i] = parseEnvelopeAddress(addr)
-	}
-	return emails
-}
-
-func parseEnvelope(msg *backend.Message, envelope []imap.Field) {
-	// TODO: support more formats (see RFC)
-	t, err := time.Parse("Mon, 2 Jan 2006 15:04:05 -0700 (MST)", imap.AsString(envelope[0]))
-	if err != nil {
-		t, err = time.Parse("Mon, 2 Jan 2006 15:04:05 -0700", imap.AsString(envelope[0]))
-	}
-	if err == nil {
-		msg.Time = t.Unix()
-	}
-
-	msg.Subject = textproto.DecodeWord(imap.AsString(envelope[1]))
-
-	// envelope[2] is From
-
-	senders := imap.AsList(envelope[3])
-	if len(senders) > 0 {
-		msg.Sender = parseEnvelopeAddress(imap.AsList(senders[0]))
-	}
-
-	replyTo := imap.AsList(envelope[4])
-	if len(replyTo) > 0 {
-		msg.ReplyTo = parseEnvelopeAddress(imap.AsList(replyTo[0]))
-	}
-
-	to := imap.AsList(envelope[5])
-	msg.ToList = parseEnvelopeAddressList(to)
-
-	cc := imap.AsList(envelope[6])
-	msg.CCList = parseEnvelopeAddressList(cc)
-
-	bcc := imap.AsList(envelope[6])
-	msg.BCCList = parseEnvelopeAddressList(bcc)
-
-	// envelope[7] is In-Reply-To
-	// envelope[8] is Message-Id
-}
-
-func parseBodyStructureParams(params []imap.Field) map[string]string {
-	result := map[string]string{}
-
-	for i := 0; i < len(params); i += 2 {
-		key := imap.AsString(params[i])
-		val := imap.AsString(params[i+1])
-
-		result[key] = val
-	}
-
-	return result
-}
-
-func parseBodyStructure(structure []imap.Field) *textproto.BodyStructure {
-	var parse func(structure []imap.Field, id string) *textproto.BodyStructure
-	parse = func(structure []imap.Field, id string) *textproto.BodyStructure {
-		if imap.TypeOf(structure[0]) == imap.QuotedString {
-			if id == "" {
-				id = "1"
-			}
-
-			// Not a MIME message
-			return &textproto.BodyStructure{
-				ID:                 id,
-				Type:               imap.AsString(structure[0]),
-				SubType:            imap.AsString(structure[1]),
-				Params:             parseBodyStructureParams(imap.AsList(structure[2])),
-				ContentId:          imap.AsString(structure[3]),
-				ContentDescription: imap.AsString(structure[4]),
-				ContentEncoding:    imap.AsString(structure[5]),
-				Size:               int(imap.AsNumber(structure[6])),
-			}
-		}
-
-		var processedUntil int
-		var children []*textproto.BodyStructure
-		for i, field := range structure {
-			if imap.TypeOf(field) != imap.List {
-				processedUntil = i
-				break
-			}
-
-			childId := strconv.Itoa(i + 1)
-			if id != "" {
-				childId = id + "." + childId
-			}
-
-			child := parse(imap.AsList(field), childId)
-			children = append(children, child)
-		}
-
-		return &textproto.BodyStructure{
-			ID:       id,
-			Type:     "multipart",
-			SubType:  imap.AsString(structure[processedUntil]),
-			Children: children,
-		}
-	}
-
-	return parse(structure, "")
 }
 
 func (b *Messages) GetMessage(user, id string) (msg *backend.Message, err error) {
@@ -310,9 +130,9 @@ func reverseMessagesList(msgs []*backend.Message) {
 }
 
 func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (msgs []*backend.Message, total int, err error) {
+	// TODO: find a way to search in all mailboxes when label isn't specified
 	if filter.Label == "" {
-		err = errors.New("Cannot list messages without specifying a label")
-		return
+		filter.Label = backend.InboxLabel
 	}
 
 	err = b.selectLabelMailbox(user, filter.Label)
@@ -334,6 +154,7 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 	}
 
 	set, _ := imap.NewSeqSet("")
+	fetchUid := false
 	if filter.Limit > 0 && filter.Page >= 0 {
 		from := filter.Limit * filter.Page
 		to := filter.Limit * (filter.Page + 1)
@@ -347,9 +168,61 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 		set.Add("1:*")
 	}
 
-	cmd, err := c.Fetch(set, "UID", "FLAGS", "RFC822.SIZE", "ENVELOPE")
-	if err != nil {
-		return
+	// TODO: support filter.Address, filter.Attachments
+	search := []imap.Field{}
+
+	dateFormat := "2-Jan-2006"
+	if filter.Begin != 0 {
+		search = append(search, "AFTER", time.Unix(filter.Begin, 0).Format(dateFormat))
+	}
+	if filter.End != 0 {
+		search = append(search, "BEFORE", time.Unix(filter.End, 0).Format(dateFormat))
+	}
+
+	if filter.From != "" {
+		search = append(search, "FROM", imap.Quote(filter.From, true))
+	}
+	if filter.To != "" {
+		search = append(search, "TO", imap.Quote(filter.To, true))
+	}
+
+	if filter.Keyword != "" {
+		search = append(search, "TEXT", imap.Quote(filter.Keyword, true))
+	}
+
+	if len(search) > 0 {
+		var cmd *imap.Command
+		cmd, _, err = wait(c.UIDSearch(search...))
+		if err != nil {
+			return
+		}
+
+		results := []uint32{}
+		for _, res := range cmd.Data {
+			results = append(results, res.SearchResults()...)
+		}
+
+		if len(results) == 0 {
+			return // No result
+		}
+
+		set, _ = imap.NewSeqSet("")
+		set.AddNum(results...)
+		fetchUid = true
+	}
+
+	var cmd *imap.Command
+	if fetchUid {
+		cmd, err = c.UIDFetch(set, "UID", "FLAGS", "RFC822.SIZE", "ENVELOPE")
+		log.Println(cmd)
+		if err != nil {
+			return
+		}
+	} else {
+		cmd, err = c.Fetch(set, "UID", "FLAGS", "RFC822.SIZE", "ENVELOPE")
+		if err != nil {
+			return
+		}
 	}
 
 	for cmd.InProgress() {

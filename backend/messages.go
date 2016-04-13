@@ -32,6 +32,7 @@ type Message struct {
 	BCCList []*Email
 	Time int64
 	Size int
+	HasAttachment int
 	NumAttachments int
 	IsEncrypted int
 	ExpirationTime int
@@ -39,8 +40,8 @@ type Message struct {
 	IsRepliedAll int
 	IsForwarded int
 	AddressID string
-	Body string
-	Header string
+	Body string `json:",omitempty"`
+	Header string `json:",omitempty"`
 	ReplyTo *Email
 	Attachments []*Attachment
 	Starred int
@@ -198,8 +199,8 @@ type MessagesFilter struct {
 	Attachments bool
 	From string
 	To string
-	Begin int // Timestamp
-	End int // Timestamp
+	Begin int64 // Timestamp
+	End int64 // Timestamp
 	Sort string
 	Desc bool
 }
