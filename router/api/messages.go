@@ -500,9 +500,13 @@ func (api *Api) SendMessage(ctx *macaron.Context, req SendMessageReq) (err error
 			att.Data = data
 		}
 
+		recipients := []*backend.Email{}
+		recipients = append(recipients, msg.ToList...)
+		recipients = append(recipients, msg.CCList...)
+		recipients = append(recipients, msg.BCCList...)
+
 		// Send clear text message to remaining recipients
-		// TODO: send to CCList and BCCList
-		for _, email := range msg.ToList {
+		for _, email := range recipients {
 			alreadySent := false
 			for _, pkg := range req.Packages {
 				if pkg.Address == email.Address {

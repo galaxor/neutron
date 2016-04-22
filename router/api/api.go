@@ -161,7 +161,7 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 		m.Post("/", binding.Json(CreateUserReq{}), api.CreateUser)
 		m.Get("/direct", api.GetDirectUser)
 		m.Get("/available/:username", api.GetUsernameAvailable)
-		m.Get("/pubkeys/:email", api.GetPublicKey)
+		m.Get("/pubkeys/:email", api.GetPublicKeys)
 	})
 
 	m.Group("/contacts", func() {

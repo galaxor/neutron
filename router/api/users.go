@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/base64"
+	"strings"
 
 	"gopkg.in/macaron.v1"
 
@@ -197,21 +198,27 @@ func (api *Api) GetUsernameAvailable(ctx *macaron.Context) (err error) {
 	return
 }
 
-func (api *Api) GetPublicKey(ctx *macaron.Context) (err error) {
+func (api *Api) GetPublicKeys(ctx *macaron.Context) (err error) {
 	b, err := base64.URLEncoding.DecodeString(ctx.Params("email"))
 	if err != nil {
 		return
 	}
 
-	email := string(b)
+	emails := strings.Split(string(b), ",")
 
-	key, err := api.backend.GetPublicKey(email)
-	if err != nil {
-		return
+	resp := map[string]interface{}{}
+	for _, email := range emails {
+		var key string
+		key, err = api.backend.GetPublicKey(email)
+		if err != nil {
+			return
+		}
+
+		resp[email] = key
 	}
 
-	resp := map[string]interface{}{ "Code": Ok }
-	resp[email] = key
+	resp["Code"] = Ok
+
 	ctx.JSON(200, resp)
 	return
 }
