@@ -1,0 +1,36 @@
+hash: 76aabaabbba85ccb0a942de80badf5ab567a2094dd3723b99ec324a15993d555
+updated: 2016-06-12T17:04:01.146999517+02:00
+imports:
+- name: github.com/go-macaron/binding
+  version: bd00823a7e9aa00cb3b1738fde244573ba7cce2c
+- name: github.com/go-macaron/inject
+  version: c5ab7bf3a307593cd44cb272d1a5beea473dd072
+- name: github.com/mxk/go-imap
+  version: 531c36c3f12d6a03ea766b07a77314aa51ec17f3
+  subpackages:
+  - imap
+- name: github.com/Unknwon/com
+  version: 28b053d5a2923b87ce8c5a08f3af779894a72758
+- name: golang.org/x/crypto
+  version: 77f4136a99ffb5ecdbdd0226bd5cb146cf56bc0e
+  subpackages:
+  - openpgp
+  - openpgp/armor
+  - openpgp/packet
+  - openpgp/errors
+  - openpgp/s2k
+  - cast5
+  - openpgp/elgamal
+- name: golang.org/x/text
+  version: e4775119bd79944a15a741ac4be61e43509a70d9
+  subpackages:
+  - encoding
+  - encoding/charmap
+  - encoding/internal/identifier
+  - transform
+  - encoding/internal
+- name: gopkg.in/ini.v1
+  version: 72ba3e6b9e6b87e0c74c9a7a4dc86e8dd8ba4355
+- name: gopkg.in/macaron.v1
+  version: 94a5ef7105036242f79e5e07a8eb8651d06c8533
+devImports: []
