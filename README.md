@@ -30,8 +30,8 @@ If you use Neutron, make sure to [donate to ProtonMail](https://protonmail.com/d
 
 ## Install
 
-* Debian, Ubuntu & Fedora: install from https://packager.io/gh/emersion/neutron
-  and run with `neutronmail run web`
+* Debian, Ubuntu & Fedora: ~~install from https://packager.io/gh/emersion/neutron
+  and run with `neutronmail run web`~~
 * Other platforms: no packages yet, you'll have to build from source (see below)
 
 ### Configuration
