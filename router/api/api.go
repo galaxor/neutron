@@ -151,6 +151,7 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 	})
 
 	m.Group("/auth", func() {
+		m.Post("/info", binding.Json(AuthInfoReq{}), api.AuthInfo)
 		m.Post("/", binding.Json(AuthReq{}), api.Auth)
 		m.Delete("/", api.DeleteAuth)
 		m.Post("/cookies", binding.Json(AuthCookiesReq{}), api.AuthCookies)

@@ -27,6 +27,22 @@ const (
 	TokenBearer TokenType = "Bearer"
 )
 
+type AuthInfoReq struct {
+	ClientID string
+	ClientSecret string
+	Username string
+}
+
+type AuthInfoResp struct {
+	Resp
+	Modulus string
+	ServerEphemeral string
+	Version int
+	Salt string
+	SRPSession string
+	TwoFactor int
+}
+
 type AuthReq struct {
 	Req
 	ClientID string
@@ -71,6 +87,12 @@ type AuthCookiesResp struct {
 type AuthCookie struct {
 	AccessToken string
 	Uid string `json:"UID"`
+}
+
+func (api *Api) AuthInfo(ctx *macaron.Context, req AuthInfoReq) {
+	ctx.JSON(200, &AuthInfoResp{
+		Resp: Resp{Ok},
+	})
 }
 
 func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
