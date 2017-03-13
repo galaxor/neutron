@@ -70,7 +70,9 @@ func main() {
 	}
 
 	// Create server
-	m := macaron.Classic()
+	m := macaron.New()
+	m.Use(macaron.Logger())
+	m.Use(macaron.Recovery())
 	m.Use(macaron.Renderer())
 
 	// Initialize API
@@ -81,7 +83,7 @@ func main() {
 	// Serve static files
 	m.Use(macaron.Static(publicDir, macaron.StaticOptions{
 		IndexFile: indexFile,
-		SkipLogging: true,
+		//SkipLogging: true,
 	}))
 
 	// Fallback to index file
