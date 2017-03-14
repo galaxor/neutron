@@ -23,6 +23,23 @@ type Plan struct {
 	TwoFactor int
 }
 
+type SubscriptionResp struct {
+	Resp
+	Subscription *Subscription
+}
+
+type Subscription struct {
+	ID string
+	InvoiceID string
+	Cycle int
+	PeriodStart int64
+	PeriodEnd int64
+	CouponCode string
+	Currency string
+	Amount int
+	Plans []*Plan
+}
+
 func (api *Api) GetPlans(ctx *macaron.Context) {
 	ctx.JSON(200, &PlansResp{
 		Resp: Resp{Ok},
@@ -31,9 +48,13 @@ func (api *Api) GetPlans(ctx *macaron.Context) {
 }
 
 func (api *Api) GetSubscription(ctx *macaron.Context) {
-	ctx.JSON(200, &ErrorResp{
-		Resp: Resp{22110},
-		Error: "You do not have an active subscription",
+	ctx.JSON(200, &SubscriptionResp{
+		Resp: Resp{Ok},
+		Subscription: &Subscription{
+			ID: "0",
+			InvoiceID: "0",
+			Plans: []*Plan{},
+		},
 	})
 }
 
