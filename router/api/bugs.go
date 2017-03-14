@@ -1,23 +1,29 @@
 package api
 
 import (
+	"encoding/json"
 	"log"
 
 	"gopkg.in/macaron.v1"
 )
 
+type ClientType int
+
+const (
+	ClientEmail ClientType = 1
+	ClientVPN
+)
+
 type CrashReq struct {
 	Req
+	OS string
 	OSVersion string
+	Browser string
+	BrowserVersion string
 	Client string
 	ClientVersion string
-	Debug struct {
-		State string `json:"state"`
-		Error struct {
-			Message string `json:"message"`
-			Stack string `json:"stack"`
-		} `json:"error"`
-	}
+	ClientType ClientType
+	Debug json.RawMessage
 }
 
 func (api *Api) Crash(ctx *macaron.Context, req CrashReq) {

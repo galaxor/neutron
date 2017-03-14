@@ -38,6 +38,7 @@ type UploadAttachmentReq struct {
 	Filename string `form:"Filename"`
 	MessageID string `form:"MessageID"`
 	MIMEType string `form:"MIMEType"`
+	ContentID string `form:"ContentID"`
 	KeyPackets *multipart.FileHeader `form:"KeyPackets"`
 	DataPacket *multipart.FileHeader `form:"DataPacket"`
 }
@@ -93,19 +94,14 @@ func (api *Api) UploadAttachment(ctx *macaron.Context, req UploadAttachmentReq) 
 	return
 }
 
-type RemoveAttachmentReq struct {
-	AttachmentID string
-	MessageID string
-}
-
-func (api *Api) RemoveAttachment(ctx *macaron.Context, req RemoveAttachmentReq) (err error) {
+func (api *Api) DeleteAttachment(ctx *macaron.Context) error {
 	userId := api.getUserId(ctx)
+	id := ctx.Params("id")
 
-	err = api.backend.DeleteAttachment(userId, req.AttachmentID)
-	if err != nil {
-		return
+	if err := api.backend.DeleteAttachment(userId, id); err != nil {
+		return err
 	}
 
 	ctx.JSON(200, &Resp{Ok})
-	return
+	return nil
 }

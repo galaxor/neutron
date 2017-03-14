@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"io/ioutil"
+	"net/textproto"
 
 	"golang.org/x/crypto/openpgp/packet"
 )
@@ -29,6 +30,7 @@ type Attachment struct {
 	Size int
 	MIMEType string
 	KeyPackets string `json:",omitempty"`
+	Headers textproto.MIMEHeader
 	DataPacket string `json:",omitempty"` // TODO: remove this from here
 }
 

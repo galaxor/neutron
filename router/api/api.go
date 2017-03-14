@@ -145,16 +145,19 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 	})
 
 	m.Group("/attachments", func() {
-		m.Get("/:id", api.GetAttachment)
 		m.Post("/upload", binding.MultipartForm(UploadAttachmentReq{}), api.UploadAttachment)
-		m.Put("/remove", binding.Json(RemoveAttachmentReq{}), api.RemoveAttachment)
+		m.Get("/:id", api.GetAttachment)
+		m.Delete("/:id", api.DeleteAttachment)
 	})
 
 	m.Group("/auth", func() {
 		m.Post("/", binding.Json(AuthReq{}), api.Auth)
 		m.Delete("/", api.DeleteAuth)
+		//m.Post("/refresh", binding.Json(RefreshAuthReq{}), api.RefreshAuth)
 		m.Post("/cookies", binding.Json(AuthCookiesReq{}), api.AuthCookies)
 		m.Post("/info", binding.Json(AuthInfoReq{}), api.AuthInfo)
+		//m.Get("/modulus", api.GetAuthModulus)
+		//m.Delete("/others", api.DeleteOthersAuth)
 	})
 
 	m.Group("/users", func() {
@@ -238,7 +241,10 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 
 	m.Group("/addresses", func() {
 		m.Post("/", binding.Json(CreateAddressReq{}), api.CreateAddress)
+		//m.Put("/order", binding.Json(OrderAddressReq{}), api.OrderAddresses)
+		//m.Post("/setup", binding.Json(SetupAddressReq{}), api.SetupAddress)
 		m.Put("/:id/:action(enable|disable)", api.ToggleAddress)
+		//m.Put("/:id", binding.Json(UpdateAddressReq{}), api.UpdateAddress)
 		m.Delete("/:id", api.DeleteAddress)
 	})
 

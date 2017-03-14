@@ -24,6 +24,8 @@ type Address struct {
 	Type int
 	DisplayName string
 	Signature string
+	MemberID string
+	MemberName string
 
 	HasKeys int
 	Keys []*Keypair
