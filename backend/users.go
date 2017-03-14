@@ -32,6 +32,7 @@ type User struct {
 	ComposerMode int
 	MessageButtons int
 	ShowImages int
+	ShowEmbedded int
 	ViewMode int
 	ViewLayout int
 	SwipeLeft int
@@ -39,6 +40,14 @@ type User struct {
 	Theme string
 	Currency string
 	Credit int
+	InvoiceText string
+	AlsoArchive int
+	Hotkeys int
+	PMSignature int
+	TwoFactor int
+	PasswordReset int
+	PasswordMode int
+	News int
 	DisplayName string
 	MaxSpace int
 	MaxUpload int
@@ -46,9 +55,9 @@ type User struct {
 	Private int
 	Subscribed int
 	Deliquent int
+	VPN interface{}
 	Addresses []*Address
-	PublicKey string
-	EncPrivateKey string
+	Keys []*Keypair
 }
 
 func (u *User) GetMainAddress() *Address {

@@ -36,6 +36,7 @@ type Keypair struct {
 	ID string
 	PublicKey string
 	PrivateKey string
+	Fingerprint string // TODO: populate this field
 }
 
 func (kp *Keypair) getPrivateKey() (entity *openpgp.Entity, err error) {

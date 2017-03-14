@@ -8,12 +8,6 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-type ResponseType string
-
-const (
-	ResponseToken ResponseType = "token"
-)
-
 type TokenType string
 
 const (
@@ -24,11 +18,9 @@ type AuthReq struct {
 	Req
 	ClientID string
 	ClientSecret string
-	Password string
-	RedirectURI string
-	ResponseType ResponseType
-	State string
 	Username string
+	Password string
+	TwoFactorCode string
 }
 
 type AuthResp struct {
@@ -41,14 +33,13 @@ type AuthResp struct {
 	RefreshToken string
 	UserStatus int
 	PrivateKey string
-	EncPrivateKey string
+	KeySalt string
 	EventID string
 }
 
 type AuthCookiesReq struct {
 	Req
 	ClientID string
-	ResponseType ResponseType
 	RefreshToken string
 	RedirectURI string
 	State string
@@ -146,7 +137,6 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 		Uid: session.ID,
 		RefreshToken: "refresh_token", // TODO
 		PrivateKey: kp.PrivateKey,
-		EncPrivateKey: kp.PrivateKey,
 		EventID: lastEvent.ID,
 	})
 }

@@ -37,13 +37,9 @@ type UsernameAvailableResp struct {
 }
 
 func populateUser(user *backend.User) {
-	if user.EncPrivateKey == "" || user.PublicKey == "" {
+	if user.Keys == nil {
 		addr := user.GetMainAddress()
-		if len(addr.Keys) > 0 {
-			keyring := addr.Keys[0]
-			user.EncPrivateKey = keyring.PrivateKey
-			user.PublicKey = keyring.PublicKey
-		}
+		user.Keys = addr.Keys
 	}
 
 	for _, addr := range user.Addresses {
