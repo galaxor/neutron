@@ -25,7 +25,7 @@ Neutron is modular so it's easy to create new backends and handle more scenarios
 
 Keep in mind that Neutron is less secure than ProtonMail: most servers don't
 use full-disk encryption and aren't under 1,000 meters of granite rock in
-Switzerland.
+Switzerland. Also, SRP is not yet supported ([#35](https://github.com/emersion/neutron/issues/35)).
 If you use Neutron, make sure to [donate to ProtonMail](https://protonmail.com/donate)!
 
 ## Install
