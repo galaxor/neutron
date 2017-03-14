@@ -8,13 +8,6 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-type GrantType string
-
-const (
-	GrantPassword GrantType = "password"
-	GrantRefreshToken = "refresh_token"
-)
-
 type ResponseType string
 
 const (
@@ -31,7 +24,6 @@ type AuthReq struct {
 	Req
 	ClientID string
 	ClientSecret string
-	GrantType GrantType
 	Password string
 	RedirectURI string
 	ResponseType ResponseType
@@ -57,7 +49,6 @@ type AuthCookiesReq struct {
 	Req
 	ClientID string
 	ResponseType ResponseType
-	GrantType GrantType
 	RefreshToken string
 	RedirectURI string
 	State string
@@ -73,16 +64,24 @@ type AuthCookie struct {
 	Uid string `json:"UID"`
 }
 
-func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
-	if req.GrantType != GrantPassword {
-		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{BadRequest},
-			Error: "invalid_grant",
-			ErrorDescription: "GrantType must be set to password",
-		})
-		return
-	}
+type AuthInfoReq struct {
+	Req
+	ClientID string
+	ClientSecret string
+	Username string
+}
 
+type AuthInfoResp struct {
+	Resp
+	Modulus string
+	ServerEphemeral string
+	Version int
+	Salt string
+	SRPSession string
+	TwoFactor int
+}
+
+func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	user, err := api.backend.Auth(req.Username, req.Password)
 	if err != nil {
 		ctx.JSON(200, &ErrorResp{
@@ -152,6 +151,12 @@ func (api *Api) Auth(ctx *macaron.Context, req AuthReq) {
 	})
 }
 
+func (api *Api) AuthInfo(ctx *macaron.Context, req AuthInfoReq) {
+	ctx.JSON(200, &AuthInfoResp{
+		Resp: Resp{Ok},
+	})
+}
+
 func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 	uid := api.getUid(ctx)
 	if uid == "" {
@@ -201,15 +206,6 @@ func (api *Api) AuthCookies(ctx *macaron.Context, req AuthCookiesReq) {
 			Resp: Resp{BadRequest},
 			Error: "invalid_authorization",
 			ErrorDescription: "Invalid authorization header",
-		})
-		return
-	}
-
-	if req.GrantType != GrantRefreshToken {
-		ctx.JSON(200, &ErrorResp{
-			Resp: Resp{BadRequest},
-			Error: "invalid_grant",
-			ErrorDescription: "GrantType must be set to refresh_token",
 		})
 		return
 	}
