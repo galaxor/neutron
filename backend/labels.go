@@ -12,12 +12,21 @@ type LabelsBackend interface {
 	DeleteLabel(user, id string) error
 }
 
+type LabelType int
+
+const (
+	LabelMessage LabelType = 1
+	LabelContact
+)
+
 // A message label.
 type Label struct {
 	ID string
 	Name string
 	Color string
 	Display int
+	Type LabelType
+	Exclusive int
 	Order int
 }
 

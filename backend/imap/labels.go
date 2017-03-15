@@ -81,6 +81,8 @@ func (b *Labels) ListLabels(user string) (labels []*backend.Label, err error) {
 			Color: getLabelColor(i),
 			Display: 1,
 			Order: i,
+			Type: backend.LabelMessage,
+			Exclusive: 1,
 		})
 
 		i++
@@ -113,6 +115,8 @@ func (b *Labels) InsertLabel(user string, label *backend.Label) (inserted *backe
 	inserted.ID = label.Name
 	inserted.Color = getLabelColor(i)
 	inserted.Order = i
+	inserted.Type = backend.LabelMessage
+	inserted.Exclusive = 1
 	return
 }
 

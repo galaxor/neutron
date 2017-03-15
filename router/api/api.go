@@ -229,8 +229,16 @@ func New(m *macaron.Macaron, backend *backend.Backend) {
 	})
 
 	m.Group("/keys", func() {
+		//m.Get("/", api.GetPublicKeys)
+		//m.Get("/salts", api.GetPrivateKeySalts)
 		m.Post("/", binding.Json(CreatePrivateKeyReq{}), api.CreatePrivateKey)
+		//m.Post("/setup", binding.Json(SetupPrivateKeysReq{}), api.SetupPrivateKeys)
+		//m.Post("/order", binding.Json(OrderKeysReq{}), api.OrderKeys)
+		//m.Post("/reset", binding.Json(ResetPrivateKeysReq{}), api.ResetPrivateKeys)
+		//m.Put("/:id/activate", binding.Json(ActivatePrivateKeyReq{}), api.ActivatePrivateKey)
+		//m.Put("/:id", binding.Json(ReactivatePrivateKeyReq{}), api.ReactivatePrivateKey)
 		m.Put("/private", binding.Json(UpdateAllPrivateKeysReq{}), api.UpdateAllPrivateKeys)
+		//m.Delete("/:id", binding.Json(DeletePrivateKeyReq{}), api.DeletePrivateKey)
 	})
 
 	m.Group("/domains", func() {
