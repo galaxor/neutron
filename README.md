@@ -84,7 +84,7 @@ Requirements:
 * Go (to build the server)
 * Node, NPM (to build the client)
 
-```bash
+```shell
 # Get the code
 go get -u github.com/emersion/neutron
 cd $GOPATH/src/github.com/emersion/neutron
@@ -96,6 +96,14 @@ make build-client
 
 # Start the server
 make start
+```
+
+### Docker
+
+```shell
+make build-docker
+docker build -t neutron .
+docker create -p 4000:4000 -v $PWD/config.json:/config.json -v $PWD/db:/db neutron
 ```
 
 ## Backends
