@@ -5,6 +5,8 @@
 
 Self-hosted server for [Protonmail client](https://github.com/ProtonMail/WebClient).
 
+> This project is not affiliated or supported by ProtonMail.
+
 ## What is it?
 
 Neutron is a server that will allow the ProtonMail client to be used with
