@@ -37,7 +37,7 @@ func (b *Messages) ReadAttachment(user, id string) (att *backend.Attachment, out
 	}
 	defer unlock()
 
-	seqset, _ := imap.NewSeqSet("")
+	seqset := new(imap.SeqSet)
 	seqset.AddNum(uid)
 
 	items := []string{"BODY.PEEK["+partId+"]"}

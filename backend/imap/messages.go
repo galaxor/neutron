@@ -41,7 +41,7 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 	}
 	defer unlock()
 
-	seqset, _ := imap.NewSeqSet("")
+	seqset := new(imap.SeqSet)
 	seqset.AddNum(uid)
 	items := []string{imap.FlagsMsgAttr, imap.SizeMsgAttr, imap.BodyStructureMsgAttr, "RFC822.HEADER"}
 
@@ -156,7 +156,7 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 		return
 	}
 
-	set, _ := imap.NewSeqSet("")
+	set := new(imap.SeqSet)
 	if filter.Limit > 0 && filter.Page >= 0 {
 		from := filter.Limit * filter.Page
 		to := filter.Limit * (filter.Page + 1)
@@ -386,7 +386,7 @@ func (b *Messages) UpdateMessage(user string, update *backend.MessageUpdate) (ms
 		return
 	}
 
-	seqset, _ := imap.NewSeqSet("")
+	seqset := new(imap.SeqSet)
 	seqset.AddNum(uid)
 
 	msg, err = b.GetMessage(user, update.Message.ID)
@@ -529,7 +529,7 @@ func (b *Messages) DeleteMessage(user, id string) (err error) {
 		return
 	}
 
-	seqset, _ := imap.NewSeqSet("")
+	seqset := new(imap.SeqSet)
 	seqset.AddNum(uid)
 
 	err = b.deleteMessages(user, seqset)
