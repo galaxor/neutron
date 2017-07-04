@@ -76,7 +76,7 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 
 	// Get message content
 
-	path, part := getPreferredPart(data.BodyStructure)
+	path, _ := getPreferredPart(data.BodyStructure)
 
 	ch = make(chan *imap.Message, 1)
 	if err = c.UidFetch(seqset, []string{"BODY.PEEK["+path+"]"}, ch); err != nil {

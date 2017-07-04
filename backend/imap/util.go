@@ -120,14 +120,10 @@ func writeOutgoingMessage(w io.Writer, msg *backend.OutgoingMessage) error {
 	if err != nil {
 		return err
 	}
-	if _, err := io.WriteString(tw, msg.Body); err != nil {
+	if _, err := io.WriteString(tw, msg.Message.Body); err != nil {
 		return err
 	}
 	tw.Close()
-
-	if !writeAttachments {
-		return nil
-	}
 
 	for _, att := range msg.Attachments {
 		mimeType := att.MIMEType
