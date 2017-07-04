@@ -37,7 +37,7 @@ func (b *Events) processUpdate(u *update) error {
 	}
 
 	mailbox := c.Mailbox.Name
-	seqset, _ := imap.NewSeqSet("")
+	seqset := new(imap.SeqSet)
 	seqset.AddNum(u.seqnbr)
 
 	ch := make(chan *imap.Message, 1)
