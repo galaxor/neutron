@@ -102,7 +102,7 @@ func (b *conns) getConn(user string) (*conn, func(), error) {
 
 	lock.Lock()
 
-	if c.State & imap.ConnectedState == 0 {
+	if c.State() & imap.ConnectedState == 0 {
 		delete(b.clients, user)
 
 		// Connection closed, reconnect
@@ -150,9 +150,8 @@ func (b *conns) idle(clt *client) error {
 
 	c := clt.conn
 
-	mailbox := "INBOX"
-	if c.Mailbox != nil && c.Mailbox.Name != mailbox {
-		if _, err := c.Select(mailbox, false); err != nil {
+	if mailbox := c.Mailbox(); mailbox != nil && mailbox.Name != imap.InboxName {
+		if _, err := c.Select(imap.InboxName, false); err != nil {
 			return err
 		}
 	}

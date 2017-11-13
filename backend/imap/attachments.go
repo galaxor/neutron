@@ -40,7 +40,8 @@ func (b *Messages) ReadAttachment(user, id string) (att *backend.Attachment, out
 	seqset := new(imap.SeqSet)
 	seqset.AddNum(uid)
 
-	items := []string{"BODY.PEEK["+partId+"]"}
+	// TODO: format imap.FetchItem
+	items := []imap.FetchItem{imap.FetchItem("BODY.PEEK["+partId+"]")}
 
 	messages := make(chan *imap.Message, 1)
 	if err = c.UidFetch(seqset, items, messages); err != nil {
@@ -53,7 +54,7 @@ func (b *Messages) ReadAttachment(user, id string) (att *backend.Attachment, out
 		return
 	}
 
-	att, r := parseAttachment(data.GetBody("BODY["+partId+"]"))
+	att, r := parseAttachment(data.GetBody(imap.FetchItem("BODY["+partId+"]")))
 
 	out, err = ioutil.ReadAll(r)
 	return
