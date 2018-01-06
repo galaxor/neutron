@@ -36,12 +36,12 @@ func (b *Events) processUpdate(u *update) error {
 		return err
 	}
 
-	mailbox := c.Mailbox.Name
+	mailbox := c.Mailbox().Name
 	seqset := new(imap.SeqSet)
 	seqset.AddNum(u.seqnbr)
 
 	ch := make(chan *imap.Message, 1)
-	err = c.Fetch(seqset, []string{imap.UidMsgAttr}, ch)
+	err = c.Fetch(seqset, []imap.FetchItem{imap.UidMsgAttr}, ch)
 	unlock()
 	if err != nil {
 		return err

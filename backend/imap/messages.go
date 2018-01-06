@@ -43,7 +43,14 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 
 	seqset := new(imap.SeqSet)
 	seqset.AddNum(uid)
-	items := []string{imap.FlagsMsgAttr, imap.SizeMsgAttr, imap.BodyStructureMsgAttr, "RFC822.HEADER"}
+
+        var bodySectionName *imap.BodySectionName
+        bodySectionName, err = imap.ParseBodySectionName(imap.FetchItem("RFC822.HEADER"))
+        if err != nil {
+                return
+        }
+
+	items := []string{imap.FlagsMsgAttr, imap.SizeMsgAttr, imap.BodyStructureMsgAttr, bodySectionName}
 
 	// Get message metadata
 
@@ -60,7 +67,7 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 
 	msg = &backend.Message{}
 	msg.ID = id
-	msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)}
+	msg.LabelIDs = []string{getLabelID(c.Mailbox().Name)}
 	//msg.Header = string(header)
 	parseMessage(msg, data)
 
@@ -68,7 +75,12 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 	msg.Attachments = bodyStructureAttachments(data.BodyStructure)
 
 	// Apply header to msg
-	m, err := mail.ReadMessage(data.GetBody("RFC822.HEADER"))
+        bodySectionName, err = imap.ParseBodySectionName(imap.FetchItem("RFC822.HEADER"))
+        if err != nil {
+                return
+        }
+
+	m, err := mail.ReadMessage(data.GetBody(bodySectionName))
 	if err != nil {
 		return
 	}
@@ -79,7 +91,7 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 	path, part := getPreferredPart(data.BodyStructure)
 
 	ch = make(chan *imap.Message, 1)
-	if err = c.UidFetch(seqset, []string{"BODY.PEEK["+path+"]"}, ch); err != nil {
+	if err = c.UidFetch(seqset, []imap.FetchItem{imap.FetchItem("BODY.PEEK["+path+"]")}, ch); err != nil {
 		return
 	}
 
@@ -89,7 +101,12 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 		return
 	}
 
-	r := decodePart(part, data.GetBody("BODY["+path+"]"))
+        bodySectionName, err = imap.ParseBodySectionName(imap.FetchItem("RFC822.HEADER"))
+        if err != nil {
+                return
+        }
+
+	r := decodePart(part, data.GetBody(bodySectionName))
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return
@@ -149,10 +166,10 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 	}
 	defer unlock()
 
-	total = int(c.Mailbox.Messages)
+	total = int(c.Mailbox().Messages)
 
 	// No messages to fetch
-	if c.Mailbox.Messages == 0 {
+	if c.Mailbox().Messages == 0 {
 		return
 	}
 
@@ -161,8 +178,8 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 		from := filter.Limit * filter.Page
 		to := filter.Limit * (filter.Page + 1)
 
-		if uint32(to) < c.Mailbox.Messages {
-			set.AddRange(c.Mailbox.Messages-uint32(from), c.Mailbox.Messages-uint32(to))
+		if uint32(to) < c.Mailbox().Messages {
+			set.AddRange(c.Mailbox().Messages-uint32(from), c.Mailbox().Messages-uint32(to))
 		} else {
 			set.Add("1:*")
 		}

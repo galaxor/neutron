@@ -155,7 +155,7 @@ func (b *Labels) DeleteLabel(user, id string) error {
 	}
 	defer unlock()
 
-	if c.Mailbox.Messages > 0 {
+	if c.Mailbox().Messages > 0 {
 		return errors.New("This label contains mesages, please move all of them before deleting it")
 	}
 
