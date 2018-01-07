@@ -169,30 +169,38 @@ func (b *conns) idle(clt *client) error {
 
 	reset := time.After(20 * time.Minute)
 
+        updates := make(chan interface{}, 1)
+        c.Updates = updates
 	for {
 		select {
-		case status := <-c.MailboxUpdates:
-			u := &update{
-				user: clt.id,
-				name: "EXISTS",
-				seqnbr: status.Messages,
-			}
+		case msg := <-updates:
+                        switch msg.(type) {
+                        case *(imapclient.MailboxUpdate):
+                                mbu := *msg.(*imap.MailboxStatus)
+                                u := &update{
+                                        user: clt.id,
+                                        name: "EXISTS",
+                                        // seqnbr: msg.(*imapclient.MailboxUpdate).Messages,
+                                        seqnbr: mbu.Messages,
+                                }
 
-			select {
-			case b.updates <- u:
-			default:
-			}
-		case seqNum := <-c.Expunges:
-			u := &update{
-				user: clt.id,
-				name: "EXPUNGE",
-				seqnbr: seqNum,
-			}
+                                select {
+                                case b.updates <- u:
+                                default:
+                                }
 
-			select {
-			case b.updates <- u:
-			default:
-			}
+                        case *(imapclient.ExpungeUpdate):
+                                u := &update{
+                                        user: clt.id,
+                                        name: "EXPUNGE",
+                                        seqnbr: msg.(*imapclient.ExpungeUpdate).SeqNum,
+                                }
+
+                                select {
+                                case b.updates <- u:
+                                default:
+                                }
+                        }
 		//case msg := <-c.MessageUpdates:
 		case <-reset:
 			clt.lock.Lock()
