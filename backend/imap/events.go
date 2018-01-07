@@ -41,7 +41,7 @@ func (b *Events) processUpdate(u *update) error {
 	seqset.AddNum(u.seqnbr)
 
 	ch := make(chan *imap.Message, 1)
-	err = c.Fetch(seqset, []imap.FetchItem{imap.UidMsgAttr}, ch)
+	err = c.Fetch(seqset, []imap.FetchItem{imap.FetchUid}, ch)
 	unlock()
 	if err != nil {
 		return err
