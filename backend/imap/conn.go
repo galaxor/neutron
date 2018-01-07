@@ -1,18 +1,18 @@
 package imap
 
 import (
-	"sync"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/emersion/go-imap"
-	imapclient "github.com/emersion/go-imap/client"
 	imapidle "github.com/emersion/go-imap-idle"
 	imapquota "github.com/emersion/go-imap-quota"
+	imapclient "github.com/emersion/go-imap/client"
 )
 
-type idleClient struct {*imapidle.Client}
-type quotaClient struct {*imapquota.Client}
+type idleClient struct{ *imapidle.Client }
+type quotaClient struct{ *imapquota.Client }
 
 type conn struct {
 	*imapclient.Client
@@ -21,23 +21,23 @@ type conn struct {
 }
 
 type client struct {
-	id string
-	conn *conn
-	lock sync.Locker
-	idle chan struct{}
+	id        string
+	conn      *conn
+	lock      sync.Locker
+	idle      chan struct{}
 	idleTimer *time.Timer
-	password string
+	password  string
 	mailboxes []*imap.MailboxInfo
 }
 
 type update struct {
-	user string
-	name string
+	user   string
+	name   string
 	seqnbr uint32
 }
 
 type conns struct {
-	config *Config
+	config  *Config
 	clients map[string]*client
 	updates chan *update
 }
@@ -67,11 +67,11 @@ func (b *conns) connect(username, password string) (email string, err error) {
 	b.clients[username] = &client{
 		id: username,
 		conn: &conn{
-			Client: c,
-			idleClient: idleClient{imapidle.NewClient(c)},
+			Client:      c,
+			idleClient:  idleClient{imapidle.NewClient(c)},
 			quotaClient: quotaClient{imapquota.NewClient(c)},
 		},
-		lock: &sync.Mutex{},
+		lock:     &sync.Mutex{},
 		password: password,
 	}
 	return
@@ -102,7 +102,7 @@ func (b *conns) getConn(user string) (*conn, func(), error) {
 
 	lock.Lock()
 
-	if c.State() & imap.ConnectedState == 0 {
+	if c.State()&imap.ConnectedState == 0 {
 		delete(b.clients, user)
 
 		// Connection closed, reconnect
@@ -138,7 +138,7 @@ func (b *conns) scheduleIdle(clt *client) {
 		clt.idleTimer.Stop()
 	}
 
-	clt.idleTimer = time.AfterFunc(10 * time.Second, func() {
+	clt.idleTimer = time.AfterFunc(10*time.Second, func() {
 		b.idle(clt)
 	})
 }
@@ -151,7 +151,7 @@ func (b *conns) idle(clt *client) error {
 	c := clt.conn
 
 	mailbox := "INBOX"
-	if c.Mailbox != nil && c.Mailbox().Name != mailbox {
+	if c.Mailbox() != nil && c.Mailbox().Name != mailbox {
 		if _, err := c.Select(mailbox, false); err != nil {
 			return err
 		}
@@ -169,38 +169,38 @@ func (b *conns) idle(clt *client) error {
 
 	reset := time.After(20 * time.Minute)
 
-        updates := make(chan interface{}, 1)
-        c.Updates = updates
+	updates := make(chan interface{}, 1)
+	c.Updates = updates
 	for {
 		select {
 		case msg := <-updates:
-                        switch msg.(type) {
-                        case *(imapclient.MailboxUpdate):
-                                mbu := *msg.(*imap.MailboxStatus)
-                                u := &update{
-                                        user: clt.id,
-                                        name: "EXISTS",
-                                        // seqnbr: msg.(*imapclient.MailboxUpdate).Messages,
-                                        seqnbr: mbu.Messages,
-                                }
+			switch msg.(type) {
+			case *(imapclient.MailboxUpdate):
+				mbu := *msg.(*imap.MailboxStatus)
+				u := &update{
+					user: clt.id,
+					name: "EXISTS",
+					// seqnbr: msg.(*imapclient.MailboxUpdate).Messages,
+					seqnbr: mbu.Messages,
+				}
 
-                                select {
-                                case b.updates <- u:
-                                default:
-                                }
+				select {
+				case b.updates <- u:
+				default:
+				}
 
-                        case *(imapclient.ExpungeUpdate):
-                                u := &update{
-                                        user: clt.id,
-                                        name: "EXPUNGE",
-                                        seqnbr: msg.(*imapclient.ExpungeUpdate).SeqNum,
-                                }
+			case *(imapclient.ExpungeUpdate):
+				u := &update{
+					user:   clt.id,
+					name:   "EXPUNGE",
+					seqnbr: msg.(*imapclient.ExpungeUpdate).SeqNum,
+				}
 
-                                select {
-                                case b.updates <- u:
-                                default:
-                                }
-                        }
+				select {
+				case b.updates <- u:
+				default:
+				}
+			}
 		//case msg := <-c.MessageUpdates:
 		case <-reset:
 			clt.lock.Lock()
@@ -291,7 +291,7 @@ func (b *conns) selectMailbox(user, mailbox string) (err error) {
 	}
 	defer unlock()
 
-	if c.Mailbox == nil || c.Mailbox().Name != mailbox {
+	if c.Mailbox() == nil || c.Mailbox().Name != mailbox {
 		_, err = c.Select(mailbox, false)
 		if err != nil {
 			return
