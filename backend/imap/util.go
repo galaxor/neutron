@@ -80,27 +80,27 @@ func parseMessage(msg *backend.Message, src *imap.Message) {
 
 func bodyStructureAttachments(structure *imap.BodyStructure) []*backend.Attachment {
 	// Non-multipart messages don't contain attachments
-	if structure.MimeType != "multipart" || structure.MimeSubType == "alternative" {
+	if structure.MIMEType != "multipart" || structure.MIMESubType == "alternative" {
 		return nil
 	}
 
 	var attachments []*backend.Attachment
 	for i, part := range structure.Parts {
-		if part.MimeType == "multipart" {
+		if part.MIMEType == "multipart" {
 			attachments = append(attachments, bodyStructureAttachments(part)...)
 			continue
 		}
 
 		// Apple Mail doesn't format well headers
 		// First child is message content
-		if part.MimeType == "text" && i == 0 {
+		if part.MIMEType == "text" && i == 0 {
 			continue
 		}
 
 		attachments = append(attachments, &backend.Attachment{
 			ID: part.Id,
 			Name: part.Params["name"],
-			MIMEType: part.MimeType + "/" + part.MimeSubType,
+			MIMEType: part.MIMEType + "/" + part.MIMESubType,
 			Size: int(part.Size),
 		})
 	}
@@ -112,14 +112,14 @@ func getPreferredPart(structure *imap.BodyStructure) (path string, part *imap.Bo
 	part = structure
 
 	for i, p := range structure.Parts {
-		if p.MimeType == "multipart" && p.MimeSubType == "alternative" {
+		if p.MIMEType == "multipart" && p.MIMESubType == "alternative" {
 			path, part = getPreferredPart(p)
 			path = strconv.Itoa(i+1) + "." + path
 		}
-		if p.MimeType != "text" {
+		if p.MIMEType != "text" {
 			continue
 		}
-		if part.MimeType == "multipart" || p.MimeSubType == "html" {
+		if part.MIMEType == "multipart" || p.MIMESubType == "html" {
 			part = p
 			path = strconv.Itoa(i+1)
 		}

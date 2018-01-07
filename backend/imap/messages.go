@@ -43,7 +43,8 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 
 	seqset := new(imap.SeqSet)
 	seqset.AddNum(uid)
-	items := []string{imap.FlagsMsgAttr, imap.SizeMsgAttr, imap.BodyStructureMsgAttr, "RFC822.HEADER"}
+
+	items := []imap.FetchItem{imap.FetchFlags, imap.FetchRFC822Size, imap.FetchBodyStructure, imap.FetchRFC822Header}
 
 	// Get message metadata
 
@@ -60,7 +61,7 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 
 	msg = &backend.Message{}
 	msg.ID = id
-	msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)}
+	msg.LabelIDs = []string{getLabelID(c.Mailbox().Name)}
 	//msg.Header = string(header)
 	parseMessage(msg, data)
 
@@ -68,7 +69,13 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 	msg.Attachments = bodyStructureAttachments(data.BodyStructure)
 
 	// Apply header to msg
-	m, err := mail.ReadMessage(data.GetBody("RFC822.HEADER"))
+        var bodySectionName *imap.BodySectionName
+        bodySectionName, err = imap.ParseBodySectionName(imap.FetchItem("RFC822.HEADER"))
+        if err != nil {
+                return
+        }
+
+	m, err := mail.ReadMessage(data.GetBody(bodySectionName))
 	if err != nil {
 		return
 	}
@@ -79,7 +86,7 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 	path, part := getPreferredPart(data.BodyStructure)
 
 	ch = make(chan *imap.Message, 1)
-	if err = c.UidFetch(seqset, []string{"BODY.PEEK["+path+"]"}, ch); err != nil {
+	if err = c.UidFetch(seqset, []imap.FetchItem{imap.FetchItem("BODY.PEEK["+path+"]")}, ch); err != nil {
 		return
 	}
 
@@ -89,7 +96,12 @@ func (be *Messages) GetMessage(user, id string) (msg *backend.Message, err error
 		return
 	}
 
-	r := decodePart(part, data.GetBody("BODY["+path+"]"))
+        bodySectionName, err = imap.ParseBodySectionName(imap.FetchItem("RFC822.HEADER"))
+        if err != nil {
+                return
+        }
+
+	r := decodePart(part, data.GetBody(bodySectionName))
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return
@@ -149,10 +161,10 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 	}
 	defer unlock()
 
-	total = int(c.Mailbox.Messages)
+	total = int(c.Mailbox().Messages)
 
 	// No messages to fetch
-	if c.Mailbox.Messages == 0 {
+	if c.Mailbox().Messages == 0 {
 		return
 	}
 
@@ -161,8 +173,8 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 		from := filter.Limit * filter.Page
 		to := filter.Limit * (filter.Page + 1)
 
-		if uint32(to) < c.Mailbox.Messages {
-			set.AddRange(c.Mailbox.Messages-uint32(from), c.Mailbox.Messages-uint32(to))
+		if uint32(to) < c.Mailbox().Messages {
+			set.AddRange(c.Mailbox().Messages-uint32(from), c.Mailbox().Messages-uint32(to))
 		} else {
 			set.Add("1:*")
 		}
@@ -213,7 +225,7 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 		fetchUid = true
 	}
 
-	items := []string{imap.UidMsgAttr, imap.FlagsMsgAttr, imap.SizeMsgAttr, imap.EnvelopeMsgAttr}
+	items := []imap.FetchItem{imap.FetchUid, imap.FetchFlags, imap.FetchRFC822Size, imap.FetchEnvelope}
 
 	ch := make(chan *imap.Message)
 	done := make(chan error, 1)
@@ -227,8 +239,8 @@ func (b *Messages) ListMessages(user string, filter *backend.MessagesFilter) (ms
 
 	for data := range ch {
 		msg := &backend.Message{}
-		msg.ID = formatMessageId(c.Mailbox.Name, data.Uid)
-		msg.LabelIDs = []string{getLabelID(c.Mailbox.Name)}
+		msg.ID = formatMessageId(c.Mailbox().Name, data.Uid)
+		msg.LabelIDs = []string{getLabelID(c.Mailbox().Name)}
 		parseMessage(msg, data)
 		parseEnvelope(msg, data.Envelope)
 
@@ -257,7 +269,7 @@ func (b *Messages) CountMessages(user string) (counts []*backend.MessagesCount, 
 	defer unlock()
 
 	for _, mailbox := range mailboxes {
-		status, err := c.Status(mailbox.Name, []string{imap.MailboxMessages, imap.MailboxUnseen})
+		status, err := c.Status(mailbox.Name, []imap.StatusItem{imap.StatusMessages, imap.StatusUnseen})
 		if err != nil {
 			return nil, err
 		}
@@ -311,7 +323,7 @@ func (b *Messages) InsertMessage(user string, msg *backend.Message) (inserted *b
 	return
 }
 
-func (b *Messages) updateMessageFlags(user string, seqset *imap.SeqSet, flag string, value bool) error {
+func (b *Messages) updateMessageFlags(user string, seqset *imap.SeqSet, flag imap.StoreItem, value bool) error {
 	c, unlock, err := b.getConn(user)
 	if err != nil {
 		return err
@@ -323,8 +335,8 @@ func (b *Messages) updateMessageFlags(user string, seqset *imap.SeqSet, flag str
 		item = imap.RemoveFlags
 	}
 
-	flags := []string{flag}
-	return c.UidStore(seqset, item, flags, nil)
+	flags := []imap.StoreItem{flag}
+	return c.UidStore(seqset, imap.StoreItem(item), flags, nil)
 }
 
 func (b *Messages) deleteMessages(user string, seqset *imap.SeqSet) error {
